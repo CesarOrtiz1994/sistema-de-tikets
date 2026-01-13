@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoleType {
+  SUPER_ADMIN
+  DEPT_ADMIN
+  SUBORDINATE
+  REQUESTER
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  googleId       String?  @unique @map("google_id")
+  name           String
+  profilePicture String?  @map("profile_picture")
+  roleType       RoleType @default(REQUESTER) @map("role_type")
+  language       String   @default("es")
+  isActive       Boolean  @default(true) @map("is_active")
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  departmentUsers DepartmentUser[]
+  createdDepartments Department[] @relation("DepartmentCreator")
+
+  @@map("users")
+}
+
+model Department {
+  id                      String   @id @default(uuid())
+  name                    String
+  prefix                  String   @unique
+  description             String?
+  isDefaultForRequesters  Boolean  @default(false) @map("is_default_for_requesters")
+  createdById             String?  @map("created_by")
+  deletedAt               DateTime? @map("deleted_at")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  createdBy       User?   @relation("DepartmentCreator", fields: [createdById], references: [id])
+  departmentUsers DepartmentUser[]
+
+  @@map("departments")
+}
+
+model DepartmentUser {
+  id           String   @id @default(uuid())
+  departmentId String   @map("department_id")
+  userId       String   @map("user_id")
+  role         String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, userId])
+  @@map("department_users")
+}
