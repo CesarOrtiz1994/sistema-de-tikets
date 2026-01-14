@@ -28,21 +28,32 @@ export const corsOptions: CorsOptions = {
 // Configuración de Rate Limiting
 export const rateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 requests por ventana
+  max: env.NODE_ENV === 'development' ? 1000 : 100, // Más permisivo en desarrollo
   message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip para health checks
-    return req.path === '/api/health';
+    // Skip para health checks y en desarrollo para localhost
+    if (req.path === '/api/health') return true;
+    if (env.NODE_ENV === 'development' && (req.ip === '::1' || req.ip === '127.0.0.1' || req.ip === '::ffff:127.0.0.1')) {
+      return true;
+    }
+    return false;
   },
 };
 
 // Rate limit más estricto para autenticación
 export const authRateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // Solo 5 intentos de login
+  max: env.NODE_ENV === 'development' ? 100 : 5, // Más permisivo en desarrollo
   message: 'Demasiados intentos de inicio de sesión, por favor intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip en desarrollo para localhost
+    if (env.NODE_ENV === 'development' && (req.ip === '::1' || req.ip === '127.0.0.1' || req.ip === '::ffff:127.0.0.1')) {
+      return true;
+    }
+    return false;
+  },
 };

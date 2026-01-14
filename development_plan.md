@@ -59,32 +59,32 @@
 **Objetivo:** Login funcional con Google
 
 #### Backend
-- [ ] Instalar Passport.js + Passport-Google-OAuth20
-- [ ] Configurar Google OAuth en Google Console
-- [ ] Crear strategy de Passport
-- [ ] Endpoints de autenticación:
+- [x] Instalar Passport.js + Passport-Google-OAuth20
+- [x] Configurar Google OAuth en Google Console
+- [x] Crear strategy de Passport
+- [x] Endpoints de autenticación:
   - `GET /api/auth/google` - Iniciar OAuth
   - `GET /api/auth/google/callback` - Callback
   - `POST /api/auth/refresh` - Refresh token
   - `POST /api/auth/logout` - Cerrar sesión
   - `GET /api/auth/me` - Usuario actual
-- [ ] Implementar JWT (access + refresh tokens)
-- [ ] Middleware de autenticación (verificar JWT)
-- [ ] Tabla users completa en BD
-- [ ] Tabla user_sessions para gestión de sesiones
-- [ ] Lógica para revocar sesiones
-- [ ] Endpoint para ver sesiones activas
-- [ ] Endpoint para cerrar sesión en todos los dispositivos
+- [x] Implementar JWT (access + refresh tokens)
+- [x] Middleware de autenticación (verificar JWT)
+- [x] Tabla users completa en BD
+- [x] Tabla user_sessions para gestión de sesiones
+- [x] Lógica para revocar sesiones
+- [x] Endpoint para ver sesiones activas
+- [x] Endpoint para cerrar sesión en todos los dispositivos
 
 #### Frontend
-- [ ] Página de Login
-- [ ] Componente GoogleLoginButton
-- [ ] Servicio de autenticación (API calls)
-- [ ] Store de autenticación (Zustand)
-- [ ] Hook useAuth
-- [ ] Guardar tokens en localStorage
-- [ ] Rutas protegidas (ProtectedRoute component)
-- [ ] Redirect automático si no está autenticado
+- [x] Página de Login
+- [x] Componente GoogleLoginButton
+- [x] Servicio de autenticación (API calls)
+- [x] Store de autenticación (Zustand)
+- [x] Hook useAuth
+- [x] Guardar tokens en localStorage
+- [x] Rutas protegidas (ProtectedRoute component)
+- [x] Redirect automático si no está autenticado
 
 **Entregable:** Login funcional con Google, tokens, rutas protegidas
 

@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import passport from './config/passport';
 import { env } from './config/env';
 import { corsOptions } from './config/security';
 import {
@@ -10,6 +11,7 @@ import {
 } from './middlewares/security.middleware';
 import { notFoundHandler, errorHandler } from './middlewares/error.middleware';
 import logger, { stream } from './config/logger';
+import authRoutes from './routes/auth.routes';
 
 const app: Application = express();
 
@@ -31,6 +33,12 @@ app.use(bodySizeLimiter);
 // Body parsers con límites
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Inicializar Passport
+app.use(passport.initialize());
+
+// Rutas de autenticación
+app.use('/api/auth', authRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (_req, res) => {
