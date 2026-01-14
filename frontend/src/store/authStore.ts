@@ -40,14 +40,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.setItem('refreshToken', refreshToken);
   },
 
-  loadUser: async () => {
+  loadUser: async (): Promise<void> => {
     // Verificación síncrona ANTES de crear la promesa
     if (isLoadingUserFlag) {
-      return loadUserPromise;
+      await loadUserPromise;
+      return;
     }
     
     if (loadUserPromise) {
-      return loadUserPromise;
+      await loadUserPromise;
+      return;
     }
 
     const accessToken = localStorage.getItem('accessToken');
@@ -77,7 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     })();
 
-    return loadUserPromise;
+    await loadUserPromise;
   },
 
   logout: async () => {
