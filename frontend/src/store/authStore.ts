@@ -18,13 +18,14 @@ interface AuthState {
 }
 
 let loadUserPromise: Promise<void> | null = null;
+let isLoadingUserFlag = false;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
-  error: null,
   isLoadingUser: false,
+  error: null,
 
   setUser: (user) => {
     set({
@@ -40,33 +41,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   loadUser: async () => {
-    if (loadUserPromise) {
+    // Verificación síncrona ANTES de crear la promesa
+    if (isLoadingUserFlag) {
       return loadUserPromise;
     }
-
-    if (get().isLoadingUser) {
-      return;
+    
+    if (loadUserPromise) {
+      return loadUserPromise;
     }
 
     const accessToken = localStorage.getItem('accessToken');
     
     if (!accessToken) {
       set({ user: null, isAuthenticated: false, isLoading: false, isLoadingUser: false });
-      loadUserPromise = null;
       return;
     }
 
+    // Activar flag INMEDIATAMENTE antes de crear la promesa
+    isLoadingUserFlag = true;
+    set({ isLoading: true, isLoadingUser: true, error: null });
+
     loadUserPromise = (async () => {
       try {
-        set({ isLoading: true, isLoadingUser: true, error: null });
         const user = await authService.getCurrentUser();
         set({ user, isAuthenticated: true, isLoading: false, isLoadingUser: false });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading user:', error);
+        console.error('Detalles:', error.response?.data || error.message);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         set({ user: null, isAuthenticated: false, isLoading: false, isLoadingUser: false, error: 'Failed to load user' });
       } finally {
+        isLoadingUserFlag = false;
         loadUserPromise = null;
       }
     })();
@@ -81,11 +87,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await authService.logout(refreshToken);
       }
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Logout error:', error);
     } finally {
+      authService.clearUserCache();
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      loadUserPromise = null;
       set({ user: null, isAuthenticated: false, isLoading: false, isLoadingUser: false });
       usePermissionsStore.getState().clearPermissions();
     }

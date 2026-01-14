@@ -1,16 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { RoleType } from '@prisma/client';
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    roleType: RoleType;
-  };
-}
-
 export const checkPermission = (...allowedRoles: RoleType[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         return res.status(401).json({
@@ -19,7 +11,7 @@ export const checkPermission = (...allowedRoles: RoleType[]) => {
         });
       }
 
-      const userRole = req.user.roleType;
+      const userRole = (req.user as any).roleType;
 
       if (!allowedRoles.includes(userRole)) {
         return res.status(403).json({
@@ -30,7 +22,7 @@ export const checkPermission = (...allowedRoles: RoleType[]) => {
         });
       }
 
-      next();
+      return next();
     } catch (error) {
       return res.status(500).json({
         success: false,

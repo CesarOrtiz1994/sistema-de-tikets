@@ -1,10 +1,9 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuditService } from '../services/audit.service';
-import { AuthRequest } from '../middlewares/permissions.middleware';
 
 const auditService = new AuditService();
 
-export const getAuditLogs = async (req: AuthRequest, res: Response) => {
+export const getAuditLogs = async (req: Request, res: Response) => {
   try {
     const {
       userId,
@@ -45,7 +44,7 @@ export const getAuditLogs = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getAuditLogById = async (req: AuthRequest, res: Response) => {
+export const getAuditLogById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -73,7 +72,7 @@ export const getAuditLogById = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getMyAuditLogs = async (req: AuthRequest, res: Response) => {
+export const getMyAuditLogs = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -85,7 +84,7 @@ export const getMyAuditLogs = async (req: AuthRequest, res: Response) => {
     const { page, limit } = req.query;
 
     const result = await auditService.getUserAuditLogs(
-      req.user.id,
+      (req.user as any).id,
       page ? parseInt(page as string) : undefined,
       limit ? parseInt(limit as string) : undefined
     );
@@ -105,7 +104,7 @@ export const getMyAuditLogs = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getAuditStats = async (req: AuthRequest, res: Response) => {
+export const getAuditStats = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate } = req.query;
 

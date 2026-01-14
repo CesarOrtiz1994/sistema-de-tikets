@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { FiFileText, FiCheckCircle, FiClock, FiUser } from 'react-icons/fi';
@@ -8,8 +8,15 @@ export default function AuthCallbackPage() {
   const navigate = useNavigate();
   const { setTokens, loadUser } = useAuthStore();
   const [loadingStep, setLoadingStep] = useState(0);
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
+    // Solo ejecutar una vez
+    if (hasProcessed.current) {
+      return;
+    }
+    hasProcessed.current = true;
+
     const handleCallback = async () => {
       const accessToken = searchParams.get('accessToken');
       const refreshToken = searchParams.get('refreshToken');
@@ -25,20 +32,18 @@ export default function AuthCallbackPage() {
         setLoadingStep(1);
         setTokens(accessToken, refreshToken);
         
-        setTimeout(() => setLoadingStep(2), 500);
-        
+        setLoadingStep(2);
         await loadUser();
         
-        setTimeout(() => setLoadingStep(3), 500);
-        
-        setTimeout(() => navigate('/'), 1000);
+        setLoadingStep(3);
+        navigate('/');
       } else {
         navigate('/login?error=no_tokens');
       }
     };
 
     handleCallback();
-  }, [searchParams, navigate, setTokens, loadUser]);
+  }, []);
 
   const steps = [
     { icon: FiUser, text: 'Verificando identidad', color: 'from-blue-500 to-blue-600' },

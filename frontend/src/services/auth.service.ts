@@ -21,9 +21,44 @@ export interface Session {
 }
 
 class AuthService {
+  private currentUserCache: User | null = null;
+  private currentUserCacheTime = 0;
+  private currentUserPromise: Promise<User> | null = null;
+  private readonly CACHE_DURATION = 30000; // 30 segundos
+
   async getCurrentUser(): Promise<User> {
-    const response = await api.get('/api/auth/me');
-    return response.data.data;
+    const now = Date.now();
+    
+    // Si hay datos en cache y son recientes, retornarlos inmediatamente
+    if (this.currentUserCache && (now - this.currentUserCacheTime) < this.CACHE_DURATION) {
+      return this.currentUserCache;
+    }
+    
+    // Si hay una petición en curso, reutilizarla
+    if (this.currentUserPromise) {
+      return this.currentUserPromise;
+    }
+    
+    // Crear nueva petición
+    this.currentUserPromise = api.get('/api/auth/me')
+      .then(response => {
+        this.currentUserCache = response.data.data;
+        this.currentUserCacheTime = Date.now();
+        this.currentUserPromise = null;
+        return response.data.data;
+      })
+      .catch(error => {
+        this.currentUserPromise = null;
+        throw error;
+      });
+    
+    return this.currentUserPromise;
+  }
+
+  clearUserCache(): void {
+    this.currentUserCache = null;
+    this.currentUserCacheTime = 0;
+    this.currentUserPromise = null;
   }
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {

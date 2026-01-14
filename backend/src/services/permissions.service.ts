@@ -12,8 +12,14 @@ export class PermissionsService {
         roleType: true,
         isActive: true,
         departmentUsers: {
-          include: {
-            department: true
+          select: {
+            role: true,
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
           }
         }
       }
@@ -144,7 +150,8 @@ export class PermissionsService {
       select: {
         roleType: true,
         departmentUsers: {
-          include: {
+          select: {
+            role: true,
             department: {
               select: {
                 id: true,

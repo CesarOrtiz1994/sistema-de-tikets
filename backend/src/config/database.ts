@@ -31,16 +31,16 @@ const prisma = new PrismaClient({
   ],
 });
 
-// Log de queries en desarrollo
-if (process.env.NODE_ENV === 'development') {
-  prisma.$on('query', (e: any) => {
-    logger.debug('Query:', {
-      query: e.query,
-      params: e.params,
-      duration: `${e.duration}ms`,
-    });
-  });
-}
+// Log de queries en desarrollo - DESACTIVADO TEMPORALMENTE
+// if (process.env.NODE_ENV === 'development') {
+//   prisma.$on('query', (e: any) => {
+//     logger.debug('Query:', {
+//       query: e.query,
+//       params: e.params,
+//       duration: `${e.duration}ms`,
+//     });
+//   });
+// }
 
 // Log de errores
 prisma.$on('error', (e: any) => {

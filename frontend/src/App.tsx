@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
@@ -15,17 +15,27 @@ import { usePermissions } from './hooks/usePermissions';
 function App() {
   const { isAuthenticated, isLoading, loadUser } = useAuth();
   const { loadPermissions } = usePermissions();
+  const hasInitialized = useRef(false);
+  const hasLoadedPermissions = useRef(false);
 
   useEffect(() => {
-    const initializeApp = async () => {
-      await loadUser();
-      if (isAuthenticated) {
-        await loadPermissions();
-      }
-    };
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      loadUser();
+    }
+  }, [loadUser]);
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && !hasLoadedPermissions.current) {
+      hasLoadedPermissions.current = true;
+      loadPermissions();
+    }
     
-    initializeApp();
-  }, []);
+    // Reset flag cuando el usuario cierra sesión
+    if (!isAuthenticated) {
+      hasLoadedPermissions.current = false;
+    }
+  }, [isAuthenticated, isLoading, loadPermissions]);
 
   if (isLoading) {
     return (

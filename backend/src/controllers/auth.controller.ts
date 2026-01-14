@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import authService from '../services/auth.service';
 import { AppError } from '../utils/errors';
-import { AuthRequest } from '../middlewares/auth';
 
 export class AuthController {
   async googleCallback(req: Request, res: Response, next: NextFunction) {
@@ -65,13 +64,13 @@ export class AuthController {
     }
   }
 
-  async logoutAll(req: AuthRequest, res: Response, next: NextFunction) {
+  async logoutAll(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) {
         throw new AppError('Authentication required', 401);
       }
 
-      await authService.logoutAllSessions(req.user.userId);
+      await authService.logoutAllSessions((req.user as any).userId);
 
       res.json({
         success: true,
@@ -82,7 +81,7 @@ export class AuthController {
     }
   }
 
-  async getCurrentUser(req: AuthRequest, res: Response, next: NextFunction) {
+  async getCurrentUser(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) {
         throw new AppError('Authentication required', 401);
@@ -90,7 +89,7 @@ export class AuthController {
 
       const prisma = (await import('../config/database')).default;
       const user = await prisma.user.findUnique({
-        where: { id: req.user.userId },
+        where: { id: (req.user as any).userId },
         select: {
           id: true,
           email: true,
@@ -117,13 +116,13 @@ export class AuthController {
     }
   }
 
-  async getActiveSessions(req: AuthRequest, res: Response, next: NextFunction) {
+  async getActiveSessions(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) {
         throw new AppError('Authentication required', 401);
       }
 
-      const sessions = await authService.getActiveSessions(req.user.userId);
+      const sessions = await authService.getActiveSessions((req.user as any).userId);
 
       res.json({
         success: true,

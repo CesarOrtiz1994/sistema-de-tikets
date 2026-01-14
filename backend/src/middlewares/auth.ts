@@ -3,16 +3,8 @@ import { verifyAccessToken, JwtPayload } from '../utils/jwt';
 import { AppError } from '../utils/errors';
 import prisma from '../config/database';
 
-export interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    roleType: string;
-  };
-}
-
 export const authenticate = async (
-  req: AuthRequest,
+  req: Request,
   _res: Response,
   next: NextFunction
 ) => {
@@ -43,6 +35,7 @@ export const authenticate = async (
     }
 
     req.user = {
+      id: user.id,
       userId: user.id,
       email: user.email,
       roleType: user.roleType,
@@ -59,12 +52,12 @@ export const authenticate = async (
 };
 
 export const authorize = (...roles: string[]) => {
-  return (req: AuthRequest, _res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new AppError('Authentication required', 401));
     }
 
-    if (!roles.includes(req.user.roleType)) {
+    if (!roles.includes((req.user as any).roleType)) {
       return next(
         new AppError('You do not have permission to access this resource', 403)
       );

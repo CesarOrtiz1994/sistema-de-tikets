@@ -50,12 +50,26 @@ export default function Navbar() {
 
             {/* User Info */}
             <div className="flex items-center gap-3 bg-gray-100 rounded-full px-4 py-2 border border-gray-200">
-              {user.profilePicture && (
+              {user.profilePicture ? (
                 <img
                   src={user.profilePicture}
                   alt={user.name}
                   className="w-8 h-8 rounded-full border-2 border-purple-500"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent && !parent.querySelector('.fallback-avatar')) {
+                      const fallback = document.createElement('div');
+                      fallback.className = 'fallback-avatar w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-semibold text-sm';
+                      fallback.textContent = user.name.charAt(0).toUpperCase();
+                      parent.insertBefore(fallback, e.currentTarget);
+                    }
+                  }}
                 />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
               )}
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-gray-900">{user.name}</p>

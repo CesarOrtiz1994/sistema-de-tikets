@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { RoleType } from '../types/permissions';
@@ -16,6 +17,11 @@ import {
 export default function DashboardHomePage() {
   const { user } = useAuth();
   const { userRole } = usePermissions();
+  const navigate = useNavigate();
+
+  console.log('DashboardHomePage - userRole:', userRole);
+  console.log('DashboardHomePage - RoleType.SUPER_ADMIN:', RoleType.SUPER_ADMIN);
+  console.log('DashboardHomePage - Comparación:', userRole === RoleType.SUPER_ADMIN);
 
   if (!user) return null;
 
@@ -69,6 +75,34 @@ export default function DashboardHomePage() {
       {/* Role-Specific Content */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Super Admin Panel */}
+        {userRole === RoleType.SUPER_ADMIN && (
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <FiShield className="text-3xl" />
+              <h2 className="text-2xl font-bold">Panel de Super Admin</h2>
+            </div>
+            <p className="text-purple-100 mb-4">
+              Tienes acceso completo al sistema. Puedes gestionar usuarios, departamentos, permisos y auditoría.
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                <p className="text-sm text-purple-100">Total Usuarios</p>
+                <p className="text-2xl font-bold">0</p>
+              </div>
+              <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+                <p className="text-sm text-purple-100">Departamentos</p>
+                <p className="text-2xl font-bold">0</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/users')}
+              className="w-full bg-white text-purple-600 font-semibold py-3 px-4 rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <FiUsers className="text-xl" />
+              <span>Gestionar Usuarios</span>
+            </button>
+          </div>
+        )}
         <RoleGuard roles={[RoleType.SUPER_ADMIN]}>
           <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-3 mb-4">

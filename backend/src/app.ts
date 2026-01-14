@@ -14,6 +14,7 @@ import logger, { stream } from './config/logger';
 import authRoutes from './routes/auth.routes';
 import permissionsRoutes from './routes/permissions.routes';
 import auditRoutes from './routes/audit.routes';
+import usersRoutes from './routes/users.routes';
 
 const app: Application = express();
 
@@ -47,6 +48,9 @@ app.use('/api/permissions', permissionsRoutes);
 
 // Rutas de auditoría
 app.use('/api/audit', auditRoutes);
+
+// Rutas de usuarios
+app.use('/api/users', usersRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (_req, res) => {

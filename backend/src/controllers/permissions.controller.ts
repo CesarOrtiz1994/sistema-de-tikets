@@ -1,10 +1,9 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { PermissionsService } from '../services/permissions.service';
-import { AuthRequest } from '../middlewares/permissions.middleware';
 
 const permissionsService = new PermissionsService();
 
-export const getMyPermissions = async (req: AuthRequest, res: Response) => {
+export const getMyPermissions = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -13,7 +12,14 @@ export const getMyPermissions = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const permissions = await permissionsService.getUserPermissions(req.user.id);
+    if (!(req.user as any).id) {
+      return res.status(500).json({
+        success: false,
+        message: 'Usuario sin ID'
+      });
+    }
+
+    const permissions = await permissionsService.getUserPermissions((req.user as any).id);
 
     return res.json({
       success: true,
@@ -29,7 +35,7 @@ export const getMyPermissions = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getUserPermissions = async (req: AuthRequest, res: Response) => {
+export const getUserPermissions = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
 
@@ -49,7 +55,7 @@ export const getUserPermissions = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getMyDepartments = async (req: AuthRequest, res: Response) => {
+export const getMyDepartments = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -58,7 +64,7 @@ export const getMyDepartments = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const departments = await permissionsService.getUserDepartments(req.user.id);
+    const departments = await permissionsService.getUserDepartments((req.user as any).id);
 
     return res.json({
       success: true,
@@ -74,7 +80,7 @@ export const getMyDepartments = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const checkDepartmentAccess = async (req: AuthRequest, res: Response) => {
+export const checkDepartmentAccess = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -86,7 +92,7 @@ export const checkDepartmentAccess = async (req: AuthRequest, res: Response) => 
     const { departmentId } = req.params;
 
     const access = await permissionsService.checkUserDepartmentAccess(
-      req.user.id,
+      (req.user as any).id,
       departmentId
     );
 

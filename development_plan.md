@@ -119,7 +119,7 @@
 **Objetivo:** CRUD completo de usuarios
 
 #### Backend
-- [ ] Endpoints de usuarios:
+- [x] Endpoints de usuarios:
   - `GET /api/users` - Listar (Super Admin)
   - `POST /api/users` - Crear (Super Admin)
   - `GET /api/users/:id` - Obtener
@@ -128,19 +128,19 @@
   - `PUT /api/users/:id/restore` - Restaurar usuario eliminado
   - `PUT /api/users/:id/role` - Cambiar rol
   - `PUT /api/users/:id/activate` - Activar/desactivar
-- [ ] Implementar soft delete (campo deleted_at)
-- [ ] Filtrar usuarios eliminados en queries
-- [ ] Validaciones con Zod
-- [ ] Registrar cambios en audit_logs
+- [x] Implementar soft delete (campo deleted_at)
+- [x] Filtrar usuarios eliminados en queries
+- [x] Validaciones con Zod
+- [x] Registrar cambios en audit_logs
 - [ ] Tests básicos
 
 #### Frontend
-- [ ] Página de gestión de usuarios
-- [ ] Tabla de usuarios con búsqueda y filtros
-- [ ] Modal para crear/editar usuario
-- [ ] Formulario con validación
-- [ ] Confirmaciones de eliminación
-- [ ] Paginación de usuarios
+- [x] Página de gestión de usuarios
+- [x] Tabla de usuarios con búsqueda y filtros
+- [x] Modal para crear/editar usuario
+- [x] Formulario con validación
+- [x] Confirmaciones de eliminación
+- [x] Paginación de usuarios
 
 **Entregable:** Super Admin puede gestionar usuarios completamente
 

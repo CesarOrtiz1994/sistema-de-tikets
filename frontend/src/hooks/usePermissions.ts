@@ -8,6 +8,7 @@ interface PermissionsState {
   userRole: RoleType | null;
   isLoading: boolean;
   error: string | null;
+  hasLoaded: boolean;
   
   loadPermissions: () => Promise<void>;
   hasPermission: (permission: keyof Permissions) => boolean;
@@ -16,32 +17,69 @@ interface PermissionsState {
   clearPermissions: () => void;
 }
 
+let loadPermissionsPromise: Promise<void> | null = null;
+let isLoadingPermissionsFlag = false;
+
 export const usePermissionsStore = create<PermissionsState>((set, get) => ({
   permissions: null,
   departments: null,
   userRole: null,
   isLoading: false,
   error: null,
+  hasLoaded: false,
 
-  loadPermissions: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      
-      const data: UserPermissions = await permissionsService.getMyPermissions();
-      
-      set({
-        permissions: data.permissions,
-        departments: data.departments,
-        userRole: data.user.roleType,
-        isLoading: false
-      });
-    } catch (error: any) {
-      console.error('Error al cargar permisos:', error);
-      set({
-        error: error.message || 'Error al cargar permisos',
-        isLoading: false
-      });
+  loadPermissions: async (): Promise<void> => {
+    // Verificación síncrona ANTES de crear la promesa
+    if (isLoadingPermissionsFlag) {
+      await loadPermissionsPromise;
+      return;
     }
+
+    // Si hay una carga en progreso, retornar esa promesa
+    if (loadPermissionsPromise) {
+      await loadPermissionsPromise;
+      return;
+    }
+
+    // Si ya se cargaron los permisos, no cargar de nuevo
+    if (get().hasLoaded && get().permissions) {
+      return;
+    }
+
+    // Activar flag INMEDIATAMENTE antes de crear la promesa
+    isLoadingPermissionsFlag = true;
+    set({ isLoading: true, error: null });
+
+    loadPermissionsPromise = (async () => {
+      try {
+        set({ isLoading: true, error: null });
+        
+        const data: UserPermissions = await permissionsService.getMyPermissions();
+        
+        set({
+          permissions: data.permissions,
+          departments: data.departments,
+          userRole: data.user.roleType,
+          isLoading: false,
+          hasLoaded: true
+        });
+      } catch (error: any) {
+        // NO BLOQUEAR EL SISTEMA - Continuar sin permisos
+        set({
+          permissions: null,
+          departments: null,
+          userRole: null,
+          error: error.message || 'Error al cargar permisos',
+          isLoading: false,
+          hasLoaded: true
+        });
+      } finally {
+        isLoadingPermissionsFlag = false;
+        loadPermissionsPromise = null;
+      }
+    })();
+
+    await loadPermissionsPromise;
   },
 
   hasPermission: (permission: keyof Permissions) => {
@@ -71,7 +109,8 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
       permissions: null,
       departments: null,
       userRole: null,
-      error: null
+      error: null,
+      hasLoaded: false
     });
   }
 }));

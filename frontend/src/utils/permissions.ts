@@ -2,8 +2,8 @@ import { RoleType, Permissions } from '../types/permissions';
 
 export const getRoleLabel = (role: RoleType): string => {
   const labels: Record<RoleType, string> = {
-    [RoleType.SUPER_ADMIN]: 'Super Administrador',
-    [RoleType.DEPT_ADMIN]: 'Administrador de Departamento',
+    [RoleType.SUPER_ADMIN]: 'Super Admin',
+    [RoleType.DEPT_ADMIN]: 'Admin Depto.',
     [RoleType.SUBORDINATE]: 'Subordinado',
     [RoleType.REQUESTER]: 'Solicitante'
   };
