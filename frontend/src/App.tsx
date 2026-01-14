@@ -3,14 +3,28 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
+import DashboardHomePage from './pages/DashboardHomePage';
+import TicketsPage from './pages/TicketsPage';
+import UsersPage from './pages/UsersPage';
+import AuditPage from './pages/AuditPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
 import { useAuth } from './hooks/useAuth';
+import { usePermissions } from './hooks/usePermissions';
 
 function App() {
   const { isAuthenticated, isLoading, loadUser } = useAuth();
+  const { loadPermissions } = usePermissions();
 
   useEffect(() => {
-    loadUser();
+    const initializeApp = async () => {
+      await loadUser();
+      if (isAuthenticated) {
+        await loadPermissions();
+      }
+    };
+    
+    initializeApp();
   }, []);
 
   if (isLoading) {
@@ -37,7 +51,53 @@ function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <Layout>
+                <DashboardHomePage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <DashboardPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tickets"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <TicketsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <UsersPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/audit"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AuditPage />
+              </Layout>
             </ProtectedRoute>
           }
         />

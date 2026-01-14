@@ -12,6 +12,8 @@ import {
 import { notFoundHandler, errorHandler } from './middlewares/error.middleware';
 import logger, { stream } from './config/logger';
 import authRoutes from './routes/auth.routes';
+import permissionsRoutes from './routes/permissions.routes';
+import auditRoutes from './routes/audit.routes';
 
 const app: Application = express();
 
@@ -39,6 +41,12 @@ app.use(passport.initialize());
 
 // Rutas de autenticación
 app.use('/api/auth', authRoutes);
+
+// Rutas de permisos
+app.use('/api/permissions', permissionsRoutes);
+
+// Rutas de auditoría
+app.use('/api/audit', auditRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (_req, res) => {

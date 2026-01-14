@@ -1,9 +1,12 @@
 import { useAuth } from '../hooks/useAuth';
+import { usePermissions } from '../hooks/usePermissions';
+import { getRoleLabel, getRoleBadgeColor } from '../utils/permissions';
 import { FiLogOut, FiUser, FiMail, FiShield, FiCalendar, FiFileText, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
+  const { userRole } = usePermissions();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -137,8 +140,8 @@ export default function DashboardPage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Rol:</span>
-                <span className="px-4 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-                  {user.roleType}
+                <span className={`px-4 py-1.5 rounded-full text-sm font-semibold border ${userRole ? getRoleBadgeColor(userRole) : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                  {userRole ? getRoleLabel(userRole) : user.roleType}
                 </span>
               </div>
               <div className="flex justify-between items-center">

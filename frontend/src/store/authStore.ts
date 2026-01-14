@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import authService, { User } from '../services/auth.service';
+import { usePermissionsStore } from '../hooks/usePermissions';
 
 interface AuthState {
   user: User | null;
@@ -86,6 +87,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.removeItem('refreshToken');
       loadUserPromise = null;
       set({ user: null, isAuthenticated: false, isLoading: false, isLoadingUser: false });
+      usePermissionsStore.getState().clearPermissions();
     }
   },
 
@@ -93,12 +95,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await authService.logoutAll();
     } catch (error) {
-      console.error('Error during logout all:', error);
+      console.error('Error al cerrar todas las sesiones:', error);
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       loadUserPromise = null;
       set({ user: null, isAuthenticated: false, isLoading: false, isLoadingUser: false });
+      usePermissionsStore.getState().clearPermissions();
     }
   },
 

@@ -95,20 +95,20 @@
 **Objetivo:** RBAC (Role-Based Access Control) funcional
 
 #### Backend
-- [ ] Enum de roles en Prisma
-- [ ] Middleware checkPermission(role)
-- [ ] Middleware checkDepartmentAccess(action)
-- [ ] Endpoint para obtener permisos del usuario
-- [ ] Lógica para verificar acceso a departamentos
-- [ ] Tabla audit_logs para auditoría
-- [ ] Middleware para registrar acciones críticas
-- [ ] Endpoint para consultar logs de auditoría (Super Admin)
+- [x] Enum de roles en Prisma
+- [x] Middleware checkPermission(role)
+- [x] Middleware checkDepartmentAccess(action)
+- [x] Endpoint para obtener permisos del usuario
+- [x] Lógica para verificar acceso a departamentos
+- [x] Tabla audit_logs para auditoría
+- [x] Middleware para registrar acciones críticas
+- [x] Endpoint para consultar logs de auditoría (Super Admin)
 
 #### Frontend
-- [ ] Componente que muestra contenido según rol
-- [ ] Hook usePermissions
-- [ ] Utilidades para verificar permisos
-- [ ] Navbar diferente según rol
+- [x] Componente que muestra contenido según rol
+- [x] Hook usePermissions
+- [x] Utilidades para verificar permisos
+- [x] Navbar diferente según rol
 
 **Entregable:** Sistema de roles funcionando, cada rol ve lo que debe
 
