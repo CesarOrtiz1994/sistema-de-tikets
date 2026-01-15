@@ -38,6 +38,15 @@ export class AuditService {
     const [logs, total] = await Promise.all([
       prisma.auditLog.findMany({
         where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit
@@ -58,7 +67,16 @@ export class AuditService {
 
   async getAuditLogById(id: string) {
     const log = await prisma.auditLog.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
     });
 
     if (!log) {

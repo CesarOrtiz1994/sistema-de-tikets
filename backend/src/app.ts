@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.routes';
 import permissionsRoutes from './routes/permissions.routes';
 import auditRoutes from './routes/audit.routes';
 import usersRoutes from './routes/users.routes';
+import departmentsRoutes from './routes/departments.routes';
 
 const app: Application = express();
 
@@ -51,6 +52,9 @@ app.use('/api/audit', auditRoutes);
 
 // Rutas de usuarios
 app.use('/api/users', usersRoutes);
+
+// Rutas de departamentos
+app.use('/api/departments', departmentsRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (_req, res) => {

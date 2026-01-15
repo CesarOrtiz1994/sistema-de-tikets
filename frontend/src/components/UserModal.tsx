@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { FiX, FiSave } from 'react-icons/fi';
 import { User, CreateUserData, UpdateUserData } from '../services/users.service';
 
@@ -67,7 +68,9 @@ export default function UserModal({ user, onClose, onSave }: UserModalProps) {
       await onSave(dataToSend);
       onClose();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al guardar usuario');
+      toast.error('Error al guardar usuario', {
+        description: error.response?.data?.message
+      });
     } finally {
       setLoading(false);
     }

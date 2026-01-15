@@ -8,7 +8,10 @@ import TicketsPage from './pages/TicketsPage';
 import UsersPage from './pages/UsersPage';
 import AuditPage from './pages/AuditPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import DepartmentRoute from './components/DepartmentRoute';
 import Layout from './components/Layout';
+import ThemeProvider from './components/ThemeProvider';
+import Toaster from './components/Toaster';
 import { useAuth } from './hooks/useAuth';
 import { usePermissions } from './hooks/usePermissions';
 
@@ -49,24 +52,26 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route 
-          path="/login" 
-          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
-        />
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <DashboardHomePage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
+    <ThemeProvider>
+      <Router>
+        <Toaster />
+        <Routes>
+            <Route 
+            path="/login" 
+            element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
+          />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DashboardHomePage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
 
         <Route
           path="/profile"
@@ -102,6 +107,17 @@ function App() {
         />
 
         <Route
+          path="/departments"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <DepartmentRoute />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/audit"
           element={
             <ProtectedRoute>
@@ -112,9 +128,10 @@ function App() {
           }
         />
         
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 

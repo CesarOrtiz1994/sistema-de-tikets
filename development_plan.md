@@ -151,7 +151,7 @@
 **Objetivo:** CRUD de departamentos y asignación de usuarios
 
 #### Backend
-- [ ] Endpoints de departamentos:
+- [x] Endpoints de departamentos:
   - `GET /api/departments` - Listar
   - `POST /api/departments` - Crear (Super Admin)
   - `GET /api/departments/:id` - Obtener
@@ -160,22 +160,22 @@
   - `GET /api/departments/:id/users` - Usuarios del dept
   - `POST /api/departments/:id/users` - Agregar usuario
   - `DELETE /api/departments/:id/users/:userId` - Remover
-- [ ] Validar prefijo único del departamento (ej: IT, RRHH, FIN)
-- [ ] Lógica de is_default_for_requesters
-- [ ] Tabla department_users
-- [ ] Tabla department_access
-- [ ] Tabla system_settings
-- [ ] Endpoints de configuración:
+- [x] Validar prefijo único del departamento (ej: IT, RRHH, FIN)
+- [x] Lógica de is_default_for_requesters
+- [x] Tabla department_users
+- [x] Tabla department_access
+- [x] Tabla system_settings
+- [x] Endpoints de configuración:
   - `GET /api/settings` - Obtener configuraciones
   - `PUT /api/settings/:key` - Actualizar configuración (Super Admin)
-- [ ] Seed de configuraciones iniciales
+- [x] Seed de configuraciones iniciales
 
 #### Frontend
-- [ ] Página de gestión de departamentos
-- [ ] CRUD visual de departamentos
-- [ ] Asignación de admins y subordinados
-- [ ] Configurar accesos de solicitantes
-- [ ] Checkbox "visible por defecto"
+- [x] Página de gestión de departamentos
+- [x] CRUD visual de departamentos
+- [x] Asignación de admins y subordinados
+- [x] Configurar accesos de solicitantes
+- [x] Checkbox "visible por defecto"
 
 **Entregable:** Gestión completa de departamentos y permisos
 

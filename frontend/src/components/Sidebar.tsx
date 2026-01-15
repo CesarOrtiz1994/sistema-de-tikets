@@ -72,12 +72,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       badge: 'Admin'
     },
     {
-      icon: FiShield,
-      label: 'Permisos',
-      path: '/permissions',
-      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
-    },
-    {
       icon: FiSettings,
       label: 'Configuración',
       path: '/settings',
@@ -85,19 +79,25 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     }
   ];
 
-  const visibleMenuItems = menuItems.filter(item => 
-    userRole && item.roles.includes(userRole)
-  );
+  const visibleMenuItems = menuItems
+    .filter(item => userRole && item.roles.includes(userRole))
+    .map(item => {
+      // Cambiar label de "Departamentos" a "Mi Departamento" para DEPT_ADMIN
+      if (item.path === '/departments' && userRole === RoleType.DEPT_ADMIN) {
+        return { ...item, label: 'Mi Departamento' };
+      }
+      return item;
+    });
 
   const handleNavigate = (path: string) => {
     navigate(path);
   };
 
   return (
-    <aside className={`fixed top-0 left-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-40 shadow-lg ${isOpen ? 'w-64' : 'w-20'}`}>
+    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40 shadow-lg ${isOpen ? 'w-64' : 'w-20'}`}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 mx-4 mb-4">
           <div className="flex items-center justify-between">
             {isOpen && (
               <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
@@ -122,10 +122,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <button
                 key={index}
                 onClick={() => handleNavigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 relative group ${
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
                   isActive
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 title={!isOpen ? item.label : ''}
               >
@@ -162,14 +162,14 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
         {/* Role Badge */}
         {userRole && (
-          <div className="p-3 border-t border-gray-200">
+          <div className="p-3 border-t border-gray-200 dark:border-gray-700">
             {isOpen ? (
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-3 border border-purple-200">
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-1">
-                  <FiShield className="text-purple-600" />
-                  <span className="text-xs font-semibold text-gray-600">Tu Rol</span>
+                  <FiShield className="text-purple-600 dark:text-purple-400" />
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Tu Rol</span>
                 </div>
-                <p className="text-xs font-bold text-purple-700">
+                <p className="text-xs font-bold text-purple-700 dark:text-purple-400">
                   {userRole === RoleType.SUPER_ADMIN && 'Super Administrador'}
                   {userRole === RoleType.DEPT_ADMIN && 'Admin de Departamento'}
                   {userRole === RoleType.SUBORDINATE && 'Subordinado'}

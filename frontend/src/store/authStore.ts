@@ -20,7 +20,7 @@ interface AuthState {
 let loadUserPromise: Promise<void> | null = null;
 let isLoadingUserFlag = false;
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,

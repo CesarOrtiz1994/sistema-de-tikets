@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { useConfirmDialog } from '../hooks/useConfirmDialog';
+import ConfirmDialog from '../components/ConfirmDialog';
+import DataTable from '../components/DataTable';
+import Pagination from '../components/Pagination';
 import { 
   FiUsers, 
   FiPlus, 
@@ -26,6 +31,7 @@ export default function UsersManagementPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -57,7 +63,9 @@ export default function UsersManagementPage() {
     } catch (error: any) {
       console.error('Error al cargar usuarios:', error);
       console.error('Detalles del error:', error.response?.data || error.message);
-      alert('Error al cargar usuarios: ' + (error.response?.data?.message || error.message));
+      toast.error('Error al cargar usuarios', {
+        description: error.response?.data?.message || error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -73,7 +81,15 @@ export default function UsersManagementPage() {
   };
 
   const handleDelete = async (userId: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este usuario?')) return;
+    const confirmed = await confirm({
+      title: 'Eliminar Usuario',
+      message: '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger'
+    });
+    
+    if (!confirmed) return;
     
     try {
       await usersService.deleteUser(userId);
@@ -81,7 +97,7 @@ export default function UsersManagementPage() {
       loadStats();
     } catch (error) {
       console.error('Error al eliminar usuario:', error);
-      alert('Error al eliminar usuario');
+      toast.error('Error al eliminar usuario');
     }
   };
 
@@ -92,7 +108,7 @@ export default function UsersManagementPage() {
       loadStats();
     } catch (error) {
       console.error('Error al restaurar usuario:', error);
-      alert('Error al restaurar usuario');
+      toast.error('Error al restaurar usuario');
     }
   };
 
@@ -103,7 +119,7 @@ export default function UsersManagementPage() {
       loadStats();
     } catch (error) {
       console.error('Error al cambiar estado:', error);
-      alert('Error al cambiar estado del usuario');
+      toast.error('Error al cambiar estado del usuario');
     }
   };
 
@@ -139,11 +155,11 @@ export default function UsersManagementPage() {
     <RoleGuard 
       roles={[RoleType.SUPER_ADMIN]}
       fallback={
-        <div className="bg-white rounded-2xl p-8 border border-red-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-red-200 dark:border-red-800 shadow-sm transition-colors">
           <div className="text-center py-12">
             <FiShield className="text-6xl text-red-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-red-700 mb-2">Acceso Denegado</h3>
-            <p className="text-red-500">Solo los Super Administradores pueden acceder a esta sección</p>
+            <h3 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-2">Acceso Denegado</h3>
+            <p className="text-red-500 dark:text-red-400">Solo los Super Administradores pueden acceder a esta sección</p>
           </div>
         </div>
       }
@@ -152,8 +168,8 @@ export default function UsersManagementPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
-            <p className="text-gray-600 mt-1">Administra usuarios y sus roles en el sistema</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Gestión de Usuarios</h1>
+            <p className="text-gray-600 dark:text-gray-300">Administra usuarios y sus roles en el sistema</p>
           </div>
           <button 
             onClick={() => {
@@ -168,39 +184,39 @@ export default function UsersManagementPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Usuarios</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Usuarios</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
               </div>
               <FiUsers className="text-3xl text-blue-500" />
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Activos</p>
-                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Activos</p>
+                <p className="text-3xl font-bold text-green-600">{stats.active}</p>
               </div>
               <FiCheckCircle className="text-3xl text-green-500" />
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Inactivos</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.inactive}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Inactivos</p>
+                <p className="text-3xl font-bold text-orange-600">{stats.inactive}</p>
               </div>
               <FiXCircle className="text-3xl text-orange-500" />
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Eliminados</p>
-                <p className="text-2xl font-bold text-red-600">{stats.deleted}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Eliminados</p>
+                <p className="text-3xl font-bold text-red-600">{stats.deleted}</p>
               </div>
               <FiTrash2 className="text-3xl text-red-500" />
             </div>
@@ -208,7 +224,7 @@ export default function UsersManagementPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -217,13 +233,13 @@ export default function UsersManagementPage() {
                 placeholder="Buscar por nombre o email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400"
               />
             </div>
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">Todos los roles</option>
               <option value="SUPER_ADMIN">Super Admin</option>
@@ -234,7 +250,7 @@ export default function UsersManagementPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">Todos los estados</option>
               <option value="active">Activos</option>
@@ -242,7 +258,7 @@ export default function UsersManagementPage() {
             </select>
             <button
               onClick={loadUsers}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-gray-900 dark:text-gray-200"
             >
               <FiRefreshCw />
               <span>Actualizar</span>
@@ -251,37 +267,14 @@ export default function UsersManagementPage() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Cargando usuarios...</p>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="p-12 text-center">
-              <FiUsers className="text-6xl text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No hay usuarios</h3>
-              <p className="text-gray-500">No se encontraron usuarios con los filtros aplicados</p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Creación</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
+        <DataTable
+          data={users}
+          columns={[
+            {
+              key: 'user',
+              header: 'Usuario',
+              render: (user: User) => (
+                <div className="flex items-center">
                             {user.profilePicture ? (
                               <img 
                                 src={user.profilePicture} 
@@ -306,108 +299,112 @@ export default function UsersManagementPage() {
                                 <span className="text-purple-600 font-semibold">{user.name.charAt(0)}</span>
                               </div>
                             )}
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                              {user.deletedAt && (
-                                <div className="text-xs text-red-500">Eliminado</div>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{user.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getRoleBadgeColor(user.roleType as RoleType)}`}>
-                            {getRoleLabel(user.roleType as RoleType)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.isActive 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.isActive ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(user.createdAt).toLocaleDateString('es-ES')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
-                            {user.deletedAt ? (
-                              <button
-                                onClick={() => handleRestore(user.id)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Restaurar"
-                              >
-                                <FiRefreshCw />
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => handleToggleActivation(user.id, user.isActive)}
-                                  className={user.isActive ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
-                                  title={user.isActive ? 'Desactivar' : 'Activar'}
-                                >
-                                  {user.isActive ? <FiXCircle /> : <FiCheckCircle />}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedUser(user);
-                                    setShowModal(true);
-                                  }}
-                                  className="text-blue-600 hover:text-blue-900"
-                                  title="Editar"
-                                >
-                                  <FiEdit2 />
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(user.id)}
-                                  className="text-red-600 hover:text-red-900"
-                                  title="Eliminar"
-                                >
-                                  <FiTrash2 />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    Anterior
-                  </button>
-                  <span className="text-sm text-gray-700">
-                    Página {page} de {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    Siguiente
-                  </button>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</div>
+                    {user.deletedAt && (
+                      <div className="text-xs text-red-500">Eliminado</div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+              )
+            },
+            {
+              key: 'email',
+              header: 'Email',
+              render: (user: User) => (
+                <div className="text-sm text-gray-900 dark:text-white">{user.email}</div>
+              )
+            },
+            {
+              key: 'role',
+              header: 'Rol',
+              render: (user: User) => (
+                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getRoleBadgeColor(user.roleType as RoleType)}`}>
+                  {getRoleLabel(user.roleType as RoleType)}
+                </span>
+              )
+            },
+            {
+              key: 'status',
+              header: 'Estado',
+              render: (user: User) => (
+                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                  user.isActive 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {user.isActive ? 'Activo' : 'Inactivo'}
+                </span>
+              )
+            },
+            {
+              key: 'created',
+              header: 'Fecha Creación',
+              render: (user: User) => (
+                <div className="text-sm text-gray-500 dark:text-gray-300">
+                  {new Date(user.createdAt).toLocaleDateString('es-ES')}
+                </div>
+              )
+            },
+            {
+              key: 'actions',
+              header: 'Acciones',
+              align: 'right' as const,
+              render: (user: User) => (
+                <div className="flex items-center justify-end gap-2">
+                  {user.deletedAt ? (
+                    <button
+                      onClick={() => handleRestore(user.id)}
+                      className="text-green-600 hover:text-green-900"
+                      title="Restaurar"
+                    >
+                      <FiRefreshCw />
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleToggleActivation(user.id, user.isActive)}
+                        className={user.isActive ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
+                        title={user.isActive ? 'Desactivar' : 'Activar'}
+                      >
+                        {user.isActive ? <FiXCircle /> : <FiCheckCircle />}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="Editar"
+                      >
+                        <FiEdit2 />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(user.id)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Eliminar"
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </>
+                  )}
+                </div>
+              )
+            }
+          ]}
+          loading={loading}
+          emptyMessage="No se encontraron usuarios con los filtros aplicados"
+          emptyIcon={<FiUsers />}
+          getRowKey={(user) => user.id}
+        />
+
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       </div>
 
-      {/* User Modal */}
       {showModal && (
         <UserModal
           user={selectedUser}
@@ -418,6 +415,17 @@ export default function UsersManagementPage() {
           onSave={handleSaveUser}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={isOpen}
+        title={options.title}
+        message={options.message}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        type={options.type}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </RoleGuard>
   );
 }

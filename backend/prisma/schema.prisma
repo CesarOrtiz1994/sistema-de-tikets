@@ -25,11 +25,18 @@ model User {
   deletedAt      DateTime? @map("deleted_at")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
+  
+  // Nueva relación directa con departamento
+  departmentId   String?  @map("department_id")
+  departmentRole String?  @default("MEMBER") @map("department_role") // ADMIN o MEMBER
 
-  departmentUsers DepartmentUser[]
+  department         Department? @relation("UserDepartment", fields: [departmentId], references: [id])
+  departmentUsers    DepartmentUser[] // Mantener temporalmente para migración
   createdDepartments Department[] @relation("DepartmentCreator")
-  sessions UserSession[]
+  sessions           UserSession[]
+  auditLogs          AuditLog[]
 
+  @@index([departmentId])
   @@map("users")
 }
 
@@ -45,7 +52,8 @@ model Department {
   updatedAt               DateTime @updatedAt @map("updated_at")
 
   createdBy       User?   @relation("DepartmentCreator", fields: [createdById], references: [id])
-  departmentUsers DepartmentUser[]
+  users           User[]  @relation("UserDepartment") // Nueva relación directa
+  departmentUsers DepartmentUser[] // Mantener temporalmente para migración
 
   @@map("departments")
 }
@@ -95,6 +103,8 @@ model AuditLog {
   status      String   @default("success")
   errorMessage String? @map("error_message")
   createdAt   DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([action])
