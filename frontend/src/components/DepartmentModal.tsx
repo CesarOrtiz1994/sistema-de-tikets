@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { FiX, FiSave } from 'react-icons/fi';
 import { Department, CreateDepartmentData, UpdateDepartmentData } from '../services/departments.service';
+import Modal from './Modal';
+import ModalButtons from './ModalButtons';
 
 interface DepartmentModalProps {
   isOpen: boolean;
@@ -80,21 +81,22 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            {department ? 'Editar Departamento' : 'Nuevo Departamento'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-          >
-            <FiX size={24} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={department ? 'Editar Departamento' : 'Nuevo Departamento'}
+      size="md"
+      footer={
+        <ModalButtons
+          onCancel={onClose}
+          confirmType="submit"
+          confirmText="Guardar"
+          loading={loading}
+          formId="department-form"
+        />
+      }
+    >
+      <form onSubmit={handleSubmit} id="department-form" className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Nombre del Departamento *
@@ -114,23 +116,23 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Prefijo *
             </label>
             <input
               type="text"
               value={formData.prefix}
               onChange={(e) => setFormData({ ...formData, prefix: e.target.value.toUpperCase() })}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                errors.prefix ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                errors.prefix ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Ej: RH"
               maxLength={10}
             />
             {errors.prefix && (
-              <p className="mt-1 text-sm text-red-600">{errors.prefix}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.prefix}</p>
             )}
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               El prefijo se usará para identificar tickets (ej: RH-001)
             </p>
           </div>
@@ -164,26 +166,7 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
             Los nuevos usuarios con rol "Solicitante" serán asignados automáticamente a este departamento
           </p>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              disabled={loading}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              <FiSave />
-              {loading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }

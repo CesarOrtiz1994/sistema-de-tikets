@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { FiX, FiSave } from 'react-icons/fi';
 import { User, CreateUserData, UpdateUserData } from '../services/users.service';
+import Modal from './Modal';
+import ModalButtons from './ModalButtons';
 
 interface UserModalProps {
   user: User | null;
@@ -77,66 +78,65 @@ export default function UserModal({ user, onClose, onSave }: UserModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-900">
-            {user ? 'Editar Usuario' : 'Crear Usuario'}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <FiX className="text-xl text-gray-500" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    <Modal
+      isOpen={!!user || user === null}
+      onClose={onClose}
+      title={user ? 'Editar Usuario' : 'Crear Usuario'}
+      size="md"
+      footer={
+        <ModalButtons
+          onCancel={onClose}
+          confirmType="submit"
+          confirmText={user ? 'Actualizar' : 'Crear'}
+          loading={loading}
+          formId="user-form"
+        />
+      }
+    >
+      <form onSubmit={handleSubmit} id="user-form" className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Nombre Completo *
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
-              } ${user?.googleId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              } ${user?.googleId ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed' : ''}`}
               placeholder="Ej: Juan Pérez"
               disabled={!!user?.googleId}
             />
             {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
             )}
             {user?.googleId && (
-              <p className="mt-1 text-xs text-gray-500">El nombre proviene de Google y no se puede modificar</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">El nombre proviene de Google y no se puede modificar</p>
             )}
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Email *
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
-              } ${user ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              } ${user ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed' : ''}`}
               placeholder="Ej: juan@ejemplo.com"
               disabled={!!user}
             />
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
             )}
             {user && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {user.googleId ? 'El email proviene de Google y no se puede modificar' : 'El email no se puede modificar'}
               </p>
             )}
@@ -144,13 +144,13 @@ export default function UserModal({ user, onClose, onSave }: UserModalProps) {
 
           {/* Role */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Rol *
             </label>
             <select
               value={formData.roleType}
               onChange={(e) => setFormData({ ...formData, roleType: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="REQUESTER">Solicitante</option>
               <option value="SUBORDINATE">Subordinado</option>
@@ -161,49 +161,20 @@ export default function UserModal({ user, onClose, onSave }: UserModalProps) {
 
           {/* Language */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Idioma
             </label>
             <select
               value={formData.language}
               onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="es">Español</option>
               <option value="en">English</option>
             </select>
           </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              disabled={loading}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Guardando...</span>
-                </>
-              ) : (
-                <>
-                  <FiSave />
-                  <span>{user ? 'Actualizar' : 'Crear'}</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }

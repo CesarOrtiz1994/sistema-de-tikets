@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { FiX, FiUserPlus, FiTrash2 } from 'react-icons/fi';
+import Modal from './Modal';
+import { FiUserPlus, FiTrash2 } from 'react-icons/fi';
 import { departmentsService, DepartmentUser } from '../services/departments.service';
 import { usersService } from '../services/users.service';
 import AssignUserModal from './AssignUserModal';
@@ -54,6 +55,7 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
   const handleAssignUser = async (userId: string, role: 'ADMIN' | 'MEMBER') => {
     try {
       await departmentsService.assignUserToDepartment(departmentId, userId, role);
+      toast.success('Usuario asignado al departamento exitosamente');
       await loadUsers();
       await loadAvailableUsers();
       setIsAssignModalOpen(false);
@@ -76,6 +78,7 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
 
     try {
       await departmentsService.removeUserFromDepartment(departmentId, userId);
+      toast.success('Usuario removido del departamento exitosamente');
       await loadUsers();
       await loadAvailableUsers();
     } catch (error) {
@@ -88,24 +91,24 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="flex items-center justify-between p-6 border-b">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">Usuarios del Departamento</h2>
-              <p className="text-sm text-gray-600 mt-1">{departmentName}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <FiX size={24} />
-            </button>
-          </div>
-
-          <div className="p-6">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Usuarios del Departamento"
+        subtitle={departmentName}
+        size="lg"
+        footer={
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            Cerrar
+          </button>
+        }
+      >
+        <div>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-700">
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
                 Usuarios Asignados ({users.length})
               </h3>
               <button
@@ -122,7 +125,7 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
               </div>
             ) : users.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 No hay usuarios asignados a este departamento
               </div>
             ) : (
@@ -130,10 +133,10 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
                 {users.map((departmentUser) => (
                   <div
                     key={departmentUser.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
                         {departmentUser.user.profilePicture ? (
                           <img
                             src={departmentUser.user.profilePicture}
@@ -141,16 +144,16 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
                             className="w-10 h-10 rounded-full"
                           />
                         ) : (
-                          <span className="text-purple-600 font-semibold">
+                          <span className="text-purple-600 dark:text-purple-300 font-semibold">
                             {departmentUser.user.name.charAt(0).toUpperCase()}
                           </span>
                         )}
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-gray-900 dark:text-white">
                           {departmentUser.user.name}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           {departmentUser.user.email}
                         </div>
                       </div>
@@ -159,15 +162,15 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
                       <span
                         className={`px-3 py-1 text-xs font-semibold rounded-full ${
                           departmentUser.role === 'ADMIN'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                         }`}
                       >
                         {departmentUser.role === 'ADMIN' ? 'Administrador' : 'Miembro'}
                       </span>
                       <button
                         onClick={() => handleRemoveUser(departmentUser.userId)}
-                        className="text-red-600 hover:text-red-900 p-2"
+                        className="text-red-600 hover:text-red-900 dark:hover:text-red-400 p-2"
                         title="Remover usuario"
                       >
                         <FiTrash2 size={18} />
@@ -177,18 +180,8 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
                 ))}
               </div>
             )}
-          </div>
-
-          <div className="flex justify-end p-6 border-t">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cerrar
-            </button>
-          </div>
         </div>
-      </div>
+      </Modal>
 
       <AssignUserModal
         isOpen={isAssignModalOpen}

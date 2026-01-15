@@ -3,6 +3,10 @@ import { toast } from 'sonner';
 import RoleGuard from '../components/RoleGuard';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
+import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { RoleType } from '../types/permissions';
 import { 
   FiShield, 
@@ -43,44 +47,35 @@ export default function AuditPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-      error: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-      warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-    };
-    return styles[status as keyof typeof styles] || styles.success;
+  const getActionBadgeVariant = (action: string): 'success' | 'info' | 'danger' | 'gray' => {
+    if (action.includes('CREATE')) return 'success';
+    if (action.includes('UPDATE')) return 'info';
+    if (action.includes('DELETE')) return 'danger';
+    return 'gray';
   };
 
-  const getActionColor = (action: string) => {
-    if (action.includes('CREATE')) return 'text-green-600 dark:text-green-400';
-    if (action.includes('UPDATE')) return 'text-blue-600 dark:text-blue-400';
-    if (action.includes('DELETE')) return 'text-red-600 dark:text-red-400';
-    return 'text-gray-600 dark:text-gray-400';
-  };
+  if (loading) return <LoadingSpinner />;
 
   return (
     <RoleGuard 
       roles={[RoleType.SUPER_ADMIN]}
       fallback={
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-red-200 dark:border-red-800 shadow-sm transition-colors">
+        <Card padding="lg">
           <div className="text-center py-12">
             <FiShield className="text-6xl text-red-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-2">Acceso Denegado</h3>
             <p className="text-red-500 dark:text-red-400">Solo los Super Administradores pueden acceder a esta sección</p>
           </div>
-        </div>
+        </Card>
       }
     >
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Auditoría del Sistema</h1>
-          <p className="text-gray-600 dark:text-gray-300">Registro de todas las acciones críticas del sistema</p>
-        </div>
+        <PageHeader
+          title="Auditoría del Sistema"
+          description="Registro de todas las acciones críticas del sistema"
+        />
 
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
+        <Card>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <select
               value={filters.action || ''}
@@ -124,7 +119,7 @@ export default function AuditPage() {
               <span>Actualizar</span>
             </button>
           </div>
-        </div>
+        </Card>
 
         {/* Logs Table */}
         <DataTable
@@ -152,9 +147,9 @@ export default function AuditPage() {
               key: 'action',
               header: 'Acción',
               render: (log: AuditLog) => (
-                <span className={`text-sm font-medium ${getActionColor(log.action)}`}>
+                <Badge variant={getActionBadgeVariant(log.action)} size="sm">
                   {log.action}
-                </span>
+                </Badge>
               )
             },
             {
@@ -170,9 +165,9 @@ export default function AuditPage() {
               key: 'status',
               header: 'Estado',
               render: (log: AuditLog) => (
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(log.status)}`}>
+                <Badge variant={log.status === 'success' ? 'success' : 'danger'} size="sm">
                   {log.status === 'success' ? 'Exitoso' : 'Error'}
-                </span>
+                </Badge>
               )
             },
             {

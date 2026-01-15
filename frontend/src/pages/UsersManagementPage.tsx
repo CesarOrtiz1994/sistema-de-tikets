@@ -4,13 +4,18 @@ import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 import DataTable from '../components/DataTable';
 import Pagination from '../components/Pagination';
+import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
+import StatCard from '../components/StatCard';
+import SearchInput from '../components/SearchInput';
+import Badge from '../components/Badge';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { 
   FiUsers, 
   FiPlus, 
   FiEdit2, 
   FiTrash2, 
   FiRefreshCw,
-  FiSearch,
   FiCheckCircle,
   FiXCircle,
   FiShield
@@ -19,7 +24,7 @@ import RoleGuard from '../components/RoleGuard';
 import UserModal from '../components/UserModal';
 import { RoleType } from '../types/permissions';
 import usersService, { User, CreateUserData, UpdateUserData } from '../services/users.service';
-import { getRoleLabel, getRoleBadgeColor } from '../utils/permissions';
+import { getRoleLabel } from '../utils/permissions';
 
 export default function UsersManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -93,6 +98,7 @@ export default function UsersManagementPage() {
     
     try {
       await usersService.deleteUser(userId);
+      toast.success('Usuario eliminado exitosamente');
       loadUsers();
       loadStats();
     } catch (error) {
@@ -104,6 +110,7 @@ export default function UsersManagementPage() {
   const handleRestore = async (userId: string) => {
     try {
       await usersService.restoreUser(userId);
+      toast.success('Usuario restaurado exitosamente');
       loadUsers();
       loadStats();
     } catch (error) {
@@ -115,6 +122,7 @@ export default function UsersManagementPage() {
   const handleToggleActivation = async (userId: string, isActive: boolean) => {
     try {
       await usersService.toggleUserActivation(userId, !isActive);
+      toast.success(isActive ? 'Usuario desactivado exitosamente' : 'Usuario activado exitosamente');
       loadUsers();
       loadStats();
     } catch (error) {
@@ -132,9 +140,11 @@ export default function UsersManagementPage() {
         console.log('Actualizando usuario:', selectedUser.id);
         const result = await usersService.updateUser(selectedUser.id, data as UpdateUserData);
         console.log('Usuario actualizado:', result);
+        toast.success('Usuario actualizado exitosamente');
       } else {
         console.log('Creando nuevo usuario');
         await usersService.createUser(data as CreateUserData);
+        toast.success('Usuario creado exitosamente');
       }
       
       console.log('Cerrando modal y recargando lista...');
@@ -151,95 +161,80 @@ export default function UsersManagementPage() {
     }
   };
 
+  if (loading) return <LoadingSpinner />;
+
   return (
     <RoleGuard 
       roles={[RoleType.SUPER_ADMIN]}
       fallback={
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-red-200 dark:border-red-800 shadow-sm transition-colors">
+        <Card padding="lg">
           <div className="text-center py-12">
             <FiShield className="text-6xl text-red-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-2">Acceso Denegado</h3>
             <p className="text-red-500 dark:text-red-400">Solo los Super Administradores pueden acceder a esta sección</p>
           </div>
-        </div>
+        </Card>
       }
     >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Gestión de Usuarios</h1>
-            <p className="text-gray-600 dark:text-gray-300">Administra usuarios y sus roles en el sistema</p>
-          </div>
-          <button 
-            onClick={() => {
-              setSelectedUser(null);
-              setShowModal(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
-          >
-            <FiPlus />
-            <span>Nuevo Usuario</span>
-          </button>
-        </div>
+        <PageHeader
+          title="Gestión de Usuarios"
+          description="Administra usuarios y sus roles en el sistema"
+          action={
+            <button 
+              onClick={() => {
+                setSelectedUser(null);
+                setShowModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
+            >
+              <FiPlus />
+              Nuevo Usuario
+            </button>
+          }
+        />
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Usuarios</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              </div>
-              <FiUsers className="text-3xl text-blue-500" />
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Activos</p>
-                <p className="text-3xl font-bold text-green-600">{stats.active}</p>
-              </div>
-              <FiCheckCircle className="text-3xl text-green-500" />
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Inactivos</p>
-                <p className="text-3xl font-bold text-orange-600">{stats.inactive}</p>
-              </div>
-              <FiXCircle className="text-3xl text-orange-500" />
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Eliminados</p>
-                <p className="text-3xl font-bold text-red-600">{stats.deleted}</p>
-              </div>
-              <FiTrash2 className="text-3xl text-red-500" />
-            </div>
-          </div>
+          <StatCard
+            label="Total Usuarios"
+            value={stats.total}
+            icon={FiUsers}
+            iconColor="text-blue-500"
+          />
+          <StatCard
+            label="Activos"
+            value={stats.active}
+            icon={FiCheckCircle}
+            iconColor="text-green-500"
+            valueColor="text-green-600"
+          />
+          <StatCard
+            label="Inactivos"
+            value={stats.inactive}
+            icon={FiXCircle}
+            iconColor="text-orange-500"
+            valueColor="text-orange-600"
+          />
+          <StatCard
+            label="Eliminados"
+            value={stats.deleted}
+            icon={FiTrash2}
+            iconColor="text-red-500"
+            valueColor="text-red-600"
+          />
         </div>
 
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 transition-colors">
+        <Card>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre o email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400"
-              />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar usuarios..."
+            />
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
             >
               <option value="">Todos los roles</option>
               <option value="SUPER_ADMIN">Super Admin</option>
@@ -250,7 +245,7 @@ export default function UsersManagementPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
             >
               <option value="">Todos los estados</option>
               <option value="active">Activos</option>
@@ -264,7 +259,7 @@ export default function UsersManagementPage() {
               <span>Actualizar</span>
             </button>
           </div>
-        </div>
+        </Card>
 
         {/* Users Table */}
         <DataTable
@@ -318,23 +313,25 @@ export default function UsersManagementPage() {
             {
               key: 'role',
               header: 'Rol',
-              render: (user: User) => (
-                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getRoleBadgeColor(user.roleType as RoleType)}`}>
-                  {getRoleLabel(user.roleType as RoleType)}
-                </span>
-              )
+              render: (user: User) => {
+                const roleVariant = 
+                  user.roleType === 'SUPER_ADMIN' ? 'purple' :
+                  user.roleType === 'DEPT_ADMIN' ? 'blue' :
+                  user.roleType === 'SUBORDINATE' ? 'gray' : 'green';
+                return (
+                  <Badge variant={roleVariant as any}>
+                    {getRoleLabel(user.roleType as RoleType)}
+                  </Badge>
+                );
+              }
             },
             {
               key: 'status',
               header: 'Estado',
               render: (user: User) => (
-                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  user.isActive 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
+                <Badge variant={user.isActive ? 'success' : 'danger'}>
                   {user.isActive ? 'Activo' : 'Inactivo'}
-                </span>
+                </Badge>
               )
             },
             {
