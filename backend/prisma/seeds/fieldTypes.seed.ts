@@ -308,35 +308,7 @@ export const fieldTypesSeed = async (prisma: PrismaClient) => {
     // CATEGORÍA: AVANZADO
     // ============================================
     {
-      name: 'JSON',
-      label: 'JSON',
-      category: FieldCategory.ADVANCED,
-      description: 'Editor de JSON',
-      icon: 'FiCode',
-      hasOptions: false,
-      allowMultiple: false,
-      hasPlaceholder: true,
-      hasDefaultValue: true,
-      availableValidations: ['REQUIRED', 'CUSTOM'],
-      componentType: 'json',
-      inputProps: {}
-    },
-    {
-      name: 'CODE',
-      label: 'Código',
-      category: FieldCategory.ADVANCED,
-      description: 'Editor de código',
-      icon: 'FiTerminal',
-      hasOptions: false,
-      allowMultiple: false,
-      hasPlaceholder: false,
-      hasDefaultValue: true,
-      availableValidations: ['REQUIRED'],
-      componentType: 'code',
-      inputProps: { language: 'javascript' }
-    },
-    {
-      name: 'SIGNATURE',
+      name: 'FIRMA',
       label: 'Firma',
       category: FieldCategory.ADVANCED,
       description: 'Campo de firma digital',
@@ -394,5 +366,4 @@ export const fieldTypesSeed = async (prisma: PrismaClient) => {
     });
   }
 
-  console.log(`✅ Created ${fieldTypes.length} field types`);
 };

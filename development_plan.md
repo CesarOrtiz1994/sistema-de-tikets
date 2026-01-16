@@ -266,28 +266,33 @@
 **Objetivo:** Configurar cada campo en detalle
 
 #### Frontend
-- [ ] Componente FieldEditor (panel lateral):
+- [x] Componente FieldEditor (panel lateral):
   - Input para label
   - Input para placeholder
   - Input para help_text
   - Checkbox "es obligatorio"
-  - Select de tipo de campo (solo lectura)
-- [ ] Editor de opciones (para SELECT, RADIO, CHECKBOX):
+  - Checkbox "campo visible"
+  - Tipo de campo mostrado en título
+- [x] Editor de opciones (para SELECT, RADIO, CHECKBOX, MULTISELECT, TOGGLE):
   - Agregar opción
   - Editar opción
   - Eliminar opción
-  - Reordenar opciones
+  - Reordenar opciones (visual)
   - Marcar opción por defecto
-- [ ] Configurador de validaciones:
+- [x] Configurador de validaciones:
   - Mostrar validaciones disponibles según tipo
-  - Inputs para configurar cada validación
-  - Preview del error que se mostraría
-- [ ] Sistema de lógica condicional básica:
+  - Inputs para configurar cada validación (TEXT, NUMBER, FILE)
+  - ~~Preview del error que se mostraría~~ (no implementado)
+- [x] Sistema de lógica condicional básica:
   - Checkbox "activar condicional"
   - Select de campo a evaluar
   - Select de operador (equals, not_equals)
   - Input de valor
-- [ ] Vista previa en tiempo real
+- [x] Vista previa en tiempo real
+  - Renderiza el campo según su tipo
+  - Actualiza en tiempo real al cambiar propiedades
+  - Muestra label, placeholder, help text, required
+  - Soporta todos los 23 tipos de campos
 
 **Entregable:** Configuración completa de campos
 

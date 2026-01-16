@@ -9,6 +9,7 @@ interface BuilderCanvasProps {
   onEditField: (field: FormField) => void;
   onDeleteField: (fieldId: string) => void;
   onToggleVisibility: (fieldId: string) => void;
+  isDraggingFromPalette?: boolean;
 }
 
 function SortableField({ 
@@ -115,44 +116,52 @@ export default function BuilderCanvas({
   fields, 
   onEditField, 
   onDeleteField,
-  onToggleVisibility 
+  onToggleVisibility,
+  isDraggingFromPalette = false
 }: BuilderCanvasProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'builder-canvas',
   });
 
+  // Iluminar cuando isOver es true O cuando se está arrastrando desde la paleta
+  const shouldHighlight = isOver || isDraggingFromPalette;
+
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 p-6 overflow-y-auto ${
-        isOver ? 'bg-purple-50 dark:bg-purple-900/10' : 'bg-white dark:bg-gray-800'
+      className={`flex-1 p-6 overflow-y-auto min-h-full ${
+        shouldHighlight ? 'bg-purple-50 dark:bg-purple-900/10' : 'bg-white dark:bg-gray-800'
       } transition-colors`}
     >
-      {fields.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full text-center">
-          <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
-            <FiEdit2 className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+      <div className="min-h-full">
+        {fields.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+            <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
+              <FiEdit2 className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Comienza a construir tu formulario
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md">
+              Arrastra campos desde la paleta de la izquierda para agregar campos a tu formulario
+            </p>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Comienza a construir tu formulario
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 max-w-md">
-            Arrastra campos desde la paleta de la izquierda para agregar campos a tu formulario
-          </p>
-        </div>
-      ) : (
-        <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
-          {fields.map(field => (
-            <SortableField
-              key={field.id}
-              field={field}
-              onEdit={() => onEditField(field)}
-              onDelete={() => onDeleteField(field.id)}
-              onToggleVisibility={() => onToggleVisibility(field.id)}
-            />
-          ))}
-        </SortableContext>
-      )}
+        ) : (
+          <div className="pb-32">
+            <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+              {fields.map(field => (
+                <SortableField
+                  key={field.id}
+                  field={field}
+                  onEdit={() => onEditField(field)}
+                  onDelete={() => onDeleteField(field.id)}
+                  onToggleVisibility={() => onToggleVisibility(field.id)}
+                />
+              ))}
+            </SortableContext>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

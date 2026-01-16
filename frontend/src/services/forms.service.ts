@@ -24,6 +24,8 @@ export interface FormField {
   order: number;
   defaultValue?: string;
   validationRules?: any;
+  validations?: any;
+  conditionalLogic?: any;
   fieldType?: {
     id: string;
     name: string;

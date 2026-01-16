@@ -4,6 +4,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { toast } from 'sonner';
 import FieldPalette from './FieldPalette';
 import BuilderCanvas from './BuilderCanvas';
+import FieldEditor from './FieldEditor';
 import { FormField, formsService } from '../../services/forms.service';
 import { fieldTypesService, FieldType } from '../../services/fieldTypes.service';
 import LoadingSpinner from '../LoadingSpinner';
@@ -17,6 +18,9 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
   const [fieldTypes, setFieldTypes] = useState<FieldType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<FormField | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isDraggingFromPalette, setIsDraggingFromPalette] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -45,18 +49,32 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
 
   const handleDragStart = (event: any) => {
     setActiveId(event.active.id);
+    setIsDraggingFromPalette(event.active.id.toString().startsWith('palette-'));
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     setActiveId(null);
+    setIsDraggingFromPalette(false);
     const { active, over } = event;
 
-    if (!over) return;
+    console.log('handleDragEnd - active:', active.id, 'over:', over?.id);
+
+    if (!over) {
+      console.log('handleDragEnd - no over target');
+      return;
+    }
 
     if (active.id.toString().startsWith('palette-')) {
       const fieldType = active.data.current?.fieldType;
-      if (fieldType && over.id === 'builder-canvas') {
+      console.log('handleDragEnd - fieldType:', fieldType, 'over.id:', over.id);
+      // Permitir soltar sobre el canvas o sobre cualquier campo existente
+      const isValidDropTarget = over.id === 'builder-canvas' || fields.some(f => f.id === over.id);
+      console.log('handleDragEnd - isValidDropTarget:', isValidDropTarget);
+      if (fieldType && isValidDropTarget) {
+        console.log('handleDragEnd - calling handleAddField');
         await handleAddField(fieldType);
+      } else {
+        console.log('handleDragEnd - conditions not met for adding field');
       }
     } else {
       const oldIndex = fields.findIndex(f => f.id === active.id);
@@ -87,6 +105,7 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
   };
 
   const handleAddField = async (fieldType: FieldType) => {
+    console.log('handleAddField called - fieldType:', fieldType.name, 'current fields count:', fields.length);
     try {
       const newField = await formsService.addField({
         formId,
@@ -97,7 +116,9 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
         order: fields.length
       });
 
+      console.log('handleAddField - newField received:', newField);
       setFields([...fields, { ...newField, fieldType }]);
+      console.log('handleAddField - fields updated, new count:', fields.length + 1);
       toast.success('Campo agregado al formulario');
     } catch (error) {
       console.error('Error adding field:', error);
@@ -105,8 +126,30 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
     }
   };
 
-  const handleEditField = (_field: FormField) => {
-    toast.info('Función de edición en desarrollo');
+  const handleEditField = (field: FormField) => {
+    console.log('handleEditField - field:', field);
+    console.log('handleEditField - field.fieldType:', field.fieldType);
+    setEditingField(field);
+    setIsEditorOpen(true);
+  };
+
+  const handleSaveField = async (updatedField: FormField) => {
+    try {
+      const savedField = await formsService.updateField(updatedField.id, {
+        label: updatedField.label,
+        placeholder: updatedField.placeholder,
+        helpText: updatedField.helpText,
+        isRequired: updatedField.isRequired,
+        isVisible: updatedField.isVisible,
+        validationRules: updatedField.validations,
+      });
+
+      setFields(fields.map(f => f.id === savedField.id ? { ...savedField, fieldType: f.fieldType, options: updatedField.options } : f));
+      toast.success('Campo actualizado exitosamente');
+    } catch (error) {
+      console.error('Error updating field:', error);
+      toast.error('Error al actualizar campo');
+    }
   };
 
   const handleDeleteField = async (fieldId: string) => {
@@ -161,6 +204,7 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
           onEditField={handleEditField}
           onDeleteField={handleDeleteField}
           onToggleVisibility={handleToggleVisibility}
+          isDraggingFromPalette={isDraggingFromPalette}
         />
       </div>
 
@@ -173,6 +217,17 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
           </div>
         ) : null}
       </DragOverlay>
+
+      <FieldEditor
+        isOpen={isEditorOpen}
+        onClose={() => {
+          setIsEditorOpen(false);
+          setEditingField(null);
+        }}
+        field={editingField}
+        onSave={handleSaveField}
+        allFields={fields}
+      />
     </DndContext>
   );
 }
