@@ -232,25 +232,25 @@
 **Objetivo:** Interfaz drag & drop del constructor
 
 #### Backend
-- [ ] Crear tablas en Prisma:
+- [x] Crear tablas en Prisma:
   - ticket_forms
   - form_fields
   - field_options
-- [ ] Endpoints básicos:
+- [x] Endpoints básicos:
   - `GET /api/departments/:id/forms` - Formularios del dept
   - `POST /api/forms` - Crear formulario vacío
   - `GET /api/forms/:id` - Obtener formulario completo
 
 #### Frontend
-- [ ] Página FormBuilderPage
-- [ ] Componente FormBuilder principal
-- [ ] Componente FieldPalette (paleta de tipos):
+- [x] Página FormBuilderPage
+- [x] Componente FormBuilder principal
+- [x] Componente FieldPalette (paleta de tipos):
   - Organizada por categorías
   - Cards con icono y nombre de cada tipo
-- [ ] Componente BuilderCanvas (área de construcción):
+- [x] Componente BuilderCanvas (área de construcción):
   - Zona de drop para campos
   - Lista de campos agregados
-- [ ] Implementar drag & drop con @dnd-kit:
+- [x] Implementar drag & drop con @dnd-kit:
   - Arrastrar desde paleta a canvas
   - Reordenar campos en canvas
   - Eliminar campos

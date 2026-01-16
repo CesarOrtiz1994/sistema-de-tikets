@@ -55,6 +55,7 @@ model Department {
   members    User[]           @relation("UserDepartment")
   createdBy  User[]           @relation("DepartmentCreator")
   slaConfigs DepartmentSLA[]
+  forms      TicketForm[]
 
   @@map("departments")
 }
@@ -170,6 +171,8 @@ model FieldType {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  formFields FormField[]
+
   @@map("field_types")
 }
 
@@ -232,4 +235,86 @@ model DepartmentSLA {
 
   @@unique([departmentId, priority])
   @@map("department_sla")
+}
+
+// ============================================
+// FASE 3: FORM BUILDER - SEMANA 7
+// Formularios personalizados para tickets
+// ============================================
+
+enum FormStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model TicketForm {
+  id           String     @id @default(uuid())
+  departmentId String     @map("department_id")
+  name         String
+  description  String?
+  status       FormStatus @default(DRAFT)
+  isDefault    Boolean    @default(false) @map("is_default")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  department Department  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  fields     FormField[]
+
+  @@index([departmentId])
+  @@index([status])
+  @@map("ticket_forms")
+}
+
+model FormField {
+  id          String @id @default(uuid())
+  formId      String @map("form_id")
+  fieldTypeId String @map("field_type_id")
+
+  label       String
+  placeholder String?
+  helpText    String? @map("help_text")
+
+  isRequired Boolean @default(false) @map("is_required")
+  isVisible  Boolean @default(true) @map("is_visible")
+
+  order Int @default(0)
+
+  defaultValue String? @map("default_value")
+
+  validationRules Json? @map("validation_rules")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  form      TicketForm    @relation(fields: [formId], references: [id], onDelete: Cascade)
+  fieldType FieldType     @relation(fields: [fieldTypeId], references: [id], onDelete: Restrict)
+  options   FieldOption[]
+
+  @@index([formId])
+  @@index([fieldTypeId])
+  @@index([order])
+  @@map("form_fields")
+}
+
+model FieldOption {
+  id      String @id @default(uuid())
+  fieldId String @map("field_id")
+
+  label String
+  value String
+  order Int    @default(0)
+
+  isDefault Boolean @default(false) @map("is_default")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  field FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@index([fieldId])
+  @@index([order])
+  @@map("field_options")
 }

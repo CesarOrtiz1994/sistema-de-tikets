@@ -9,6 +9,7 @@ import UsersPage from './pages/UsersPage';
 import AuditPage from './pages/AuditPage';
 import FieldTypesPage from './pages/FieldTypesPage';
 import SLAConfigurationsPage from './pages/SLAConfigurationsPage';
+import FormBuilderPage from './pages/FormBuilderPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DepartmentRoute from './components/DepartmentRoute';
 import Layout from './components/Layout';
@@ -147,6 +148,17 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <SLAConfigurationsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/forms/:formId"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <FormBuilderPage />
               </Layout>
             </ProtectedRoute>
           }

@@ -77,7 +77,7 @@ export class DepartmentsService {
           },
           _count: {
             select: {
-              departmentUsers: true
+              users: true
             }
           }
         },
@@ -113,7 +113,7 @@ export class DepartmentsService {
             email: true
           }
         },
-        departmentUsers: {
+        users: {
           include: {
             user: {
               select: {
@@ -167,7 +167,9 @@ export class DepartmentsService {
         prefix: data.prefix,
         description: data.description,
         isDefaultForRequesters: data.isDefaultForRequesters || false,
-        createdById: data.createdById
+        createdBy: {
+          connect: { id: data.createdById }
+        }
       },
       include: {
         createdBy: {

@@ -19,6 +19,7 @@ import departmentsRoutes from './routes/departments.routes';
 import fieldTypeRoutes from './routes/fieldType.routes';
 import slaConfigurationRoutes from './routes/slaConfiguration.routes';
 import departmentSLARoutes from './routes/departmentSLA.routes';
+import ticketFormRoutes from './routes/ticketForm.routes';
 
 const app: Application = express();
 
@@ -67,6 +68,9 @@ app.use('/api/field-types', fieldTypeRoutes);
 
 // Rutas de configuraciones SLA (FASE 2)
 app.use('/api/sla-configurations', slaConfigurationRoutes);
+
+// Rutas de formularios de tickets (FASE 3 - SEMANA 7)
+app.use('/api/forms', ticketFormRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (_req, res) => {
