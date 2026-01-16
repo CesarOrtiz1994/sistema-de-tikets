@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { User, CreateUserData, UpdateUserData } from '../services/users.service';
 import Modal from './Modal';
 import ModalButtons from './ModalButtons';
+import { validateForm, userSchema } from '../utils/validationSchemas';
 
 interface UserModalProps {
   user: User | null;
@@ -32,25 +33,20 @@ export default function UserModal({ user, onClose, onSave }: UserModalProps) {
   }, [user]);
 
   const validate = () => {
-    const newErrors: Record<string, string> = {};
-
     // Solo validar name y email si NO es un usuario de Google
-    if (!user?.googleId) {
-      if (!formData.name.trim()) {
-        newErrors.name = 'El nombre es requerido';
-      } else if (formData.name.trim().length < 2) {
-        newErrors.name = 'El nombre debe tener al menos 2 caracteres';
-      }
-
-      if (!formData.email.trim()) {
-        newErrors.email = 'El email es requerido';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = 'El email no es válido';
-      }
+    if (user?.googleId) {
+      return true;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const result = validateForm(userSchema, formData);
+    
+    if (!result.success) {
+      setErrors(result.errors);
+      return false;
+    }
+    
+    setErrors({});
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

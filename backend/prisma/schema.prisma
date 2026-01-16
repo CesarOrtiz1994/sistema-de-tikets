@@ -14,25 +14,25 @@ enum RoleType {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  googleId       String?  @unique @map("google_id")
+  id             String    @id @default(uuid())
+  email          String    @unique
+  googleId       String?   @unique @map("google_id")
   name           String
-  profilePicture String?  @map("profile_picture")
-  roleType       RoleType @default(REQUESTER) @map("role_type")
-  language       String   @default("es")
-  isActive       Boolean  @default(true) @map("is_active")
+  profilePicture String?   @map("profile_picture")
+  roleType       RoleType  @default(REQUESTER) @map("role_type")
+  language       String    @default("es")
+  isActive       Boolean   @default(true) @map("is_active")
   deletedAt      DateTime? @map("deleted_at")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  
-  // Nueva relación directa con departamento
-  departmentId   String?  @map("department_id")
-  departmentRole String?  @default("MEMBER") @map("department_role") // ADMIN o MEMBER
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  department         Department? @relation("UserDepartment", fields: [departmentId], references: [id])
+  // Nueva relación directa con departamento
+  departmentId   String? @map("department_id")
+  departmentRole String? @default("MEMBER") @map("department_role") // ADMIN o MEMBER
+
+  department         Department?      @relation("UserDepartment", fields: [departmentId], references: [id])
   departmentUsers    DepartmentUser[] // Mantener temporalmente para migración
-  createdDepartments Department[] @relation("DepartmentCreator")
+  createdDepartments Department[]     @relation("DepartmentCreator")
   sessions           UserSession[]
   auditLogs          AuditLog[]
 
@@ -41,19 +41,20 @@ model User {
 }
 
 model Department {
-  id                      String   @id @default(uuid())
-  name                    String
-  prefix                  String   @unique
-  description             String?
-  isDefaultForRequesters  Boolean  @default(false) @map("is_default_for_requesters")
-  createdById             String?  @map("created_by")
-  deletedAt               DateTime? @map("deleted_at")
-  createdAt               DateTime @default(now()) @map("created_at")
-  updatedAt               DateTime @updatedAt @map("updated_at")
+  id                     String    @id @default(uuid())
+  name                   String    @unique
+  prefix                 String    @unique
+  description            String?
+  isDefaultForRequesters Boolean   @default(false) @map("is_default_for_requesters")
+  isActive               Boolean   @default(true) @map("is_active")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  deletedAt              DateTime? @map("deleted_at")
 
-  createdBy       User?   @relation("DepartmentCreator", fields: [createdById], references: [id])
-  users           User[]  @relation("UserDepartment") // Nueva relación directa
-  departmentUsers DepartmentUser[] // Mantener temporalmente para migración
+  users      DepartmentUser[]
+  members    User[]           @relation("UserDepartment")
+  createdBy  User[]           @relation("DepartmentCreator")
+  slaConfigs DepartmentSLA[]
 
   @@map("departments")
 }
@@ -92,17 +93,17 @@ model UserSession {
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  userId      String?  @map("user_id")
-  action      String
-  resource    String
-  resourceId  String?  @map("resource_id")
-  details     Json?
-  ipAddress   String?  @map("ip_address")
-  userAgent   String?  @map("user_agent")
-  status      String   @default("success")
-  errorMessage String? @map("error_message")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  action       String
+  resource     String
+  resourceId   String?  @map("resource_id")
+  details      Json?
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  status       String   @default("success")
+  errorMessage String?  @map("error_message")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -111,4 +112,124 @@ model AuditLog {
   @@index([resource])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================
+// FASE 2: FORMULARIOS DINÁMICOS - SEMANA 6
+// Catálogo de Tipos de Campos y SLA
+// ============================================
+
+enum FieldCategory {
+  TEXT
+  NUMBER
+  SELECTION
+  DATE
+  FILE
+  ADVANCED
+}
+
+enum ValidationType {
+  REQUIRED
+  MIN_LENGTH
+  MAX_LENGTH
+  MIN_VALUE
+  MAX_VALUE
+  PATTERN
+  EMAIL
+  URL
+  PHONE
+  CUSTOM
+}
+
+enum SLAPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model FieldType {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  label       String
+  category    FieldCategory
+  description String?
+  icon        String?
+
+  hasOptions      Boolean @default(false)
+  allowMultiple   Boolean @default(false)
+  hasPlaceholder  Boolean @default(true)
+  hasDefaultValue Boolean @default(true)
+
+  availableValidations Json?
+
+  componentType String
+  inputProps    Json?
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("field_types")
+}
+
+model ValidationRuleCatalog {
+  id          String         @id @default(uuid())
+  type        ValidationType @unique
+  name        String
+  description String?
+
+  requiresValue Boolean @default(false)
+  valueType     String?
+
+  defaultErrorMessage String @map("default_error_message")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("validation_rules_catalog")
+}
+
+model SLAConfiguration {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  description String?
+  priority    SLAPriority @default(MEDIUM)
+
+  responseTime   Int @map("response_time")
+  resolutionTime Int @map("resolution_time")
+
+  escalationEnabled Boolean @default(false) @map("escalation_enabled")
+  escalationTime    Int?    @map("escalation_time")
+
+  businessHoursOnly Boolean @default(true) @map("business_hours_only")
+
+  notifyOnBreach Boolean @default(true) @map("notify_on_breach")
+  notifyBefore   Int?    @default(30) @map("notify_before")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  departments DepartmentSLA[]
+
+  @@map("sla_configurations")
+}
+
+model DepartmentSLA {
+  id                 String      @id @default(uuid())
+  departmentId       String      @map("department_id")
+  slaConfigurationId String      @map("sla_configuration_id")
+  priority           SLAPriority
+  isDefault          Boolean     @default(false) @map("is_default")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  department       Department       @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  slaConfiguration SLAConfiguration @relation(fields: [slaConfigurationId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, priority])
+  @@map("department_sla")
 }

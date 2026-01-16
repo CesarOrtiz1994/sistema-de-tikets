@@ -32,6 +32,7 @@ export default function MyDepartmentPage() {
       }
     } catch (error) {
       console.error('Error al cargar departamento:', error);
+      toast.error('Error al cargar la información del departamento');
     } finally {
       setLoading(false);
     }
@@ -43,6 +44,7 @@ export default function MyDepartmentPage() {
       setUsers(response.data);
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
+      toast.error('Error al cargar los usuarios del departamento');
     }
   };
 
@@ -54,6 +56,7 @@ export default function MyDepartmentPage() {
       setAvailableUsers(available);
     } catch (error) {
       console.error('Error al cargar usuarios disponibles:', error);
+      toast.error('Error al cargar la lista de usuarios disponibles');
     }
   };
 
@@ -64,9 +67,10 @@ export default function MyDepartmentPage() {
       await departmentsService.assignUserToDepartment(department.id, userId, role);
       await loadUsers(department.id);
       setIsAssignModalOpen(false);
+      toast.success('Usuario asignado al departamento exitosamente');
     } catch (error) {
       console.error('Error al asignar usuario:', error);
-      alert('Error al asignar usuario. Puede que ya pertenezca a otro departamento.');
+      toast.error('Error al asignar usuario. Puede que ya pertenezca a otro departamento.');
     }
   };
 
@@ -86,9 +90,10 @@ export default function MyDepartmentPage() {
     try {
       await departmentsService.removeUserFromDepartment(department.id, userId);
       await loadUsers(department.id);
+      toast.success('Usuario removido del departamento exitosamente');
     } catch (error) {
       console.error('Error al remover usuario:', error);
-      alert('Error al remover usuario del departamento');
+      toast.error('Error al remover usuario del departamento');
     }
   };
 

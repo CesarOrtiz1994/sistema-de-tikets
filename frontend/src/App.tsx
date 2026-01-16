@@ -7,6 +7,8 @@ import DashboardHomePage from './pages/DashboardHomePage';
 import TicketsPage from './pages/TicketsPage';
 import UsersPage from './pages/UsersPage';
 import AuditPage from './pages/AuditPage';
+import FieldTypesPage from './pages/FieldTypesPage';
+import SLAConfigurationsPage from './pages/SLAConfigurationsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DepartmentRoute from './components/DepartmentRoute';
 import Layout from './components/Layout';
@@ -123,6 +125,28 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <AuditPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/field-types"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <FieldTypesPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/sla-configurations"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <SLAConfigurationsPage />
               </Layout>
             </ProtectedRoute>
           }

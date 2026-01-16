@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Department, CreateDepartmentData, UpdateDepartmentData } from '../services/departments.service';
 import Modal from './Modal';
 import ModalButtons from './ModalButtons';
+import { validateForm, departmentSchema } from '../utils/validationSchemas';
 
 interface DepartmentModalProps {
   isOpen: boolean;
@@ -39,31 +40,22 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
     setErrors({});
   }, [department, isOpen]);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'El nombre es requerido';
-    } else if (formData.name.length < 2) {
-      newErrors.name = 'El nombre debe tener al menos 2 caracteres';
+  const validate = () => {
+    const result = validateForm(departmentSchema, formData);
+    
+    if (!result.success) {
+      setErrors(result.errors);
+      return false;
     }
-
-    if (!formData.prefix.trim()) {
-      newErrors.prefix = 'El prefijo es requerido';
-    } else if (formData.prefix.length < 2) {
-      newErrors.prefix = 'El prefijo debe tener al menos 2 caracteres';
-    } else if (formData.prefix.length > 10) {
-      newErrors.prefix = 'El prefijo no puede tener más de 10 caracteres';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    setErrors({});
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validate()) {
       return;
     }
 

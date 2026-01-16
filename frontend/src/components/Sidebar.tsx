@@ -11,7 +11,9 @@ import {
   FiX,
   FiActivity,
   FiBriefcase,
-  FiUserCheck
+  FiUserCheck,
+  FiType,
+  FiClock
 } from 'react-icons/fi';
 
 interface MenuItem {
@@ -61,15 +63,25 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       icon: FiUsers,
       label: 'Usuarios',
       path: '/users',
-      roles: [RoleType.SUPER_ADMIN],
-      badge: 'Admin'
+      roles: [RoleType.SUPER_ADMIN]
     },
     {
       icon: FiActivity,
       label: 'Auditoría',
       path: '/audit',
-      roles: [RoleType.SUPER_ADMIN],
-      badge: 'Admin'
+      roles: [RoleType.SUPER_ADMIN]
+    },
+    {
+      icon: FiType,
+      label: 'Tipos de Campos',
+      path: '/field-types',
+      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
+    },
+    {
+      icon: FiClock,
+      label: 'Configuración SLA',
+      path: '/sla-configurations',
+      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
     },
     {
       icon: FiSettings,

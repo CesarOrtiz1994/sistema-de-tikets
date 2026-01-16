@@ -16,6 +16,9 @@ import permissionsRoutes from './routes/permissions.routes';
 import auditRoutes from './routes/audit.routes';
 import usersRoutes from './routes/users.routes';
 import departmentsRoutes from './routes/departments.routes';
+import fieldTypeRoutes from './routes/fieldType.routes';
+import slaConfigurationRoutes from './routes/slaConfiguration.routes';
+import departmentSLARoutes from './routes/departmentSLA.routes';
 
 const app: Application = express();
 
@@ -55,6 +58,15 @@ app.use('/api/users', usersRoutes);
 
 // Rutas de departamentos
 app.use('/api/departments', departmentsRoutes);
+
+// Rutas de SLA por departamento (FASE 2)
+app.use('/api/departments', departmentSLARoutes);
+
+// Rutas de tipos de campos (FASE 2)
+app.use('/api/field-types', fieldTypeRoutes);
+
+// Rutas de configuraciones SLA (FASE 2)
+app.use('/api/sla-configurations', slaConfigurationRoutes);
 
 // Ruta de prueba
 app.get('/api/health', (_req, res) => {

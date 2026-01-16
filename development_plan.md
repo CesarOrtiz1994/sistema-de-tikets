@@ -188,31 +188,31 @@
 **Objetivo:** Base del sistema de formularios y configuración de SLA
 
 #### Backend
-- [ ] Crear tablas en Prisma:
+- [x] Crear tablas en Prisma:
   - field_types
   - validation_rules_catalog
   - sla_configurations
-- [ ] Script de seed para field_types (~25 tipos):
+- [x] Script de seed para field_types (~25 tipos):
   - Categoría TEXTO: TEXT, TEXTAREA, EMAIL, PHONE, URL
   - Categoría NÚMEROS: NUMBER, RATING, CURRENCY
   - Categoría SELECCIÓN: SELECT, MULTISELECT, RADIO, CHECKBOX, TOGGLE
   - Categoría FECHA: DATE, TIME, DATETIME, DATERANGE
   - Categoría ARCHIVOS: FILE, FILE_MULTIPLE, IMAGE
   - Categoría ESPECIALES: LOCATION, TAGS, SIGNATURE, COLOR, SCALE
-- [ ] Script de seed para validation_rules_catalog
-- [ ] Endpoints:
+- [x] Script de seed para validation_rules_catalog
+- [x] Endpoints:
   - `GET /api/field-types` - Obtener todos los tipos
-  - `GET /api/field-types/:id/validations` - Validaciones disponibles
-- [ ] Endpoints de SLA:
+  - [x] `GET /api/field-types/:id/validations` - Validaciones disponibles
+- [x] Endpoints de SLA:
   - `GET /api/departments/:id/sla` - Obtener configuración SLA
   - `POST /api/departments/:id/sla` - Crear/actualizar SLA
   - `DELETE /api/departments/:id/sla/:priority` - Eliminar config
-- [ ] Servicio para calcular SLA deadline
-- [ ] Seed de SLA por defecto (LOW: 72h, MEDIUM: 24h, HIGH: 8h, URGENT: 2h)
+- [x] Servicio para calcular SLA deadline
+- [x] Seed de SLA por defecto (LOW: 72h, MEDIUM: 24h, HIGH: 8h, URGENT: 2h)
 
 #### Frontend
-- [ ] Types de TypeScript para tipos de campos
-- [ ] Componentes base para cada tipo de campo:
+- [x] Types de TypeScript para tipos de campos
+- [x] Componentes base para cada tipo de campo:
   - TextField.tsx
   - TextAreaField.tsx
   - SelectField.tsx
@@ -220,8 +220,8 @@
   - CheckboxField.tsx
   - DateField.tsx
   - FileField.tsx
-  - ... (uno por cada tipo)
-- [ ] Sistema de validación con Zod
+  - NumberField.tsx
+- [x] Sistema de validación con Zod
 
 **Entregable:** Catálogo de tipos de campos creado, componentes base
 

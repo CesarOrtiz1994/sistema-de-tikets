@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { FiUserPlus } from 'react-icons/fi';
 import Modal from './Modal';
 import ModalButtons from './ModalButtons';
+import { validateForm, assignUserSchema } from '../utils/validationSchemas';
 
 interface User {
   id: string;
@@ -22,6 +23,7 @@ export default function AssignUserModal({ isOpen, onClose, onAssign, availableUs
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'MEMBER'>('MEMBER');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -33,8 +35,14 @@ export default function AssignUserModal({ isOpen, onClose, onAssign, availableUs
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedUserId) {
-      toast.warning('Por favor selecciona un usuario');
+    const result = validateForm(assignUserSchema, {
+      userId: selectedUserId,
+      role: selectedRole
+    });
+
+    if (!result.success) {
+      setErrors(result.errors);
+      toast.warning('Por favor completa todos los campos requeridos');
       return;
     }
 
@@ -78,7 +86,9 @@ export default function AssignUserModal({ isOpen, onClose, onAssign, availableUs
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                errors.userId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
               required
             >
               <option value="">-- Selecciona un usuario --</option>
@@ -88,6 +98,9 @@ export default function AssignUserModal({ isOpen, onClose, onAssign, availableUs
                 </option>
               ))}
             </select>
+            {errors.userId && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.userId}</p>
+            )}
           </div>
 
           <div>

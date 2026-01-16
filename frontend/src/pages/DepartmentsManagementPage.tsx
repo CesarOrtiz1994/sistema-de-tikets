@@ -25,8 +25,6 @@ export default function DepartmentsManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
-  const [selectedDepartmentForUsers, setSelectedDepartmentForUsers] = useState<Department | null>(null);
-  const [showUsersModal, setShowUsersModal] = useState(false);
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { hasRole } = usePermissions();
 
