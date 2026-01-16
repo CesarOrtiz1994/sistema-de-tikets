@@ -13,7 +13,8 @@ import {
   FiBriefcase,
   FiUserCheck,
   FiType,
-  FiClock
+  FiClock,
+  FiEdit3
 } from 'react-icons/fi';
 
 interface MenuItem {
@@ -75,6 +76,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       icon: FiType,
       label: 'Tipos de Campos',
       path: '/field-types',
+      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
+    },
+    {
+      icon: FiEdit3,
+      label: 'Formularios',
+      path: '/forms',
       roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
     },
     {

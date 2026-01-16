@@ -10,6 +10,7 @@ import AuditPage from './pages/AuditPage';
 import FieldTypesPage from './pages/FieldTypesPage';
 import SLAConfigurationsPage from './pages/SLAConfigurationsPage';
 import FormBuilderPage from './pages/FormBuilderPage';
+import FormsManagementPage from './pages/FormsManagementPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DepartmentRoute from './components/DepartmentRoute';
 import Layout from './components/Layout';
@@ -148,6 +149,17 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <SLAConfigurationsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/forms"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <FormsManagementPage />
               </Layout>
             </ProtectedRoute>
           }

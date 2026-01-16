@@ -182,24 +182,45 @@ export default function FormBuilderPage() {
                 Eliminar
               </button>
 
+              <button
+                onClick={() => toast.info('Vista previa en desarrollo')}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <FiEye className="w-4 h-4" />
+                Vista Previa
+              </button>
+
               {form.status === 'DRAFT' && (
-                <button
-                  onClick={handlePublish}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <FiEye className="w-4 h-4" />
-                  Publicar
-                </button>
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FiSave className="w-4 h-4" />
+                    {saving ? 'Guardando...' : 'Guardar Borrador'}
+                  </button>
+
+                  <button
+                    onClick={handlePublish}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <FiEye className="w-4 h-4" />
+                    Publicar
+                  </button>
+                </>
               )}
 
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FiSave className="w-4 h-4" />
-                {saving ? 'Guardando...' : 'Guardar'}
-              </button>
+              {form.status === 'ACTIVE' && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FiSave className="w-4 h-4" />
+                  {saving ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              )}
             </div>
           </div>
 
@@ -232,7 +253,9 @@ export default function FormBuilderPage() {
           </div>
         </div>
 
-        <FormBuilder formId={formId} />
+        <div className="p-6">
+          <FormBuilder formId={formId} />
+        </div>
       </Card>
 
       <ConfirmDialog

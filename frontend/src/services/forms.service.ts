@@ -84,55 +84,55 @@ export interface UpdateFieldData {
 
 class FormsService {
   async getDepartmentForms(departmentId: string): Promise<TicketForm[]> {
-    const response = await api.get(`/forms/departments/${departmentId}/forms`);
+    const response = await api.get(`/api/forms/departments/${departmentId}/forms`);
     return response.data.data;
   }
 
   async getFormById(id: string): Promise<TicketForm> {
-    const response = await api.get(`/forms/${id}`);
+    const response = await api.get(`/api/forms/${id}`);
     return response.data.data;
   }
 
   async createForm(data: CreateFormData): Promise<TicketForm> {
-    const response = await api.post('/forms', data);
+    const response = await api.post('/api/forms', data);
     return response.data.data;
   }
 
   async updateForm(id: string, data: UpdateFormData): Promise<TicketForm> {
-    const response = await api.put(`/forms/${id}`, data);
+    const response = await api.put(`/api/forms/${id}`, data);
     return response.data.data;
   }
 
   async deleteForm(id: string): Promise<void> {
-    await api.delete(`/forms/${id}`);
+    await api.delete(`/api/forms/${id}`);
   }
 
   async setDefaultForm(departmentId: string, formId: string): Promise<TicketForm> {
-    const response = await api.put(`/forms/departments/${departmentId}/forms/${formId}/default`);
+    const response = await api.put(`/api/forms/departments/${departmentId}/forms/${formId}/default`);
     return response.data.data;
   }
 
   async duplicateForm(id: string, name: string): Promise<TicketForm> {
-    const response = await api.post(`/forms/${id}/duplicate`, { name });
+    const response = await api.post(`/api/forms/${id}/duplicate`, { name });
     return response.data.data;
   }
 
   async addField(data: CreateFieldData): Promise<FormField> {
-    const response = await api.post('/forms/fields', data);
+    const response = await api.post('/api/forms/fields', data);
     return response.data.data;
   }
 
   async updateField(id: string, data: UpdateFieldData): Promise<FormField> {
-    const response = await api.put(`/forms/fields/${id}`, data);
+    const response = await api.put(`/api/forms/fields/${id}`, data);
     return response.data.data;
   }
 
   async deleteField(id: string): Promise<void> {
-    await api.delete(`/forms/fields/${id}`);
+    await api.delete(`/api/forms/fields/${id}`);
   }
 
   async reorderFields(formId: string, fieldOrders: { id: string; order: number }[]): Promise<void> {
-    await api.put(`/forms/${formId}/fields/reorder`, { fieldOrders });
+    await api.put(`/api/forms/${formId}/fields/reorder`, { fieldOrders });
   }
 }
 

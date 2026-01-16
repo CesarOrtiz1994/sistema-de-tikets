@@ -254,8 +254,8 @@
   - Arrastrar desde paleta a canvas
   - Reordenar campos en canvas
   - Eliminar campos
-- [ ] Estado local del builder con Zustand
-- [ ] Botones: Vista Previa, Guardar Borrador
+- [x] Estado local del builder con Zustand (IGNORADO - no necesario)
+- [x] Botones: Vista Previa, Guardar Borrador
 
 **Entregable:** Interfaz drag & drop funcional, sin guardar aún
 

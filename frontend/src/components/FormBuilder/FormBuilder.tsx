@@ -30,6 +30,9 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
         fieldTypesService.getFieldTypes()
       ]);
       
+      console.log('Field Types loaded:', typesData);
+      console.log('Field Types count:', typesData?.length);
+      
       setFields(formData.fields || []);
       setFieldTypes(typesData);
     } catch (error) {
@@ -148,8 +151,8 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-[calc(100vh-12rem)] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-        <div className="w-80 flex-shrink-0">
+      <div className="flex h-[600px] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div className="w-64 flex-shrink-0">
           <FieldPalette fieldTypes={fieldTypes} />
         </div>
         

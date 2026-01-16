@@ -12,13 +12,13 @@ export interface FieldType {
 
 class FieldTypesService {
   async getFieldTypes(): Promise<FieldType[]> {
-    const response = await api.get('/field-types');
-    return response.data.data;
+    const response = await api.get('/api/field-types');
+    return response.data;
   }
 
   async getFieldTypeById(id: string): Promise<FieldType> {
-    const response = await api.get(`/field-types/${id}`);
-    return response.data.data;
+    const response = await api.get(`/api/field-types/${id}`);
+    return response.data;
   }
 }
 
