@@ -155,6 +155,64 @@ class TicketFormService {
     });
   }
 
+  async activateForm(formId: string, incrementVersion: boolean = false) {
+    const form = await this.getFormById(formId);
+    
+    if (!form) {
+      throw new Error('Formulario no encontrado');
+    }
+
+    // Validar que el formulario tenga al menos un campo
+    if (!form.fields || form.fields.length === 0) {
+      throw new Error('El formulario debe tener al menos un campo para ser activado');
+    }
+
+    // Verificar si ya hay otro formulario activo en el departamento
+    const activeForm = await prisma.ticketForm.findFirst({
+      where: {
+        departmentId: form.departmentId,
+        status: FormStatus.ACTIVE,
+        deletedAt: null,
+        id: { not: formId }
+      }
+    });
+
+    // Si hay otro formulario activo, archivarlo
+    if (activeForm) {
+      await prisma.ticketForm.update({
+        where: { id: activeForm.id },
+        data: {
+          status: FormStatus.ARCHIVED
+        }
+      });
+    }
+
+    // Calcular nueva versión si es necesario
+    let version = form.version || 1;
+    if (incrementVersion) {
+      version += 1;
+    }
+
+    // Activar el formulario
+    return await prisma.ticketForm.update({
+      where: { id: formId },
+      data: {
+        status: FormStatus.ACTIVE,
+        version
+      },
+      include: {
+        department: true,
+        fields: {
+          include: {
+            fieldType: true,
+            options: true
+          },
+          orderBy: { order: 'asc' }
+        }
+      }
+    });
+  }
+
   // ============================================
   // FORM FIELDS
   // ============================================

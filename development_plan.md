@@ -303,25 +303,50 @@
 **Objetivo:** Persistir formularios en BD
 
 #### Backend
-- [ ] Endpoints para guardar:
-  - `POST /api/forms/:id/fields` - Agregar campo
-  - `PUT /api/forms/:id/fields/:fieldId` - Actualizar campo
-  - `DELETE /api/forms/:id/fields/:fieldId` - Eliminar campo
-  - `POST /api/forms/:id/fields/:fieldId/options` - Agregar opción
-  - `PUT /api/forms/:id/activate` - Activar formulario
-- [ ] Lógica de versionado:
-  - Al activar, verificar que no haya otro activo
-  - Incrementar versión si es edición
-- [ ] Validación de formulario en backend
+- [x] Endpoints para guardar:
+  - `POST /api/forms/fields` - Agregar campo (body: formId, fieldTypeId, label, etc.)
+  - `PUT /api/forms/fields/:id` - Actualizar campo
+  - `DELETE /api/forms/fields/:id` - Eliminar campo
+  - `POST /api/forms/fields/options` - Agregar opción (body: fieldId, label, value, etc.)
+  - `PUT /api/forms/fields/options/:id` - Actualizar opción
+  - `DELETE /api/forms/fields/options/:id` - Eliminar opción
+  - `PUT /api/forms/:id/activate` - Activar formulario (body: incrementVersion)
+  - `PUT /api/forms/:formId/fields/reorder` - Reordenar campos
+  - `POST /api/forms/:id/duplicate` - Duplicar formulario
+- [x] Lógica de versionado:
+  - Al activar, verificar que no haya otro activo (archiva el anterior automáticamente)
+  - Incrementar versión si es edición (parámetro incrementVersion)
+  - Campo version agregado al modelo TicketForm
+- [x] Validación de formulario en backend (Zod en todos los endpoints)
 
 #### Frontend
-- [ ] Botón "Guardar y Activar"
-- [ ] Función para serializar estado del builder
-- [ ] Llamadas API para guardar todo
-- [ ] Confirmaciones y mensajes de éxito/error
-- [ ] Lista de formularios del departamento
-- [ ] Clonar formulario existente
-- [ ] Ver historial de versiones
+- [x] Botón "Guardar y Activar"
+  - Botón verde con icono FiCheck
+  - Deshabilitado si no hay campos
+  - Muestra "Activando..." durante el proceso
+- [x] Función para serializar estado del builder (los campos se guardan automáticamente al editar)
+- [x] Llamadas API para guardar todo
+  - formsService.activateForm() implementado
+  - formsService.updateField() para guardar campos
+  - formsService.addField() para agregar campos
+- [x] Confirmaciones y mensajes de éxito/error
+  - ConfirmDialog para confirmar activación
+  - Toast messages para éxito/error
+  - Mensaje de advertencia sobre archivado automático
+- [x] Lista de formularios del departamento (en FormsManagementPage)
+  - DataTable con columnas: Formulario, Campos, Versión, Estado, Acciones
+  - Búsqueda por nombre y descripción
+  - Badges para estado y predeterminado
+  - Botones: Editar, Duplicar, Historial, Eliminar
+- [x] Clonar formulario existente
+  - Botón de duplicar (FiCopy) en cada formulario
+  - Prompt para ingresar nombre del duplicado
+  - Usa formsService.duplicateForm()
+- [x] Ver historial de versiones
+  - Botón de historial (FiClock) en cada formulario
+  - Modal mostrando versión actual
+  - Información: versión, estado, campos, fecha
+  - Nota: historial completo pendiente para futuro
 
 **Entregable:** Formularios se guardan y activan correctamente
 

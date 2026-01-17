@@ -123,3 +123,7 @@ export const bulkCreateOptionsSchema = z.object({
     isDefault: z.boolean().optional()
   }))
 });
+
+export const activateFormSchema = z.object({
+  incrementVersion: z.boolean().optional().default(false)
+});

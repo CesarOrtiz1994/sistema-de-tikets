@@ -4,7 +4,10 @@ import { toast } from 'sonner';
 import { FiArrowLeft, FiSave, FiEye, FiCopy, FiTrash2 } from 'react-icons/fi';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
+import Badge from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Modal from '../components/Modal';
+import ModalButtons from '../components/ModalButtons';
 import FormBuilder from '../components/FormBuilder/FormBuilder';
 import { formsService, TicketForm, UpdateFormData } from '../services/forms.service';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
@@ -18,6 +21,8 @@ export default function FormBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [duplicateFormName, setDuplicateFormName] = useState('');
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
 
   useEffect(() => {
@@ -87,15 +92,22 @@ export default function FormBuilderPage() {
     }
   };
 
-  const handleDuplicate = async () => {
-    if (!formId || !form) return;
+  const handleOpenDuplicateModal = () => {
+    if (!form) return;
+    setDuplicateFormName(`${form.name} (Copia)`);
+    setIsDuplicateModalOpen(true);
+  };
 
-    const newName = prompt('Nombre del formulario duplicado:', `${form.name} (Copia)`);
-    if (!newName) return;
+  const handleDuplicate = async () => {
+    if (!formId || !duplicateFormName.trim()) {
+      toast.error('El nombre del formulario es requerido');
+      return;
+    }
 
     try {
-      const duplicatedForm = await formsService.duplicateForm(formId, newName);
+      const duplicatedForm = await formsService.duplicateForm(formId, duplicateFormName.trim());
       toast.success('Formulario duplicado exitosamente');
+      setIsDuplicateModalOpen(false);
       navigate(`/dashboard/forms/${duplicatedForm.id}`);
     } catch (error) {
       console.error('Error duplicating form:', error);
@@ -156,18 +168,15 @@ export default function FormBuilderPage() {
             </button>
 
             <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                form.status === 'ACTIVE' 
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : form.status === 'DRAFT'
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-              }`}>
+              <Badge variant={
+                form.status === 'ACTIVE' ? 'success' :
+                form.status === 'DRAFT' ? 'warning' : 'danger'
+              }>
                 {form.status === 'ACTIVE' ? 'Activo' : form.status === 'DRAFT' ? 'Borrador' : 'Archivado'}
-              </span>
+              </Badge>
 
               <button
-                onClick={handleDuplicate}
+                onClick={handleOpenDuplicateModal}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
               >
                 <FiCopy className="w-4 h-4" />
@@ -257,6 +266,48 @@ export default function FormBuilderPage() {
           <FormBuilder formId={formId} />
         </div>
       </Card>
+
+      {/* Modal para duplicar formulario */}
+      <Modal
+        isOpen={isDuplicateModalOpen}
+        onClose={() => {
+          setIsDuplicateModalOpen(false);
+          setDuplicateFormName('');
+        }}
+        title="Duplicar Formulario"
+        subtitle={form ? `Crear una copia de "${form.name}"` : ''}
+        size="sm"
+        footer={
+          <ModalButtons
+            onCancel={() => {
+              setIsDuplicateModalOpen(false);
+              setDuplicateFormName('');
+            }}
+            onConfirm={handleDuplicate}
+            cancelText="Cancelar"
+            confirmText="Duplicar"
+            confirmIcon={<FiCopy />}
+            confirmDisabled={!duplicateFormName.trim()}
+            variant="primary"
+          />
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Nombre del formulario duplicado *
+            </label>
+            <input
+              type="text"
+              value={duplicateFormName}
+              onChange={(e) => setDuplicateFormName(e.target.value)}
+              placeholder="Ej: Formulario de Soporte (Copia)"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              autoFocus
+            />
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmDialog
         isOpen={isOpen}

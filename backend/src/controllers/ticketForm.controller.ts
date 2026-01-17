@@ -152,6 +152,36 @@ export class TicketFormController {
     }
   }
 
+  async activateForm(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { incrementVersion } = req.body;
+      
+      const form = await ticketFormService.activateForm(id, incrementVersion);
+      
+      return res.json({
+        success: true,
+        data: form,
+        message: 'Formulario activado exitosamente'
+      });
+    } catch (error) {
+      logger.error('Error activating form:', error);
+      
+      if (error instanceof Error) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Error al activar formulario',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   // ============================================
   // FORM FIELDS
   // ============================================

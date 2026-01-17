@@ -7,6 +7,7 @@ export interface TicketForm {
   description?: string;
   status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
   isDefault: boolean;
+  version: number;
   createdAt: string;
   updatedAt: string;
   fields?: FormField[];
@@ -126,6 +127,11 @@ class FormsService {
 
   async updateField(id: string, data: UpdateFieldData): Promise<FormField> {
     const response = await api.put(`/api/forms/fields/${id}`, data);
+    return response.data.data;
+  }
+
+  async activateForm(formId: string, incrementVersion: boolean = false): Promise<TicketForm> {
+    const response = await api.put(`/api/forms/${formId}/activate`, { incrementVersion });
     return response.data.data;
   }
 

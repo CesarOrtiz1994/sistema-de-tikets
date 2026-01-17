@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { FiPlus, FiEdit2, FiTrash2, FiCopy, FiFileText } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiCopy, FiFileText, FiClock } from 'react-icons/fi';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -24,6 +24,11 @@ export default function FormsManagementPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newFormName, setNewFormName] = useState('');
   const [newFormDescription, setNewFormDescription] = useState('');
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [selectedForm, setSelectedForm] = useState<TicketForm | null>(null);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [duplicateFormName, setDuplicateFormName] = useState('');
+  const [formToDuplicate, setFormToDuplicate] = useState<TicketForm | null>(null);
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
 
   useEffect(() => {
@@ -101,14 +106,25 @@ export default function FormsManagementPage() {
     navigate(`/dashboard/forms/${formId}`);
   };
 
-  const handleDuplicateForm = async (form: TicketForm) => {
-    const newName = prompt('Nombre del formulario duplicado:', `${form.name} (Copia)`);
-    if (!newName) return;
+  const handleOpenDuplicateModal = (form: TicketForm) => {
+    setFormToDuplicate(form);
+    setDuplicateFormName(`${form.name} (Copia)`);
+    setIsDuplicateModalOpen(true);
+  };
+
+  const handleDuplicateForm = async () => {
+    if (!duplicateFormName.trim() || !formToDuplicate) {
+      toast.error('El nombre del formulario es requerido');
+      return;
+    }
 
     try {
-      const duplicatedForm = await formsService.duplicateForm(form.id, newName);
+      const duplicatedForm = await formsService.duplicateForm(formToDuplicate.id, duplicateFormName.trim());
       toast.success('Formulario duplicado exitosamente');
       setForms([...forms, duplicatedForm]);
+      setIsDuplicateModalOpen(false);
+      setFormToDuplicate(null);
+      setDuplicateFormName('');
     } catch (error) {
       console.error('Error duplicating form:', error);
       toast.error('Error al duplicar el formulario');
@@ -133,6 +149,11 @@ export default function FormsManagementPage() {
       console.error('Error deleting form:', error);
       toast.error('Error al eliminar el formulario');
     }
+  };
+
+  const handleViewVersionHistory = (form: TicketForm) => {
+    setSelectedForm(form);
+    setIsVersionHistoryOpen(true);
   };
 
 
@@ -217,6 +238,15 @@ export default function FormsManagementPage() {
             )
           },
           {
+            key: 'version',
+            header: 'Versión',
+            render: (form: TicketForm) => (
+              <div className="text-sm text-gray-900 dark:text-gray-100">
+                v{form.version || 1}
+              </div>
+            )
+          },
+          {
             key: 'status',
             header: 'Estado',
             render: (form: TicketForm) => getStatusBadge(form.status)
@@ -234,11 +264,18 @@ export default function FormsManagementPage() {
                   <FiEdit2 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => handleDuplicateForm(form)}
+                  onClick={() => handleOpenDuplicateModal(form)}
                   className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   title="Duplicar formulario"
                 >
                   <FiCopy className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleViewVersionHistory(form)}
+                  className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                  title="Ver historial de versiones"
+                >
+                  <FiClock className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDeleteForm(form)}
@@ -299,6 +336,111 @@ export default function FormsManagementPage() {
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
             />
           </div>
+        </div>
+      </Modal>
+
+      {/* Modal para duplicar formulario */}
+      <Modal
+        isOpen={isDuplicateModalOpen}
+        onClose={() => {
+          setIsDuplicateModalOpen(false);
+          setFormToDuplicate(null);
+          setDuplicateFormName('');
+        }}
+        title="Duplicar Formulario"
+        subtitle={formToDuplicate ? `Crear una copia de "${formToDuplicate.name}"` : ''}
+        size="sm"
+        footer={
+          <ModalButtons
+            onCancel={() => {
+              setIsDuplicateModalOpen(false);
+              setFormToDuplicate(null);
+              setDuplicateFormName('');
+            }}
+            onConfirm={handleDuplicateForm}
+            cancelText="Cancelar"
+            confirmText="Duplicar"
+            confirmIcon={<FiCopy />}
+            confirmDisabled={!duplicateFormName.trim()}
+            variant="primary"
+          />
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Nombre del formulario duplicado *
+            </label>
+            <input
+              type="text"
+              value={duplicateFormName}
+              onChange={(e) => setDuplicateFormName(e.target.value)}
+              placeholder="Ej: Formulario de Soporte (Copia)"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              autoFocus
+            />
+          </div>
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              Se duplicarán todos los campos y configuraciones del formulario original.
+            </p>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de historial de versiones */}
+      <Modal
+        isOpen={isVersionHistoryOpen}
+        onClose={() => {
+          setIsVersionHistoryOpen(false);
+          setSelectedForm(null);
+        }}
+        title="Historial de Versiones"
+        subtitle={selectedForm ? `Formulario: ${selectedForm.name}` : ''}
+        size="md"
+      >
+        <div className="space-y-4">
+          {selectedForm && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-semibold">
+                    v{selectedForm.version || 1}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      Versión actual
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {getStatusBadge(selectedForm.status)}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-600 dark:text-gray-300">
+                    {selectedForm.fields?.length || 0} campos
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(selectedForm.updatedAt).toLocaleDateString('es-MX', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  <FiClock className="inline mr-2" />
+                  El historial completo de versiones estará disponible en una futura actualización.
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 text-center mt-2">
+                  Por ahora, puedes ver la versión actual del formulario.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
 

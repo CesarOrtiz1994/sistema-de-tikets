@@ -3,6 +3,7 @@ import ticketFormController from '../controllers/ticketForm.controller';
 import { authenticate } from '../middlewares/auth';
 import { isDeptAdmin } from '../middlewares/permissions.middleware';
 import { validateBody } from '../middlewares/validateZod';
+import { auditAction } from '../middlewares/audit.middleware';
 import {
   createFormSchema,
   updateFormSchema,
@@ -12,7 +13,8 @@ import {
   updateFieldOptionSchema,
   reorderFieldsSchema,
   duplicateFormSchema,
-  bulkCreateOptionsSchema
+  bulkCreateOptionsSchema,
+  activateFormSchema
 } from '../validators/ticketForm.validator';
 
 const router = Router();
@@ -42,6 +44,7 @@ router.post(
   authenticate,
   isDeptAdmin(),
   validateBody(createFormSchema),
+  auditAction('CREATE_FORM', 'ticket_form') as any,
   ticketFormController.createForm
 );
 
@@ -51,6 +54,7 @@ router.put(
   authenticate,
   isDeptAdmin(),
   validateBody(updateFormSchema),
+  auditAction('UPDATE_FORM', 'ticket_form') as any,
   ticketFormController.updateForm
 );
 
@@ -59,6 +63,7 @@ router.delete(
   '/:id',
   authenticate,
   isDeptAdmin(),
+  auditAction('DELETE_FORM', 'ticket_form') as any,
   ticketFormController.deleteForm
 );
 
@@ -67,6 +72,7 @@ router.put(
   '/departments/:departmentId/forms/:formId/default',
   authenticate,
   isDeptAdmin(),
+  auditAction('SET_DEFAULT_FORM', 'ticket_form') as any,
   ticketFormController.setDefaultForm
 );
 
@@ -76,7 +82,18 @@ router.post(
   authenticate,
   isDeptAdmin(),
   validateBody(duplicateFormSchema),
+  auditAction('DUPLICATE_FORM', 'ticket_form') as any,
   ticketFormController.duplicateForm
+);
+
+// Activar formulario
+router.put(
+  '/:id/activate',
+  authenticate,
+  isDeptAdmin(),
+  validateBody(activateFormSchema),
+  auditAction('ACTIVATE_FORM', 'ticket_form') as any,
+  ticketFormController.activateForm
 );
 
 // Obtener estadísticas de formularios
@@ -97,6 +114,7 @@ router.post(
   authenticate,
   isDeptAdmin(),
   validateBody(addFieldSchema),
+  auditAction('ADD_FORM_FIELD', 'form_field') as any,
   ticketFormController.addFieldToForm
 );
 
@@ -106,6 +124,7 @@ router.put(
   authenticate,
   isDeptAdmin(),
   validateBody(updateFieldSchema),
+  auditAction('UPDATE_FORM_FIELD', 'form_field') as any,
   ticketFormController.updateFormField
 );
 
@@ -114,6 +133,7 @@ router.delete(
   '/fields/:id',
   authenticate,
   isDeptAdmin(),
+  auditAction('DELETE_FORM_FIELD', 'form_field') as any,
   ticketFormController.deleteFormField
 );
 
@@ -123,6 +143,7 @@ router.put(
   authenticate,
   isDeptAdmin(),
   validateBody(reorderFieldsSchema),
+  auditAction('REORDER_FORM_FIELDS', 'form_field') as any,
   ticketFormController.reorderFormFields
 );
 
@@ -136,6 +157,7 @@ router.post(
   authenticate,
   isDeptAdmin(),
   validateBody(addFieldOptionSchema),
+  auditAction('ADD_FIELD_OPTION', 'field_option') as any,
   ticketFormController.addFieldOption
 );
 
@@ -145,6 +167,7 @@ router.put(
   authenticate,
   isDeptAdmin(),
   validateBody(updateFieldOptionSchema),
+  auditAction('UPDATE_FIELD_OPTION', 'field_option') as any,
   ticketFormController.updateFieldOption
 );
 
@@ -153,6 +176,7 @@ router.delete(
   '/fields/options/:id',
   authenticate,
   isDeptAdmin(),
+  auditAction('DELETE_FIELD_OPTION', 'field_option') as any,
   ticketFormController.deleteFieldOption
 );
 
@@ -162,6 +186,7 @@ router.post(
   authenticate,
   isDeptAdmin(),
   validateBody(bulkCreateOptionsSchema),
+  auditAction('BULK_CREATE_FIELD_OPTIONS', 'field_option') as any,
   ticketFormController.bulkCreateFieldOptions
 );
 
