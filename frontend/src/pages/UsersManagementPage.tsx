@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
-import ConfirmDialog from '../components/ConfirmDialog';
-import DataTable from '../components/DataTable';
-import Pagination from '../components/Pagination';
-import PageHeader from '../components/PageHeader';
-import Card from '../components/Card';
-import StatCard from '../components/StatCard';
-import SearchInput from '../components/SearchInput';
-import Badge from '../components/Badge';
-import LoadingSpinner from '../components/LoadingSpinner';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+import DataTable from '../components/common/DataTable';
+import Pagination from '../components/common/Pagination';
+import PageHeader from '../components/common/PageHeader';
+import Card from '../components/common/Card';
+import StatCard from '../components/common/StatCard';
+import SearchInput from '../components/common/SearchInput';
+import Badge from '../components/common/Badge';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { 
   FiUsers, 
   FiPlus, 
@@ -21,7 +21,7 @@ import {
   FiShield
 } from 'react-icons/fi';
 import RoleGuard from '../components/RoleGuard';
-import UserModal from '../components/UserModal';
+import UserModal from '../components/Users/UserModal';
 import { RoleType } from '../types/permissions';
 import usersService, { User, CreateUserData, UpdateUserData } from '../services/users.service';
 import { getRoleLabel } from '../utils/permissions';

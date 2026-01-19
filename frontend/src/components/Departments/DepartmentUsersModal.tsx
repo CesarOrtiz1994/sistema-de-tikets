@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { useConfirmDialog } from '../hooks/useConfirmDialog';
-import ConfirmDialog from '../components/ConfirmDialog';
-import Modal from './Modal';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import ConfirmDialog from '../common/ConfirmDialog';
+import Modal from '../common/Modal';
 import { FiUserPlus, FiTrash2 } from 'react-icons/fi';
-import { departmentsService, DepartmentUser } from '../services/departments.service';
-import { usersService } from '../services/users.service';
-import AssignUserModal from './AssignUserModal';
+import { departmentsService, DepartmentUser } from '../../services/departments.service';
+import { usersService } from '../../services/users.service';
+import AssignUserModal from '../Users/AssignUserModal';
 
 interface DepartmentUsersModalProps {
   isOpen: boolean;

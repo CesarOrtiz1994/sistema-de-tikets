@@ -357,24 +357,48 @@
 **Objetivo:** Mostrar formularios a usuarios finales
 
 #### Backend
-- [ ] Endpoint:
-  - `GET /api/departments/:id/active-form` - Form activo del dept
-- [ ] Incluir fields y options en response
+- [x] Endpoint:
+  - `GET /api/forms/departments/:id/active-form` - Form activo del dept
+  - Retorna formulario con status ACTIVE
+  - Incluye department info (id, name, description)
+  - Incluye fields ordenados por order (solo visibles)
+  - Incluye fieldType de cada campo
+  - Incluye options ordenadas por order
+  - Error 404 si no hay formulario activo
+- [x] Incluir fields y options en response
+  - Service: `getActiveDepartmentForm(departmentId)`
+  - Controller: `getActiveDepartmentForm(req, res)`
+  - Ruta pública con autenticación
 
 #### Frontend
-- [ ] Componente DynamicFormRenderer:
+- [x] Componente DynamicFormRenderer:
   - Lee estructura del formulario
   - Renderiza campos en orden
-  - Aplica validaciones en tiempo real
+  - Aplica validaciones en tiempo real con Zod
   - Implementa lógica condicional (show/hide)
   - Maneja archivos
-- [ ] Hook useFormValidation
-- [ ] Componente para mostrar errores de validación
-- [ ] Indicadores de campo obligatorio
-- [ ] Progress bar de completitud del formulario
-- [ ] Botón de submit con validación
+  - Ubicación: `frontend/src/components/DynamicForm/DynamicFormRenderer.tsx`
+- [x] Hook useFormValidation
+  - Validación en tiempo real con Zod
+  - Gestión de errores por campo
+  - Cálculo de progreso del formulario
+  - Ubicación: `frontend/src/hooks/useFormValidation.ts`
+- [x] Componente para mostrar errores de validación
+  - ValidationError component con iconos
+  - Ubicación: `frontend/src/components/common/ValidationError.tsx`
+- [x] Indicadores de campo obligatorio
+  - Implementado en cada campo con prop `required`
+- [x] Progress bar de completitud del formulario
+  - FormProgress component con porcentaje visual
+  - Ubicación: `frontend/src/components/common/FormProgress.tsx`
+- [x] Botón de submit con validación
+  - Validación completa antes de enviar
+  - Loading state durante envío
+  - Toast notifications con sonner
+- [x] Página de prueba: `DynamicFormTestPage.tsx`
+- [x] Service actualizado: `getActiveDepartmentForm()` en `forms.service.ts`
 
-**Entregable:** Formularios se renderizan dinámicamente y validan
+**Entregable:** ✅ Formularios se renderizan dinámicamente y validan con Zod
 
 ---
 

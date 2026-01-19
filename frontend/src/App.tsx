@@ -12,7 +12,7 @@ import SLAConfigurationsPage from './pages/SLAConfigurationsPage';
 import FormBuilderPage from './pages/FormBuilderPage';
 import FormsManagementPage from './pages/FormsManagementPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import DepartmentRoute from './components/DepartmentRoute';
+import DepartmentRoute from './components/Departments/DepartmentRoute';
 import Layout from './components/Layout';
 import ThemeProvider from './components/ThemeProvider';
 import Toaster from './components/Toaster';

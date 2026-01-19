@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { FiPlus, FiTrash2, FiMove } from 'react-icons/fi';
-import Modal from '../Modal';
-import ModalButtons from '../ModalButtons';
+import Modal from '../common/Modal';
+import ModalButtons from '../common/ModalButtons';
 import FieldPreview from './FieldPreview';
 import { FormField } from '../../services/forms.service';
 
@@ -35,6 +35,7 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
   const [helpText, setHelpText] = useState('');
   const [isRequired, setIsRequired] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [columnSpan, setColumnSpan] = useState<1 | 2 | 3>(3);
   const [options, setOptions] = useState<FieldOption[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -66,6 +67,7 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
       setHelpText(field.helpText || '');
       setIsRequired(field.isRequired || false);
       setIsVisible(field.isVisible !== false);
+      setColumnSpan(field.columnSpan || 3);
       
       // Cargar opciones si existen
       if (field.options && field.options.length > 0) {
@@ -80,19 +82,19 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
       }
       
       // Cargar validaciones
-      if (field.validations) {
-        const validations = typeof field.validations === 'string' 
-          ? JSON.parse(field.validations) 
-          : field.validations;
-        setMinLength(validations.minLength);
-        setMaxLength(validations.maxLength);
-        setPattern(validations.pattern || '');
-        setMinValue(validations.minValue);
-        setMaxValue(validations.maxValue);
-        setStep(validations.step);
-        setAcceptedFileTypes(validations.acceptedFileTypes || '');
-        setMaxFileSize(validations.maxFileSize);
-        setAllowMultiple(validations.allowMultiple || false);
+      if (field.validationRules) {
+        const rules = typeof field.validationRules === 'string' 
+          ? JSON.parse(field.validationRules) 
+          : field.validationRules;
+        setMinLength(rules.minLength);
+        setMaxLength(rules.maxLength);
+        setPattern(rules.pattern || '');
+        setMinValue(rules.minValue);
+        setMaxValue(rules.maxValue);
+        setStep(rules.step);
+        setAcceptedFileTypes(rules.acceptedFileTypes || '');
+        setMaxFileSize(rules.maxFileSize);
+        setAllowMultiple(rules.allowMultiple || false);
       }
       
       // Cargar lógica condicional
@@ -176,6 +178,7 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
         helpText: helpText || undefined,
         isRequired,
         isVisible,
+        columnSpan,
         options: needsOptions(field.fieldType) 
           ? options.map((opt, idx) => ({
               id: opt.id,
@@ -186,7 +189,7 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
               isDefault: opt.isDefault
             }))
           : undefined,
-        validations: Object.keys(validations).length > 0 ? validations : undefined,
+        validationRules: Object.keys(validations).length > 0 ? validations : undefined,
         conditionalLogic: conditionalLogic || undefined
       };
 
@@ -219,28 +222,30 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
     return result;
   };
 
-  const getAvailableValidations = () => {
-    if (!field?.fieldType) return [];
-    const code = (field.fieldType.code || field.fieldType.name || '').toLowerCase();
+  const getAvailableValidations = (): string[] => {
+    const validations: string[] = [];
+    // Usar code si existe, sino name
+    const typeCode = (field?.fieldType?.code || field?.fieldType?.name || '').toLowerCase();
     
-    const validations = [];
-    
-    // TEXT types
-    if (['text', 'textarea', 'email', 'url', 'phone'].includes(code)) {
+    // TEXT types - solo TEXT y TEXTAREA necesitan minLength/maxLength
+    // EMAIL, URL, PHONE ya tienen validación específica de formato
+    if (['text', 'textarea'].includes(typeCode)) {
       validations.push('minLength', 'maxLength');
     }
     
-    if (['text', 'email', 'url', 'phone'].includes(code)) {
+    // Solo TEXT necesita patrón personalizado
+    // EMAIL, URL, PHONE ya tienen validación de formato incorporada
+    if (typeCode === 'text') {
       validations.push('pattern');
     }
     
-    // NUMBER types
-    if (['number', 'currency', 'rating'].includes(code)) {
+    // NUMBER types - RATING no necesita validaciones porque tiene estrellas fijas
+    if (['number', 'currency'].includes(typeCode)) {
       validations.push('minValue', 'maxValue', 'step');
     }
     
     // FILE types
-    if (['file', 'image', 'multifile'].includes(code)) {
+    if (['file', 'image', 'multifile'].includes(typeCode)) {
       validations.push('fileConfig');
     }
     
@@ -251,7 +256,7 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
     // SELECT, MULTISELECT, RADIO, CHECKBOX, TOGGLE
     
     // ADVANCED types - configuraciones básicas (label, placeholder, required, visible)
-    // FIRMA (SIGNATURE), LOCATION, COLOR
+    // FIRMA (SIGNATURE), COLOR
     
     return validations;
   };
@@ -345,6 +350,24 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">Campo visible</span>
             </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Ancho del campo
+            </label>
+            <select
+              value={columnSpan}
+              onChange={(e) => setColumnSpan(Number(e.target.value) as 1 | 2 | 3)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value={1}>33% - Un tercio</option>
+              <option value={2}>50% - Mitad</option>
+              <option value={3}>100% - Ancho completo</option>
+            </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Define cuánto espacio horizontal ocupará el campo en el formulario
+            </p>
           </div>
         </div>
 
@@ -535,16 +558,155 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Tipos de archivo permitidos
                   </label>
-                  <input
-                    type="text"
-                    value={acceptedFileTypes}
-                    onChange={(e) => setAcceptedFileTypes(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Ej: .pdf,.doc,.docx o image/*"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Extensiones separadas por comas o tipos MIME (image/*, application/pdf)
-                  </p>
+                  
+                  {/* Opciones para IMAGE */}
+                  {field?.fieldType && (field.fieldType.code || field.fieldType.name || '').toLowerCase() === 'image' && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Selecciona los formatos de imagen permitidos:
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: '.jpg,.jpeg', label: 'JPG/JPEG' },
+                          { value: '.png', label: 'PNG' },
+                          { value: '.gif', label: 'GIF' },
+                          { value: '.webp', label: 'WebP' },
+                          { value: '.svg', label: 'SVG' },
+                          { value: '.bmp', label: 'BMP' }
+                        ].map((option) => (
+                          <label key={option.value} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={acceptedFileTypes.includes(option.value)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setAcceptedFileTypes(prev => prev ? `${prev},${option.value}` : option.value);
+                                } else {
+                                  setAcceptedFileTypes(prev => 
+                                    prev.split(',').filter(v => v !== option.value).join(',')
+                                  );
+                                }
+                              }}
+                              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Opciones para FILE */}
+                  {field?.fieldType && (field.fieldType.code || field.fieldType.name || '').toLowerCase() === 'file' && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Selecciona los tipos de archivo permitidos:
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: '.pdf', label: 'PDF' },
+                          { value: '.doc,.docx', label: 'Word (DOC/DOCX)' },
+                          { value: '.xls,.xlsx', label: 'Excel (XLS/XLSX)' },
+                          { value: '.ppt,.pptx', label: 'PowerPoint (PPT/PPTX)' }
+                        ].map((option) => (
+                          <label key={option.value} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={acceptedFileTypes.includes(option.value)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setAcceptedFileTypes(prev => prev ? `${prev},${option.value}` : option.value);
+                                } else {
+                                  setAcceptedFileTypes(prev => 
+                                    prev.split(',').filter(v => v !== option.value).join(',')
+                                  );
+                                }
+                              }}
+                              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Opciones para MULTIFILE (Imágenes + Archivos) */}
+                  {field?.fieldType && (field.fieldType.code || field.fieldType.name || '').toLowerCase() === 'multifile' && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Formatos de imagen:
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { value: '.jpg,.jpeg', label: 'JPG/JPEG' },
+                            { value: '.png', label: 'PNG' },
+                            { value: '.gif', label: 'GIF' },
+                            { value: '.webp', label: 'WebP' },
+                            { value: '.svg', label: 'SVG' },
+                            { value: '.bmp', label: 'BMP' }
+                          ].map((option) => (
+                            <label key={option.value} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={acceptedFileTypes.includes(option.value)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setAcceptedFileTypes(prev => prev ? `${prev},${option.value}` : option.value);
+                                  } else {
+                                    setAcceptedFileTypes(prev => 
+                                      prev.split(',').filter(v => v !== option.value).join(',')
+                                    );
+                                  }
+                                }}
+                                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                              />
+                              <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Formatos de documento:
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { value: '.pdf', label: 'PDF' },
+                            { value: '.doc,.docx', label: 'Word (DOC/DOCX)' },
+                            { value: '.xls,.xlsx', label: 'Excel (XLS/XLSX)' },
+                            { value: '.ppt,.pptx', label: 'PowerPoint (PPT/PPTX)' }
+                          ].map((option) => (
+                            <label key={option.value} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={acceptedFileTypes.includes(option.value)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setAcceptedFileTypes(prev => prev ? `${prev},${option.value}` : option.value);
+                                  } else {
+                                    setAcceptedFileTypes(prev => 
+                                      prev.split(',').filter(v => v !== option.value).join(',')
+                                    );
+                                  }
+                                }}
+                                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                              />
+                              <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {acceptedFileTypes && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      Tipos seleccionados: <span className="font-mono">{acceptedFileTypes}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>

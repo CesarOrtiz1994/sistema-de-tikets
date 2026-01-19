@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { FiUserPlus } from 'react-icons/fi';
-import Modal from './Modal';
-import ModalButtons from './ModalButtons';
-import { validateForm, assignUserSchema } from '../utils/validationSchemas';
+import Modal from '../common/Modal';
+import ModalButtons from '../common/ModalButtons';
+import { validateForm, assignUserSchema } from '../../utils/validationSchemas';
 
 interface User {
   id: string;

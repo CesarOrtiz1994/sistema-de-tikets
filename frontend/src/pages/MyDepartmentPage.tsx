@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
-import ConfirmDialog from '../components/ConfirmDialog';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import { FiUsers, FiUserPlus, FiTrash2, FiInfo } from 'react-icons/fi';
 import { departmentsService, Department, DepartmentUser } from '../services/departments.service';
 import { usersService } from '../services/users.service';
-import AssignUserModal from '../components/AssignUserModal';
+import AssignUserModal from '../components/Users/AssignUserModal';
 
 export default function MyDepartmentPage() {
   const [department, setDepartment] = useState<Department | null>(null);

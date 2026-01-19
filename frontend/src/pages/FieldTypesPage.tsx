@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { FiType, FiHash, FiList, FiCalendar, FiFile, FiCode } from 'react-icons/fi';
-import PageHeader from '../components/PageHeader';
-import Card from '../components/Card';
-import Badge from '../components/Badge';
-import LoadingSpinner from '../components/LoadingSpinner';
-import EmptyState from '../components/EmptyState';
+import PageHeader from '../components/common/PageHeader';
+import Card from '../components/common/Card';
+import Badge from '../components/common/Badge';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
 import { toast } from 'sonner';
 

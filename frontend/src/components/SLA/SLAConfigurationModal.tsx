@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FiSave } from 'react-icons/fi';
-import Modal from './Modal';
-import ModalButtons from './ModalButtons';
-import { validateForm, slaConfigurationSchema } from '../utils/validationSchemas';
+import Modal from '../common/Modal';
+import ModalButtons from '../common/ModalButtons';
+import { validateForm, slaConfigurationSchema } from '../../utils/validationSchemas';
 import { toast } from 'sonner';
 
 interface SLAConfiguration {

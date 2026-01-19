@@ -153,9 +153,19 @@ export interface FileFieldProps extends BaseFieldProps {
 // Props específicos para checkbox/toggle
 export interface CheckboxFieldProps extends BaseFieldProps {
   checked?: boolean;
+  onChange?: (checked: boolean) => void;
 }
 
-// Props específicos para radio
+export interface CheckboxGroupFieldProps extends BaseFieldProps {
+  value?: string[];
+  onChange?: (values: string[]) => void;
+  options: Array<{
+    value: string;
+    label: string;
+    disabled?: boolean;
+  }>;
+}
+
 export interface RadioFieldProps extends BaseFieldProps {
   options: FieldOption[];
 }

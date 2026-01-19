@@ -2,16 +2,17 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { FiArrowLeft, FiSave, FiEye, FiCopy, FiTrash2 } from 'react-icons/fi';
-import PageHeader from '../components/PageHeader';
-import Card from '../components/Card';
-import Badge from '../components/Badge';
-import LoadingSpinner from '../components/LoadingSpinner';
-import Modal from '../components/Modal';
-import ModalButtons from '../components/ModalButtons';
+import PageHeader from '../components/common/PageHeader';
+import Card from '../components/common/Card';
+import Badge from '../components/common/Badge';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import Modal from '../components/common/Modal';
+import ModalButtons from '../components/common/ModalButtons';
 import FormBuilder from '../components/FormBuilder/FormBuilder';
+import DynamicFormRenderer from '../components/DynamicForm/DynamicFormRenderer';
 import { formsService, TicketForm, UpdateFormData } from '../services/forms.service';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
-import ConfirmDialog from '../components/ConfirmDialog';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 export default function FormBuilderPage() {
   const { formId } = useParams<{ formId: string }>();
@@ -22,6 +23,7 @@ export default function FormBuilderPage() {
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [duplicateFormName, setDuplicateFormName] = useState('');
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
 
@@ -160,7 +162,7 @@ export default function FormBuilderPage() {
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <button
-              onClick={() => navigate('/dashboard/forms')}
+              onClick={() => navigate('/forms')}
               className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               <FiArrowLeft className="w-5 h-5" />
@@ -192,7 +194,7 @@ export default function FormBuilderPage() {
               </button>
 
               <button
-                onClick={() => toast.info('Vista previa en desarrollo')}
+                onClick={() => setIsPreviewModalOpen(true)}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
               >
                 <FiEye className="w-4 h-4" />
@@ -306,6 +308,29 @@ export default function FormBuilderPage() {
               autoFocus
             />
           </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Vista Previa */}
+      <Modal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        title="Vista Previa del Formulario"
+        size="xl"
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          {form && (
+            <DynamicFormRenderer
+              form={form}
+              onSubmit={(values) => {
+                console.log('Preview form values:', values);
+                toast.success('Vista previa - Formulario válido');
+                setIsPreviewModalOpen(false);
+              }}
+              submitButtonText="Probar Envío"
+              showProgress={true}
+            />
+          )}
         </div>
       </Modal>
 

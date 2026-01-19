@@ -26,6 +26,33 @@ export class TicketFormController {
     }
   }
 
+  async getActiveDepartmentForm(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const form = await ticketFormService.getActiveDepartmentForm(id);
+      
+      return res.json({
+        success: true,
+        data: form
+      });
+    } catch (error) {
+      logger.error('Error getting active department form:', error);
+      
+      if (error instanceof Error && error.message === 'No hay formulario activo para este departamento') {
+        return res.status(404).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Error al obtener formulario activo del departamento',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   async getFormById(req: Request, res: Response) {
     try {
       const { id } = req.params;

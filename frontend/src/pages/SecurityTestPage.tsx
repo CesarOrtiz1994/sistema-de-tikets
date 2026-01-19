@@ -7,8 +7,8 @@ import {
   userSchema,
   departmentSchema
 } from '../utils/validationSchemas';
-import PageHeader from '../components/PageHeader';
-import Card from '../components/Card';
+import PageHeader from '../components/common/PageHeader';
+import Card from '../components/common/Card';
 
 interface TestResult {
   input: string;

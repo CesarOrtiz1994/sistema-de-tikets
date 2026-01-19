@@ -70,10 +70,15 @@ function SortableField({
             )}
           </div>
           
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {field.fieldType?.name || 'Campo'}
-            {field.placeholder && ` • ${field.placeholder}`}
-          </p>
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <span>{field.fieldType?.name || 'Campo'}</span>
+            {field.columnSpan && (
+              <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded">
+                {field.columnSpan === 3 ? '100%' : field.columnSpan === 2 ? '50%' : '33%'}
+              </span>
+            )}
+            {field.placeholder && <span>• {field.placeholder}</span>}
+          </div>
           
           {field.helpText && (
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">

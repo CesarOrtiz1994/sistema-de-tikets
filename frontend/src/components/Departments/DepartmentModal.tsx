@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Department, CreateDepartmentData, UpdateDepartmentData } from '../services/departments.service';
-import Modal from './Modal';
-import ModalButtons from './ModalButtons';
-import { validateForm, departmentSchema } from '../utils/validationSchemas';
+import { Department, CreateDepartmentData, UpdateDepartmentData } from '../../services/departments.service';
+import Modal from '../common/Modal';
+import ModalButtons from '../common/ModalButtons';
+import { validateForm, departmentSchema } from '../../utils/validationSchemas';
 
 interface DepartmentModalProps {
   isOpen: boolean;

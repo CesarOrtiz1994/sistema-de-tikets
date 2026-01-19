@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import RoleGuard from '../components/RoleGuard';
-import DataTable from '../components/DataTable';
-import Pagination from '../components/Pagination';
-import PageHeader from '../components/PageHeader';
-import Card from '../components/Card';
-import Badge from '../components/Badge';
-import LoadingSpinner from '../components/LoadingSpinner';
+import DataTable from '../components/common/DataTable';
+import Pagination from '../components/common/Pagination';
+import PageHeader from '../components/common/PageHeader';
+import Card from '../components/common/Card';
+import Badge from '../components/common/Badge';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { RoleType } from '../types/permissions';
 import { 
   FiShield, 

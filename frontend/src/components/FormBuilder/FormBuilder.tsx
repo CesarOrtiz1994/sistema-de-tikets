@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { toast } from 'sonner';
-import { FiCheck } from 'react-icons/fi';
 import FieldPalette from './FieldPalette';
 import BuilderCanvas from './BuilderCanvas';
 import FieldEditor from './FieldEditor';
-import ConfirmDialog from '../ConfirmDialog';
 import { FormField, formsService } from '../../services/forms.service';
 import { fieldTypesService, FieldType } from '../../services/fieldTypes.service';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 interface FormBuilderProps {
   formId: string;
@@ -23,8 +21,6 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState(false);
-  const [showActivateDialog, setShowActivateDialog] = useState(false);
-  const [isActivating, setIsActivating] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -139,16 +135,20 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
 
   const handleSaveField = async (updatedField: FormField) => {
     try {
-      const savedField = await formsService.updateField(updatedField.id, {
+      const payload = {
         label: updatedField.label,
         placeholder: updatedField.placeholder,
         helpText: updatedField.helpText,
         isRequired: updatedField.isRequired,
         isVisible: updatedField.isVisible,
-        validationRules: updatedField.validations,
-      });
+        columnSpan: updatedField.columnSpan,
+        validationRules: updatedField.validationRules,
+        options: updatedField.options,
+      };
+      console.log('Guardando campo con payload:', payload);
+      const savedField = await formsService.updateField(updatedField.id, payload);
 
-      setFields(fields.map(f => f.id === savedField.id ? { ...savedField, fieldType: f.fieldType, options: updatedField.options } : f));
+      setFields(fields.map(f => f.id === savedField.id ? { ...savedField, fieldType: f.fieldType } : f));
       toast.success('Campo actualizado exitosamente');
     } catch (error) {
       console.error('Error updating field:', error);
@@ -184,30 +184,6 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
     }
   };
 
-  const handleActivateForm = async () => {
-    if (fields.length === 0) {
-      toast.error('El formulario debe tener al menos un campo para ser activado');
-      return;
-    }
-
-    setShowActivateDialog(true);
-  };
-
-  const confirmActivateForm = async () => {
-    setIsActivating(true);
-    try {
-      await formsService.activateForm(formId, false);
-      toast.success('Formulario activado exitosamente');
-      setShowActivateDialog(false);
-      await loadData();
-    } catch (error: any) {
-      console.error('Error activating form:', error);
-      toast.error(error.response?.data?.message || 'Error al activar formulario');
-    } finally {
-      setIsActivating(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -218,23 +194,11 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
 
   return (
     <>
-      {/* Botones de acción */}
+      {/* Contador de campos */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            {fields.length} {fields.length === 1 ? 'campo' : 'campos'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleActivateForm}
-            disabled={isActivating || fields.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-          >
-            <FiCheck className="w-4 h-4" />
-            {isActivating ? 'Activando...' : 'Guardar y Activar'}
-          </button>
-        </div>
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {fields.length} {fields.length === 1 ? 'campo' : 'campos'}
+        </span>
       </div>
 
       <DndContext
@@ -277,17 +241,6 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
           allFields={fields}
         />
       </DndContext>
-
-      <ConfirmDialog
-        isOpen={showActivateDialog}
-        title="Activar Formulario"
-        message="¿Estás seguro de que deseas activar este formulario? Si hay otro formulario activo en este departamento, será archivado automáticamente."
-        confirmText="Activar"
-        cancelText="Cancelar"
-        type="info"
-        onConfirm={confirmActivateForm}
-        onCancel={() => setShowActivateDialog(false)}
-      />
     </>
   );
 }

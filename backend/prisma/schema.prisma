@@ -282,6 +282,9 @@ model FormField {
   isVisible  Boolean @default(true) @map("is_visible")
 
   order Int @default(0)
+  row   Int? @default(0)
+  columnInRow Int? @map("column_in_row") @default(0)
+  columnSpan  Int? @map("column_span") @default(3)
 
   defaultValue String? @map("default_value")
 

@@ -23,10 +23,13 @@ export interface FormField {
   isRequired: boolean;
   isVisible: boolean;
   order: number;
+  row?: number;
+  columnInRow?: number;
   defaultValue?: string;
   validationRules?: any;
   validations?: any;
   conditionalLogic?: any;
+  columnSpan?: 1 | 2 | 3;
   fieldType?: {
     id: string;
     name: string;
@@ -81,8 +84,18 @@ export interface UpdateFieldData {
   isRequired?: boolean;
   isVisible?: boolean;
   order?: number;
+  row?: number;
+  columnInRow?: number;
   defaultValue?: string;
+  columnSpan?: 1 | 2 | 3;
   validationRules?: any;
+  options?: Array<{
+    id?: string;
+    label: string;
+    value: string;
+    order: number;
+    isDefault: boolean;
+  }>;
 }
 
 class FormsService {
@@ -141,6 +154,11 @@ class FormsService {
 
   async reorderFields(formId: string, fieldOrders: { id: string; order: number }[]): Promise<void> {
     await api.put(`/api/forms/${formId}/fields/reorder`, { fieldOrders });
+  }
+
+  async getActiveDepartmentForm(departmentId: string): Promise<TicketForm> {
+    const response = await api.get(`/api/forms/departments/${departmentId}/active-form`);
+    return response.data.data;
   }
 }
 

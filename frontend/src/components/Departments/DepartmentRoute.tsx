@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
-import { usePermissions } from '../hooks/usePermissions';
-import { RoleType } from '../types/permissions';
-import DepartmentsManagementPage from '../pages/DepartmentsManagementPage';
-import MyDepartmentPage from '../pages/MyDepartmentPage';
+import { usePermissions } from '../../hooks/usePermissions';
+import { RoleType } from '../../types/permissions';
+import DepartmentsManagementPage from '../../pages/DepartmentsManagementPage';
+import MyDepartmentPage from '../../pages/MyDepartmentPage';
 
 export default function DepartmentRoute() {
   const { hasRole } = usePermissions();

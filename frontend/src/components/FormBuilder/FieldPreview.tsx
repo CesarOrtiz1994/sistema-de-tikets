@@ -171,13 +171,6 @@ export default function FieldPreview({
       );
     }
 
-    if (fieldTypeCode === 'location') {
-      return (
-        <div className="w-full h-32 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center cursor-not-allowed">
-          <p className="text-sm text-gray-500 dark:text-gray-400">📍 Selector de ubicación</p>
-        </div>
-      );
-    }
 
     if (fieldTypeCode === 'color') {
       return (
