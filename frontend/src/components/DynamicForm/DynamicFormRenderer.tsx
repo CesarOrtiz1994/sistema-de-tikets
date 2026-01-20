@@ -223,6 +223,7 @@ export default function DynamicFormRenderer({
             accept={field.validationRules?.acceptedFileTypes || '*/*'}
             maxSize={field.validationRules?.maxFileSize}
             multiple={fieldTypeName === 'MULTIFILE'}
+            fieldType={fieldTypeName as 'FILE' | 'MULTIFILE'}
           />
         );
 
@@ -230,8 +231,9 @@ export default function DynamicFormRenderer({
         return (
           <FileField
             {...commonProps}
-            accept="image/*"
+            accept={field.validationRules?.acceptedFileTypes || 'image/*'}
             maxSize={field.validationRules?.maxFileSize}
+            fieldType="IMAGE"
           />
         );
 

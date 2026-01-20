@@ -148,6 +148,7 @@ export interface FileFieldProps extends BaseFieldProps {
   multiple?: boolean;
   maxSize?: number;
   maxFiles?: number;
+  fieldType?: 'FILE' | 'IMAGE' | 'MULTIFILE';
 }
 
 // Props específicos para checkbox/toggle

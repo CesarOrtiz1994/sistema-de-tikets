@@ -20,6 +20,8 @@ import fieldTypeRoutes from './routes/fieldType.routes';
 import slaConfigurationRoutes from './routes/slaConfiguration.routes';
 import departmentSLARoutes from './routes/departmentSLA.routes';
 import ticketFormRoutes from './routes/ticketForm.routes';
+import uploadRoutes from './routes/upload.routes';
+import fileCleanupRoutes from './routes/fileCleanup.routes';
 
 const app: Application = express();
 
@@ -71,6 +73,15 @@ app.use('/api/sla-configurations', slaConfigurationRoutes);
 
 // Rutas de formularios de tickets (FASE 3 - SEMANA 7)
 app.use('/api/forms', ticketFormRoutes);
+
+// Rutas de upload de archivos (SEMANA 11)
+app.use('/api/upload', uploadRoutes);
+
+// Rutas de limpieza de archivos (SEMANA 11)
+app.use('/api/cleanup', fileCleanupRoutes);
+
+// Servir archivos estáticos (uploads)
+app.use('/uploads', express.static('uploads'));
 
 // Ruta de prueba
 app.get('/api/health', (_req, res) => {

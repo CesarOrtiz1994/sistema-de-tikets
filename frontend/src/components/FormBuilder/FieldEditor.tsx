@@ -51,7 +51,7 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
   
   // Configuración específica para FILE
   const [acceptedFileTypes, setAcceptedFileTypes] = useState('');
-  const [maxFileSize, setMaxFileSize] = useState<number | undefined>();
+  const [maxFileSizeMB, setMaxFileSizeMB] = useState<number | undefined>();
   const [allowMultiple, setAllowMultiple] = useState(false);
   
   // Lógica condicional
@@ -93,7 +93,8 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
         setMaxValue(rules.maxValue);
         setStep(rules.step);
         setAcceptedFileTypes(rules.acceptedFileTypes || '');
-        setMaxFileSize(rules.maxFileSize);
+        // Convertir de bytes a MB para mostrar
+        setMaxFileSizeMB(rules.maxFileSize ? rules.maxFileSize / (1024 * 1024) : undefined);
         setAllowMultiple(rules.allowMultiple || false);
       }
       
@@ -158,7 +159,8 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
       if (maxValue !== undefined) validations.maxValue = maxValue;
       if (step) validations.step = step;
       if (acceptedFileTypes) validations.acceptedFileTypes = acceptedFileTypes;
-      if (maxFileSize) validations.maxFileSize = maxFileSize;
+      // Convertir de MB a bytes para guardar
+      if (maxFileSizeMB) validations.maxFileSize = maxFileSizeMB * 1024 * 1024;
       if (allowMultiple) validations.allowMultiple = allowMultiple;
 
       // Construir lógica condicional
@@ -607,26 +609,35 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
                           { value: '.pdf', label: 'PDF' },
                           { value: '.doc,.docx', label: 'Word (DOC/DOCX)' },
                           { value: '.xls,.xlsx', label: 'Excel (XLS/XLSX)' },
+                          { value: '.csv', label: 'CSV' },
+                          { value: '.txt', label: 'Texto (TXT)' },
                           { value: '.ppt,.pptx', label: 'PowerPoint (PPT/PPTX)' }
-                        ].map((option) => (
+                        ].map((option) => {
+                          const optionExtensions = option.value.split(',');
+                          const currentExtensions = acceptedFileTypes.split(',').filter(v => v.trim());
+                          const isChecked = optionExtensions.every(ext => currentExtensions.includes(ext));
+                          
+                          return (
                           <label key={option.value} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={acceptedFileTypes.includes(option.value)}
+                              checked={isChecked}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setAcceptedFileTypes(prev => prev ? `${prev},${option.value}` : option.value);
+                                  const newExtensions = [...currentExtensions, ...optionExtensions];
+                                  const uniqueExtensions = Array.from(new Set(newExtensions)).filter(v => v);
+                                  setAcceptedFileTypes(uniqueExtensions.join(','));
                                 } else {
-                                  setAcceptedFileTypes(prev => 
-                                    prev.split(',').filter(v => v !== option.value).join(',')
-                                  );
+                                  const remainingExtensions = currentExtensions.filter(ext => !optionExtensions.includes(ext));
+                                  setAcceptedFileTypes(remainingExtensions.join(','));
                                 }
                               }}
                               className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                             />
                             <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
                           </label>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -677,26 +688,35 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
                             { value: '.pdf', label: 'PDF' },
                             { value: '.doc,.docx', label: 'Word (DOC/DOCX)' },
                             { value: '.xls,.xlsx', label: 'Excel (XLS/XLSX)' },
+                            { value: '.csv', label: 'CSV' },
+                            { value: '.txt', label: 'Texto (TXT)' },
                             { value: '.ppt,.pptx', label: 'PowerPoint (PPT/PPTX)' }
-                          ].map((option) => (
+                          ].map((option) => {
+                            const optionExtensions = option.value.split(',');
+                            const currentExtensions = acceptedFileTypes.split(',').filter(v => v.trim());
+                            const isChecked = optionExtensions.every(ext => currentExtensions.includes(ext));
+                            
+                            return (
                             <label key={option.value} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                               <input
                                 type="checkbox"
-                                checked={acceptedFileTypes.includes(option.value)}
+                                checked={isChecked}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setAcceptedFileTypes(prev => prev ? `${prev},${option.value}` : option.value);
+                                    const newExtensions = [...currentExtensions, ...optionExtensions];
+                                    const uniqueExtensions = Array.from(new Set(newExtensions)).filter(v => v);
+                                    setAcceptedFileTypes(uniqueExtensions.join(','));
                                   } else {
-                                    setAcceptedFileTypes(prev => 
-                                      prev.split(',').filter(v => v !== option.value).join(',')
-                                    );
+                                    const remainingExtensions = currentExtensions.filter(ext => !optionExtensions.includes(ext));
+                                    setAcceptedFileTypes(remainingExtensions.join(','));
                                   }
                                 }}
                                 className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                               />
                               <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
                             </label>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -715,8 +735,8 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
                   </label>
                   <input
                     type="number"
-                    value={maxFileSize ?? ''}
-                    onChange={(e) => setMaxFileSize(e.target.value ? parseFloat(e.target.value) : undefined)}
+                    value={maxFileSizeMB ?? ''}
+                    onChange={(e) => setMaxFileSizeMB(e.target.value ? parseFloat(e.target.value) : undefined)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="Ej: 5"
                     min="0"

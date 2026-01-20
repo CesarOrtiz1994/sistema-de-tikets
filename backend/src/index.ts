@@ -2,6 +2,7 @@ import app from './app';
 import { env } from './config/env';
 import logger from './config/logger';
 import { connectDatabase, disconnectDatabase } from './config/database';
+import fileCleanupJob from './jobs/fileCleanup.job';
 
 const startServer = async () => {
   try {
@@ -12,6 +13,9 @@ const startServer = async () => {
       logger.info(`Server running on port ${env.PORT}`);
       logger.info(`Environment: ${env.NODE_ENV}`);
       logger.info(`Health check: http://localhost:${env.PORT}/api/health`);
+      
+      // Iniciar jobs de limpieza de archivos
+      fileCleanupJob.start();
     });
 
     // Manejo de errores no capturados
@@ -32,6 +36,7 @@ const startServer = async () => {
     // Manejo de señales de terminación
     process.on('SIGTERM', () => {
       logger.info('SIGTERM signal received: closing HTTP server');
+      fileCleanupJob.stop();
       server.close(async () => {
         await disconnectDatabase();
         logger.info('HTTP server closed');
@@ -40,6 +45,7 @@ const startServer = async () => {
 
     process.on('SIGINT', () => {
       logger.info('SIGINT signal received: closing HTTP server');
+      fileCleanupJob.stop();
       server.close(async () => {
         await disconnectDatabase();
         logger.info('HTTP server closed');

@@ -407,33 +407,55 @@
 **Objetivo:** Upload de archivos funcional
 
 #### Backend
-- [ ] Configurar almacenamiento local en servidor:
-  - Crear directorio `/uploads` con subdirectorios por tipo
-  - Configurar permisos adecuados (755)
-  - Estructura: `/uploads/{year}/{month}/{uuid}-{filename}`
-- [ ] Instalar Multer + Sharp
-- [ ] Endpoint:
-  - `POST /api/upload` - Subir archivo
-  - Validar tipo y tamaño
-  - Redimensionar imágenes si aplica
-  - Guardar en disco local
-  - Retornar URL relativa del archivo
-- [ ] Endpoint para servir archivos:
-  - `GET /api/files/:year/:month/:filename` - Servir archivo
-  - Verificar permisos de acceso
-  - Stream de archivos grandes
-- [ ] Middleware de límites de archivo
-- [ ] Job programado para limpieza de archivos huérfanos
+- [x] Configurar almacenamiento local en servidor:
+  - [x] Crear directorio `/uploads` con subdirectorios por tipo (images, documents, temp)
+  - [x] Configurar permisos adecuados (755)
+  - [x] Estructura: `/uploads/{type}/{year}/{month}/{uuid}.ext`
+- [x] Instalar Multer + Sharp
+  - [x] multer, sharp, uuid, @types/multer, @types/uuid
+- [x] Endpoints implementados:
+  - [x] `POST /api/upload/single` - Subir un archivo
+  - [x] `POST /api/upload/multiple` - Subir múltiples archivos (máx 10)
+  - [x] `DELETE /api/upload` - Eliminar archivo
+  - [x] Validar tipo y tamaño con Zod
+  - [x] Redimensionar imágenes con Sharp (1920x1080, calidad 85%)
+  - [x] Crear thumbnails (200x200)
+  - [x] Guardar en disco local con UUID
+  - [x] Retornar URL completa del archivo
+- [x] Servir archivos estáticos:
+  - [x] `GET /uploads/*` - Servir archivos estáticos con express.static
+- [x] Middleware de límites de archivo
+  - [x] Validación de tamaño según tipo (5MB imágenes, 10MB documentos)
+  - [x] Validación de tipos MIME permitidos
+- [x] Job programado para limpieza de archivos huérfanos
+  - [x] Limpieza de archivos temporales (cada hora)
+  - [x] Limpieza de archivos huérfanos (diario a las 2 AM)
+  - [x] Limpieza de directorios vacíos (semanal)
+  - [x] Reporte de estadísticas (diario a las 6 AM)
+  - [x] Endpoints de administración manual
 - [ ] Sistema de respaldo de archivos (backup)
 
 #### Frontend
-- [ ] Componente FileUpload con drag & drop
-- [ ] Preview de imágenes
-- [ ] Lista de archivos subidos
-- [ ] Progress bar de upload
-- [ ] Validación de tipo y tamaño en frontend
-- [ ] Manejo de errores de upload
-- [ ] Caché de previews de imágenes
+- [x] Componente FileUpload con drag & drop
+  - [x] Drag & drop funcional con feedback visual
+  - [x] Soporte para múltiples archivos
+- [x] Preview de imágenes
+  - [x] Preview automático al seleccionar
+  - [x] Thumbnails de archivos subidos
+- [x] Lista de archivos subidos
+  - [x] Visualización con iconos y tamaños
+  - [x] Estado de carga con indicadores
+- [x] Progress bar de upload
+  - [x] Barra de progreso animada
+  - [x] Porcentaje en tiempo real
+- [x] Validación de tipo y tamaño en frontend
+  - [x] Validación con Zod
+  - [x] Mensajes de error descriptivos
+- [x] Manejo de errores de upload
+  - [x] Errores por archivo individual
+  - [x] Feedback visual de éxito/error
+- [x] Caché de previews de imágenes
+  - [x] Previews en memoria durante upload
 
 **Entregable:** Upload de archivos funcional y seguro con almacenamiento local
 
