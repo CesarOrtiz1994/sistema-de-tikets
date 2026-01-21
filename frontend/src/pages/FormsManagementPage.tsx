@@ -11,16 +11,21 @@ import ModalButtons from '../components/common/ModalButtons';
 import DataTable from '../components/common/DataTable';
 import SearchInput from '../components/common/SearchInput';
 import { formsService, TicketForm } from '../services/forms.service';
-import { departmentsService } from '../services/departments.service';
+import { departmentsService, Department } from '../services/departments.service';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import { useAuth } from '../hooks/useAuth';
 
 export default function FormsManagementPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [forms, setForms] = useState<TicketForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentId, setDepartmentId] = useState<string>('');
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState<string>('all');
+  const [newFormDepartmentId, setNewFormDepartmentId] = useState<string>('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newFormName, setNewFormName] = useState('');
   const [newFormDescription, setNewFormDescription] = useState('');
@@ -31,6 +36,8 @@ export default function FormsManagementPage() {
   const [formToDuplicate, setFormToDuplicate] = useState<TicketForm | null>(null);
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
 
+  const isSuperAdmin = user?.roleType === 'SUPER_ADMIN';
+
   useEffect(() => {
     loadDepartmentAndForms();
   }, []);
@@ -38,16 +45,35 @@ export default function FormsManagementPage() {
   const loadDepartmentAndForms = async () => {
     try {
       setLoading(true);
-      // Obtener el departamento del usuario actual
-      const response = await departmentsService.getAllDepartments({ page: 1, limit: 1 });
       
-      if (response.data.length > 0) {
-        const myDept = response.data[0];
-        setDepartmentId(myDept.id);
-        await loadForms(myDept.id);
+      if (isSuperAdmin) {
+        // Super Admin: cargar todos los departamentos
+        const response = await departmentsService.getAllDepartments({ isActive: true });
+        setDepartments(response.data || []);
+        
+        if (response.data.length > 0) {
+          const firstDept = response.data[0];
+          setDepartmentId(firstDept.id);
+          setNewFormDepartmentId(firstDept.id);
+          await loadAllForms();
+        } else {
+          toast.error('No hay departamentos disponibles');
+          setLoading(false);
+        }
       } else {
-        toast.error('No tienes un departamento asignado');
-        setLoading(false);
+        // Admin de Departamento: cargar solo su departamento
+        const response = await departmentsService.getAllDepartments({ page: 1, limit: 1 });
+        
+        if (response.data.length > 0) {
+          const myDept = response.data[0];
+          setDepartmentId(myDept.id);
+          setNewFormDepartmentId(myDept.id);
+          setDepartments([myDept]);
+          await loadForms(myDept.id);
+        } else {
+          toast.error('No tienes un departamento asignado');
+          setLoading(false);
+        }
       }
     } catch (error) {
       console.error('Error loading department:', error);
@@ -69,9 +95,35 @@ export default function FormsManagementPage() {
     }
   };
 
+  const loadAllForms = async () => {
+    try {
+      setLoading(true);
+      const allForms: TicketForm[] = [];
+      
+      for (const dept of departments) {
+        try {
+          const data = await formsService.getDepartmentForms(dept.id);
+          allForms.push(...data);
+        } catch (error) {
+          console.error(`Error loading forms for department ${dept.name}:`, error);
+        }
+      }
+      
+      setForms(allForms);
+    } catch (error) {
+      console.error('Error loading all forms:', error);
+      toast.error('Error al cargar los formularios');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOpenCreateModal = () => {
     setNewFormName('');
     setNewFormDescription('');
+    if (!isSuperAdmin) {
+      setNewFormDepartmentId(departmentId);
+    }
     setIsCreateModalOpen(true);
   };
 
@@ -81,14 +133,14 @@ export default function FormsManagementPage() {
       return;
     }
 
-    if (!departmentId) {
-      toast.error('No se pudo obtener el departamento');
+    if (!newFormDepartmentId) {
+      toast.error('Selecciona un departamento');
       return;
     }
 
     try {
       const newForm = await formsService.createForm({
-        departmentId,
+        departmentId: newFormDepartmentId,
         name: newFormName.trim(),
         description: newFormDescription.trim() || undefined,
         status: 'DRAFT'
@@ -170,10 +222,20 @@ export default function FormsManagementPage() {
     }
   };
 
-  const filteredForms = forms.filter(form =>
-    form.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredForms = forms.filter(form => {
+    const matchesSearch = form.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesDepartment = selectedDepartmentFilter === 'all' || 
+      form.departmentId === selectedDepartmentFilter;
+    
+    return matchesSearch && matchesDepartment;
+  });
+
+  const getDepartmentName = (deptId: string) => {
+    const dept = departments.find(d => d.id === deptId);
+    return dept?.name || 'Desconocido';
+  };
 
   if (loading) return <LoadingSpinner />;
 
@@ -194,18 +256,49 @@ export default function FormsManagementPage() {
       />
 
       <Card>
-        <SearchInput
-          value={searchTerm}
-          onChange={(value) => setSearchTerm(value)}
-          placeholder="Buscar formularios..."
-          className="w-full"
-        />
+        <div className="space-y-4">
+          <SearchInput
+            value={searchTerm}
+            onChange={(value) => setSearchTerm(value)}
+            placeholder="Buscar formularios..."
+            className="w-full"
+          />
+          
+          {isSuperAdmin && departments.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Filtrar por departamento
+              </label>
+              <select
+                value={selectedDepartmentFilter}
+                onChange={(e) => setSelectedDepartmentFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="all">Todos los departamentos</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </Card>
 
       <DataTable
         data={filteredForms}
         getRowKey={(form) => form.id}
         columns={[
+          ...(isSuperAdmin ? [{
+            key: 'department',
+            header: 'Departamento',
+            render: (form: TicketForm) => (
+              <div className="text-sm text-gray-900 dark:text-gray-100">
+                {getDepartmentName(form.departmentId)}
+              </div>
+            )
+          }] : []),
           {
             key: 'form',
             header: 'Formulario',
@@ -304,12 +397,32 @@ export default function FormsManagementPage() {
             onConfirm={handleCreateForm}
             cancelText="Cancelar"
             confirmText="Crear Formulario"
-            confirmDisabled={!newFormName.trim()}
+            confirmDisabled={!newFormName.trim() || !newFormDepartmentId}
             variant="primary"
           />
         }
       >
         <div className="space-y-4">
+          {isSuperAdmin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Departamento *
+              </label>
+              <select
+                value={newFormDepartmentId}
+                onChange={(e) => setNewFormDepartmentId(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">Selecciona un departamento</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Nombre del formulario *
@@ -320,7 +433,7 @@ export default function FormsManagementPage() {
               onChange={(e) => setNewFormName(e.target.value)}
               placeholder="Ej: Formulario de Soporte Técnico"
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              autoFocus
+              autoFocus={!isSuperAdmin}
             />
           </div>
 

@@ -5,6 +5,7 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import DashboardHomePage from './pages/DashboardHomePage';
 import TicketsPage from './pages/TicketsPage';
+import CreateTicketPage from './pages/CreateTicketPage';
 import UsersPage from './pages/UsersPage';
 import AuditPage from './pages/AuditPage';
 import FieldTypesPage from './pages/FieldTypesPage';
@@ -94,6 +95,17 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <TicketsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tickets/create"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <CreateTicketPage />
               </Layout>
             </ProtectedRoute>
           }

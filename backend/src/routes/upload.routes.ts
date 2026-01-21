@@ -4,6 +4,7 @@ import { upload, validateFileSize } from '../config/multer';
 import { authenticate } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validateZod';
 import { deleteFileSchema } from '../validators/upload.validator';
+import { uploadLimiter, deletionLimiter } from '../middlewares/rateLimiter.middleware';
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use(authenticate);
  */
 router.post(
   '/single',
+  uploadLimiter,
   upload.single('file'),
   validateFileSize,
   uploadController.uploadSingle
@@ -29,6 +31,7 @@ router.post(
  */
 router.post(
   '/multiple',
+  uploadLimiter,
   upload.array('files', 10),
   validateFileSize,
   uploadController.uploadMultiple
@@ -41,6 +44,7 @@ router.post(
  */
 router.delete(
   '/',
+  deletionLimiter,
   validateBody(deleteFileSchema),
   uploadController.deleteFile
 );

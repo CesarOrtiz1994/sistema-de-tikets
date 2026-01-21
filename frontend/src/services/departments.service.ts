@@ -16,7 +16,8 @@ export interface Department {
     email: string;
   };
   _count?: {
-    departmentUsers: number;
+    users: number;
+    ticketAccess: number;
   };
 }
 
@@ -104,6 +105,36 @@ export const departmentsService = {
 
   async getDepartmentUsers(departmentId: string) {
     const response = await api.get(`/api/departments/${departmentId}/users`);
+    return response.data;
+  },
+
+  async getAccessibleDepartments() {
+    const response = await api.get('/api/departments/accessible');
+    return response.data.data;
+  },
+
+  async getUsersWithAccessToDepartment(departmentId: string) {
+    const response = await api.get(`/api/departments/${departmentId}/users-with-access`);
+    return response.data.data;
+  },
+
+  async grantUserAccessToDepartment(departmentId: string, userId: string, role: 'ADMIN' | 'MEMBER' = 'MEMBER') {
+    const response = await api.post(`/api/departments/${departmentId}/grant-access`, {
+      userId,
+      role
+    });
+    return response.data;
+  },
+
+  async revokeUserAccessFromDepartment(departmentId: string, userId: string) {
+    const response = await api.delete(`/api/departments/${departmentId}/revoke-access/${userId}`);
+    return response.data;
+  },
+
+  async setDepartmentAsDefault(departmentId: string, isDefault: boolean) {
+    const response = await api.put(`/api/departments/${departmentId}/set-default`, {
+      isDefault
+    });
     return response.data;
   }
 };

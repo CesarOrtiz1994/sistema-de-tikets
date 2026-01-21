@@ -5,6 +5,12 @@ import { isDeptAdmin } from '../middlewares/permissions.middleware';
 import { validateBody } from '../middlewares/validateZod';
 import { auditAction } from '../middlewares/audit.middleware';
 import {
+  formCreationLimiter,
+  formDuplicationLimiter,
+  fieldOperationsLimiter,
+  deletionLimiter
+} from '../middlewares/rateLimiter.middleware';
+import {
   createFormSchema,
   updateFormSchema,
   addFieldSchema,
@@ -50,6 +56,7 @@ router.post(
   '/',
   authenticate,
   isDeptAdmin(),
+  formCreationLimiter,
   validateBody(createFormSchema),
   auditAction('CREATE_FORM', 'ticket_form') as any,
   ticketFormController.createForm
@@ -70,6 +77,7 @@ router.delete(
   '/:id',
   authenticate,
   isDeptAdmin(),
+  deletionLimiter,
   auditAction('DELETE_FORM', 'ticket_form') as any,
   ticketFormController.deleteForm
 );
@@ -88,6 +96,7 @@ router.post(
   '/:id/duplicate',
   authenticate,
   isDeptAdmin(),
+  formDuplicationLimiter,
   validateBody(duplicateFormSchema),
   auditAction('DUPLICATE_FORM', 'ticket_form') as any,
   ticketFormController.duplicateForm
@@ -120,6 +129,7 @@ router.post(
   '/fields',
   authenticate,
   isDeptAdmin(),
+  fieldOperationsLimiter,
   validateBody(addFieldSchema),
   auditAction('ADD_FORM_FIELD', 'form_field') as any,
   ticketFormController.addFieldToForm
@@ -130,6 +140,7 @@ router.put(
   '/fields/:id',
   authenticate,
   isDeptAdmin(),
+  fieldOperationsLimiter,
   validateBody(updateFieldSchema),
   auditAction('UPDATE_FORM_FIELD', 'form_field') as any,
   ticketFormController.updateFormField
@@ -140,6 +151,7 @@ router.delete(
   '/fields/:id',
   authenticate,
   isDeptAdmin(),
+  fieldOperationsLimiter,
   auditAction('DELETE_FORM_FIELD', 'form_field') as any,
   ticketFormController.deleteFormField
 );

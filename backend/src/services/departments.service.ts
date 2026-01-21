@@ -77,7 +77,8 @@ export class DepartmentsService {
           },
           _count: {
             select: {
-              users: true
+              users: true,
+              ticketAccess: true
             }
           }
         },

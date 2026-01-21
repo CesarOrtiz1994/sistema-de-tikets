@@ -9,10 +9,11 @@ import Card from '../components/common/Card';
 import SearchInput from '../components/common/SearchInput';
 import Badge from '../components/common/Badge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FiPlus, FiEdit2, FiTrash2, FiUsers, FiBriefcase } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUsers, FiBriefcase, FiFileText } from 'react-icons/fi';
 import { departmentsService, Department, CreateDepartmentData, UpdateDepartmentData } from '../services/departments.service';
 import DepartmentModal from '../components/Departments/DepartmentModal';
 import DepartmentUsersModal from '../components/Departments/DepartmentUsersModal';
+import DepartmentTicketAccessModal from '../components/Departments/DepartmentTicketAccessModal';
 import { usePermissions } from '../hooks/usePermissions';
 import { RoleType } from '../types/permissions';
 
@@ -24,6 +25,7 @@ export default function DepartmentsManagementPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+  const [isTicketAccessModalOpen, setIsTicketAccessModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { hasRole } = usePermissions();
@@ -47,8 +49,17 @@ export default function DepartmentsManagementPage() {
 
       setDepartments(response.data);
       setTotalPages(response.pagination.totalPages);
+      
+      // Actualizar selectedDepartment si existe para reflejar cambios en el modal
+      if (selectedDepartment) {
+        const updatedDept = response.data.find((d: Department) => d.id === selectedDepartment.id);
+        if (updatedDept) {
+          setSelectedDepartment(updatedDept);
+        }
+      }
     } catch (error) {
       console.error('Error al cargar departamentos:', error);
+      toast.error('Error al cargar departamentos');
     } finally {
       setLoading(false);
     }
@@ -67,6 +78,11 @@ export default function DepartmentsManagementPage() {
   const handleManageUsers = (department: Department) => {
     setSelectedDepartment(department);
     setIsUsersModalOpen(true);
+  };
+
+  const handleManageTicketAccess = (department: Department) => {
+    setSelectedDepartment(department);
+    setIsTicketAccessModalOpen(true);
   };
 
   const handleSaveDepartment = async (data: CreateDepartmentData | UpdateDepartmentData) => {
@@ -112,6 +128,7 @@ export default function DepartmentsManagementPage() {
   if (loading) return <LoadingSpinner />;
 
   return (
+    <>
     <div className="space-y-6">
       <PageHeader
         title="Gestión de Departamentos"
@@ -170,21 +187,34 @@ export default function DepartmentsManagementPage() {
             )
           },
           {
-            key: 'users',
-            header: 'Usuarios',
+            key: 'members',
+            header: 'Miembros',
             render: (department: Department) => (
               <div className="flex items-center text-sm text-gray-900 dark:text-gray-100">
                 <FiUsers className="mr-2 text-gray-400 dark:text-gray-500" />
-                {department._count?.departmentUsers || 0}
+                {department._count?.users || 0}
+              </div>
+            )
+          },
+          {
+            key: 'ticketAccess',
+            header: 'Acceso a Tickets',
+            render: (department: Department) => (
+              <div className="flex items-center text-sm text-gray-900 dark:text-gray-100">
+                <FiUsers className="mr-2 text-gray-400 dark:text-gray-500" />
+                {department.isDefaultForRequesters 
+                  ? <span className="text-green-600 dark:text-green-400 font-medium">Todos</span>
+                  : <span>{department._count?.ticketAccess || 0}</span>
+                }
               </div>
             )
           },
           {
             key: 'status',
-            header: 'Estado',
+            header: 'Acceso',
             render: (department: Department) => (
               <Badge variant={department.isDefaultForRequesters ? 'success' : 'gray'} size="sm">
-                {department.isDefaultForRequesters ? 'Por defecto' : 'Normal'}
+                {department.isDefaultForRequesters ? 'Público' : 'Restringido'}
               </Badge>
             )
           },
@@ -205,11 +235,20 @@ export default function DepartmentsManagementPage() {
               <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={() => handleManageUsers(department)}
-                  className="text-blue-600 hover:text-blue-900"
-                  title="Gestionar Usuarios"
+                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                  title="Usuarios del Departamento"
                 >
                   <FiUsers size={18} />
                 </button>
+                {isSuperAdmin && (
+                  <button
+                    onClick={() => handleManageTicketAccess(department)}
+                    className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                    title="Acceso para Crear Tickets"
+                  >
+                    <FiFileText size={18} />
+                  </button>
+                )}
                 {isSuperAdmin && (
                   <>
                     <button
@@ -252,13 +291,25 @@ export default function DepartmentsManagementPage() {
   />
 
   {selectedDepartment && (
-    <DepartmentUsersModal
-      isOpen={isUsersModalOpen}
-      onClose={() => setIsUsersModalOpen(false)}
-      departmentId={selectedDepartment.id}
-      departmentName={selectedDepartment.name}
-    />
+    <>
+      <DepartmentUsersModal
+        isOpen={isUsersModalOpen}
+        onClose={() => setIsUsersModalOpen(false)}
+        departmentId={selectedDepartment.id}
+        departmentName={selectedDepartment.name}
+      />
+      
+      <DepartmentTicketAccessModal
+        isOpen={isTicketAccessModalOpen}
+        onClose={() => setIsTicketAccessModalOpen(false)}
+        departmentId={selectedDepartment.id}
+        departmentName={selectedDepartment.name}
+        isDefaultForRequesters={selectedDepartment.isDefaultForRequesters}
+        onToggleDefault={loadDepartments}
+      />
+    </>
   )}
+</div>
 
   <ConfirmDialog
     isOpen={isOpen}
@@ -270,6 +321,6 @@ export default function DepartmentsManagementPage() {
     onConfirm={handleConfirm}
     onCancel={handleCancel}
   />
-</div>
+</>
 );
 }

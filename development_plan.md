@@ -468,14 +468,14 @@
 **Objetivo:** Flujo completo de crear ticket
 
 #### Backend
-- [ ] Tabla tickets completa
-- [ ] Lógica de generación de ticket_number (IT-2024-001)
-- [ ] Endpoints:
+- [x] Tabla tickets completa
+- [x] Lógica de generación de ticket_number (IT-2024-001)
+- [x] Endpoints:
   - `POST /api/tickets` - Crear ticket
   - Validar form_data contra formulario
   - Calcular SLA deadline según prioridad
-- [ ] Tabla ticket_history para auditoría
-- [ ] Registrar creación en history
+- [x] ~~Tabla ticket_history para auditoría~~ (Usando audit_logs existente)
+- [x] Registrar creación en audit_logs
 
 #### Frontend
 - [ ] Página "Crear Ticket"
@@ -496,15 +496,15 @@
 **Objetivo:** Ver, filtrar y gestionar tickets
 
 #### Backend
-- [ ] Endpoints:
+- [x] Endpoints:
   - `GET /api/tickets` - Listar (con filtros y paginación)
   - `GET /api/tickets/:id` - Ver detalle completo
   - `PUT /api/tickets/:id` - Actualizar
   - `PUT /api/tickets/:id/assign` - Asignar a subordinado
   - `PUT /api/tickets/:id/status` - Cambiar estado
   - `PUT /api/tickets/:id/priority` - Cambiar prioridad
-- [ ] Lógica de permisos según rol
-- [ ] Registrar cambios en history
+- [x] Lógica de permisos según rol
+- [x] Registrar cambios en audit_logs
 
 #### Frontend
 - [ ] Página "Mis Tickets" (Solicitante)

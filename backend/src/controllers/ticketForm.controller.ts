@@ -81,7 +81,8 @@ export class TicketFormController {
 
   async createForm(req: Request, res: Response) {
     try {
-      const form = await ticketFormService.createForm(req.body);
+      const userId = (req as any).user.id;
+      const form = await ticketFormService.createForm(req.body, userId);
       
       return res.status(201).json({
         success: true,
@@ -101,7 +102,8 @@ export class TicketFormController {
   async updateForm(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const form = await ticketFormService.updateForm(id, req.body);
+      const userId = (req as any).user.id;
+      const form = await ticketFormService.updateForm(id, req.body, userId);
       
       return res.json({
         success: true,
@@ -121,7 +123,8 @@ export class TicketFormController {
   async deleteForm(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      await ticketFormService.deleteForm(id);
+      const userId = (req as any).user.id;
+      await ticketFormService.deleteForm(id, userId);
       
       return res.json({
         success: true,
@@ -161,8 +164,8 @@ export class TicketFormController {
     try {
       const { id } = req.params;
       const { name } = req.body;
-      
-      const form = await ticketFormService.duplicateForm(id, name);
+      const userId = (req as any).user.id;
+      const form = await ticketFormService.duplicateForm(id, name, userId);
       
       return res.status(201).json({
         success: true,
@@ -183,8 +186,9 @@ export class TicketFormController {
     try {
       const { id } = req.params;
       const { incrementVersion } = req.body;
+      const userId = (req as any).user.id;
       
-      const form = await ticketFormService.activateForm(id, incrementVersion);
+      const form = await ticketFormService.activateForm(id, userId, incrementVersion);
       
       return res.json({
         success: true,

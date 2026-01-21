@@ -102,8 +102,8 @@ class TicketFormService {
     });
   }
 
-  async createForm(data: CreateTicketFormData) {
-    return await prisma.ticketForm.create({
+  async createForm(data: CreateTicketFormData, userId: string) {
+    const form = await prisma.ticketForm.create({
       data: {
         departmentId: data.departmentId,
         name: data.name,
@@ -116,10 +116,28 @@ class TicketFormService {
         fields: true
       }
     });
+
+    // Registrar en audit_logs
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'CREATE_FORM',
+        resource: 'ticket_form',
+        resourceId: form.id,
+        details: {
+          name: form.name,
+          departmentId: form.departmentId,
+          status: form.status
+        },
+        status: 'success'
+      }
+    });
+
+    return form;
   }
 
-  async updateForm(id: string, data: UpdateTicketFormData) {
-    return await prisma.ticketForm.update({
+  async updateForm(id: string, data: UpdateTicketFormData, userId: string) {
+    const form = await prisma.ticketForm.update({
       where: { id },
       data,
       include: {
@@ -132,16 +150,49 @@ class TicketFormService {
         }
       }
     });
+
+    // Registrar en audit_logs
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'UPDATE_FORM',
+        resource: 'ticket_form',
+        resourceId: id,
+        details: {
+          name: form.name,
+          updatedFields: Object.keys(data)
+        },
+        status: 'success'
+      }
+    });
+
+    return form;
   }
 
-  async deleteForm(id: string) {
-    // Soft delete
-    return await prisma.ticketForm.update({
+  async deleteForm(id: string, userId: string) {
+    const form = await prisma.ticketForm.update({
       where: { id },
       data: {
         deletedAt: new Date()
       }
     });
+
+    // Registrar en audit_logs
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'DELETE_FORM',
+        resource: 'ticket_form',
+        resourceId: id,
+        details: {
+          name: form.name,
+          departmentId: form.departmentId
+        },
+        status: 'success'
+      }
+    });
+
+    return form;
   }
 
   async setDefaultForm(departmentId: string, formId: string) {
@@ -202,7 +253,7 @@ class TicketFormService {
     return activeForm;
   }
 
-  async activateForm(formId: string, incrementVersion: boolean = false) {
+  async activateForm(formId: string, userId: string, incrementVersion: boolean = false) {
     const form = await this.getFormById(formId);
     
     if (!form) {
@@ -241,7 +292,7 @@ class TicketFormService {
     }
 
     // Activar el formulario
-    return await prisma.ticketForm.update({
+    const activatedForm = await prisma.ticketForm.update({
       where: { id: formId },
       data: {
         status: FormStatus.ACTIVE,
@@ -258,6 +309,25 @@ class TicketFormService {
         }
       }
     });
+
+    // Registrar en audit_logs
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'ACTIVATE_FORM',
+        resource: 'ticket_form',
+        resourceId: formId,
+        details: {
+          name: activatedForm.name,
+          departmentId: activatedForm.departmentId,
+          version,
+          incrementedVersion: incrementVersion
+        },
+        status: 'success'
+      }
+    });
+
+    return activatedForm;
   }
 
   // ============================================
@@ -452,7 +522,7 @@ class TicketFormService {
     };
   }
 
-  async duplicateForm(formId: string, newName: string) {
+  async duplicateForm(formId: string, newName: string, userId: string) {
     const originalForm = await this.getFormById(formId);
     
     if (!originalForm) {
@@ -514,6 +584,23 @@ class TicketFormService {
         }
       }
     }
+
+    // Registrar en audit_logs
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'DUPLICATE_FORM',
+        resource: 'ticket_form',
+        resourceId: newForm.id,
+        details: {
+          originalFormId: formId,
+          originalFormName: originalForm.name,
+          newFormName: newName,
+          departmentId: newForm.departmentId
+        },
+        status: 'success'
+      }
+    });
 
     return await this.getFormById(newForm.id);
   }

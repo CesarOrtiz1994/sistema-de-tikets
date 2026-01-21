@@ -151,11 +151,11 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
               className="w-4 h-4 text-purple-600 border-gray-300 dark:border-gray-600 rounded focus:ring-purple-500"
             />
             <label htmlFor="isDefaultForRequesters" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-              Departamento por defecto para solicitantes
+              Permitir acceso público para crear tickets
             </label>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">
-            Los nuevos usuarios con rol "Solicitante" serán asignados automáticamente a este departamento
+            Cualquier usuario podrá crear tickets en este departamento sin necesidad de asignarle acceso específico
           </p>
 
       </form>

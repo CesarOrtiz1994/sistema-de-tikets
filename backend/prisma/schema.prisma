@@ -30,11 +30,14 @@ model User {
   departmentId   String? @map("department_id")
   departmentRole String? @default("MEMBER") @map("department_role") // ADMIN o MEMBER
 
-  department         Department?      @relation("UserDepartment", fields: [departmentId], references: [id])
-  departmentUsers    DepartmentUser[] // Mantener temporalmente para migración
-  createdDepartments Department[]     @relation("DepartmentCreator")
+  department         Department?              @relation("UserDepartment", fields: [departmentId], references: [id])
+  departmentUsers    DepartmentUser[]         // Mantener temporalmente para migración
+  ticketAccess       DepartmentTicketAccess[]
+  createdDepartments Department[]             @relation("DepartmentCreator")
   sessions           UserSession[]
   auditLogs          AuditLog[]
+  requestedTickets   Ticket[]                 @relation("TicketRequester")
+  assignedTickets    Ticket[]                 @relation("TicketAssignedTo")
 
   @@index([departmentId])
   @@map("users")
@@ -51,11 +54,13 @@ model Department {
   updatedAt              DateTime  @updatedAt @map("updated_at")
   deletedAt              DateTime? @map("deleted_at")
 
-  users      DepartmentUser[]
-  members    User[]           @relation("UserDepartment")
-  createdBy  User[]           @relation("DepartmentCreator")
-  slaConfigs DepartmentSLA[]
-  forms      TicketForm[]
+  users        DepartmentUser[]
+  ticketAccess DepartmentTicketAccess[]
+  members      User[]                   @relation("UserDepartment")
+  createdBy    User[]                   @relation("DepartmentCreator")
+  slaConfigs   DepartmentSLA[]
+  forms        TicketForm[]
+  tickets      Ticket[]
 
   @@map("departments")
 }
@@ -72,6 +77,19 @@ model DepartmentUser {
 
   @@unique([departmentId, userId])
   @@map("department_users")
+}
+
+model DepartmentTicketAccess {
+  id           String   @id @default(uuid())
+  departmentId String   @map("department_id")
+  userId       String   @map("user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, userId])
+  @@map("department_ticket_access")
 }
 
 model UserSession {
@@ -263,9 +281,12 @@ model TicketForm {
 
   department Department  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   fields     FormField[]
+  tickets    Ticket[]
 
   @@index([departmentId])
   @@index([status])
+  @@index([departmentId, status])
+  @@index([departmentId, isDefault])
   @@map("ticket_forms")
 }
 
@@ -300,6 +321,8 @@ model FormField {
   @@index([formId])
   @@index([fieldTypeId])
   @@index([order])
+  @@index([formId, order])
+  @@index([formId, isVisible])
   @@map("form_fields")
 }
 
@@ -319,6 +342,65 @@ model FieldOption {
   field FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 
   @@index([fieldId])
-  @@index([order])
+  @@index([fieldId, order])
   @@map("field_options")
+}
+
+enum TicketStatus {
+  NEW
+  ASSIGNED
+  IN_PROGRESS
+  WAITING
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Ticket {
+  id            String         @id @default(uuid())
+  ticketNumber  String         @unique @map("ticket_number")
+  
+  departmentId  String         @map("department_id")
+  formId        String         @map("form_id")
+  requesterId   String         @map("requester_id")
+  assignedToId  String?        @map("assigned_to_id")
+  
+  title         String
+  status        TicketStatus   @default(NEW)
+  priority      TicketPriority @default(MEDIUM)
+  
+  formData      Json           @map("form_data")
+  
+  slaDeadline   DateTime?      @map("sla_deadline")
+  slaExceeded   Boolean        @default(false) @map("sla_exceeded")
+  
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  resolvedAt    DateTime?      @map("resolved_at")
+  closedAt      DateTime?      @map("closed_at")
+  deletedAt     DateTime?      @map("deleted_at")
+  
+  department    Department     @relation(fields: [departmentId], references: [id])
+  form          TicketForm     @relation(fields: [formId], references: [id])
+  requester     User           @relation("TicketRequester", fields: [requesterId], references: [id])
+  assignedTo    User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
+  
+  @@index([departmentId])
+  @@index([formId])
+  @@index([requesterId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+  @@index([ticketNumber])
+  @@index([createdAt])
+  @@index([departmentId, status])
+  @@index([assignedToId, status])
+  @@map("tickets")
 }

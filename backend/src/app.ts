@@ -16,12 +16,14 @@ import permissionsRoutes from './routes/permissions.routes';
 import auditRoutes from './routes/audit.routes';
 import usersRoutes from './routes/users.routes';
 import departmentsRoutes from './routes/departments.routes';
+import departmentAccessRoutes from './routes/departmentAccess.routes';
 import fieldTypeRoutes from './routes/fieldType.routes';
 import slaConfigurationRoutes from './routes/slaConfiguration.routes';
 import departmentSLARoutes from './routes/departmentSLA.routes';
 import ticketFormRoutes from './routes/ticketForm.routes';
 import uploadRoutes from './routes/upload.routes';
 import fileCleanupRoutes from './routes/fileCleanup.routes';
+import ticketsRoutes from './routes/tickets.routes';
 
 const app: Application = express();
 
@@ -59,13 +61,12 @@ app.use('/api/audit', auditRoutes);
 // Rutas de usuarios
 app.use('/api/users', usersRoutes);
 
-// Rutas de departamentos
+// Rutas de departamentos (FASE 2)
+app.use('/api/departments', departmentAccessRoutes);
 app.use('/api/departments', departmentsRoutes);
-
-// Rutas de SLA por departamento (FASE 2)
 app.use('/api/departments', departmentSLARoutes);
 
-// Rutas de tipos de campos (FASE 2)
+// Rutas de tipos de campo (FASE 2)
 app.use('/api/field-types', fieldTypeRoutes);
 
 // Rutas de configuraciones SLA (FASE 2)
@@ -78,9 +79,12 @@ app.use('/api/forms', ticketFormRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Rutas de limpieza de archivos (SEMANA 11)
-app.use('/api/cleanup', fileCleanupRoutes);
+app.use('/api/file-cleanup', fileCleanupRoutes);
 
-// Servir archivos estáticos (uploads)
+// Rutas de tickets (FASE 3 - SEMANA 12)
+app.use('/api/tickets', ticketsRoutes);
+
+// Servir archivos estáticos desde /uploads
 app.use('/uploads', express.static('uploads'));
 
 // Ruta de prueba
