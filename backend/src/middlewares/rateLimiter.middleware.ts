@@ -1,5 +1,4 @@
 import rateLimit from 'express-rate-limit';
-import { Request } from 'express';
 
 /**
  * Rate limiter general para la API
@@ -10,6 +9,7 @@ export const generalLimiter = rateLimit({
   message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo más tarde',
   standardHeaders: true,
   legacyHeaders: false,
+  // No usar keyGenerator personalizado para evitar problemas con IPv6
 });
 
 /**
@@ -20,6 +20,8 @@ export const authLimiter = rateLimit({
   max: 5, // 5 intentos de login
   message: 'Demasiados intentos de inicio de sesión, por favor intenta de nuevo en 15 minutos',
   skipSuccessfulRequests: true, // No contar requests exitosos
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 /**
@@ -31,10 +33,7 @@ export const uploadLimiter = rateLimit({
   message: 'Demasiados archivos subidos, por favor espera un momento antes de continuar',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req: Request) => {
-    // Usar userId si está autenticado, sino IP
-    return (req as any).user?.id || req.ip || 'unknown';
-  },
+  // Usar keyGenerator por defecto (basado en IP)
 });
 
 /**
@@ -44,9 +43,8 @@ export const formCreationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
   max: 20, // 20 formularios por hora
   message: 'Has alcanzado el límite de creación de formularios por hora',
-  keyGenerator: (req: Request) => {
-    return (req as any).user?.id || req.ip || 'unknown';
-  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 /**
@@ -56,9 +54,8 @@ export const formDuplicationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
   max: 10, // 10 duplicaciones por hora
   message: 'Has alcanzado el límite de duplicación de formularios por hora',
-  keyGenerator: (req: Request) => {
-    return (req as any).user?.id || req.ip || 'unknown';
-  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 /**
@@ -68,9 +65,8 @@ export const fieldOperationsLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
   max: 30, // 30 operaciones por minuto
   message: 'Demasiadas operaciones en formularios, por favor espera un momento',
-  keyGenerator: (req: Request) => {
-    return (req as any).user?.id || req.ip || 'unknown';
-  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 /**
@@ -80,7 +76,6 @@ export const deletionLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
   max: 10, // 10 eliminaciones por minuto
   message: 'Demasiadas operaciones de eliminación, por favor espera un momento',
-  keyGenerator: (req: Request) => {
-    return (req as any).user?.id || req.ip || 'unknown';
-  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });

@@ -28,7 +28,7 @@ export default function StatCard({
             {label}
           </p>
           <p className={`text-3xl font-bold ${valueColor}`}>
-            {value}
+            {value ?? 0}
           </p>
           {trend && (
             <p className={`text-sm mt-1 ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuth } from '../hooks/useAuth';
-import { FiPlus, FiFilter, FiFileText, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiFilter, FiFileText, FiClock, FiCheckCircle } from 'react-icons/fi';
 import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
 import DataTable from '../components/common/DataTable';
@@ -76,9 +75,8 @@ const getPriorityBadge = (priority: TicketPriority) => {
   return <Badge variant={variants[priority]} size="sm">{labels[priority]}</Badge>;
 };
 
-export default function TicketsPage() {
+export default function AssignedTicketsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,29 +91,20 @@ export default function TicketsPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      loadTickets();
-    }
-  }, [currentPage, statusFilter, priorityFilter, user?.id]);
+    loadTickets();
+  }, [currentPage, statusFilter, priorityFilter]);
 
   const loadTickets = async () => {
     try {
       setLoading(true);
-      
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      
-      // SOLO tickets creados por el usuario actual (Mis Tickets)
-      // Forzamos requesterId para que TODOS los roles vean solo sus tickets
+      // SOLO tickets asignados al usuario actual
       const response = await ticketsService.listTickets({
         page: currentPage,
         limit: 10,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         search: searchTerm || undefined,
-        requesterId: user.id, // FORZAR: Solo tickets que YO creé
+        // El backend filtra por assignedToId según el rol
       });
 
       setTickets(response.data);
@@ -161,13 +150,13 @@ export default function TicketsPage() {
       key: 'title',
       header: 'Título',
       render: (ticket: Ticket) => (
-        <div className="max-w-md">
-          <p className="font-medium text-gray-900 dark:text-white truncate">
+        <div>
+          <div className="font-medium text-gray-900 dark:text-white">
             {ticket.title}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {ticket.department?.name}
-          </p>
+          </div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Solicitante: {ticket.requester?.name}
+          </div>
         </div>
       ),
     },
@@ -182,17 +171,8 @@ export default function TicketsPage() {
       render: (ticket: Ticket) => getPriorityBadge(ticket.priority),
     },
     {
-      key: 'assignedTo',
-      header: 'Asignado a',
-      render: (ticket: Ticket) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          {ticket.assignedTo?.name || 'Sin asignar'}
-        </span>
-      ),
-    },
-    {
       key: 'createdAt',
-      header: 'Fecha de Creación',
+      header: 'Fecha',
       render: (ticket: Ticket) => (
         <span className="text-sm text-gray-600 dark:text-gray-400">
           {formatDate(ticket.createdAt)}
@@ -203,7 +183,7 @@ export default function TicketsPage() {
 
   if (loading && tickets.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -212,23 +192,14 @@ export default function TicketsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Mis Tickets"
-        description="Visualiza y gestiona tus solicitudes"
-        action={
-          <button
-            onClick={() => navigate('/tickets/create')}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
-          >
-            <FiPlus />
-            <span>Nuevo Ticket</span>
-          </button>
-        }
+        title="Tickets Asignados"
+        description="Tickets que te han sido asignados para trabajar"
       />
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
-          label="Total de Tickets"
+          label="Total Asignados"
           value={totalTickets}
           icon={FiFileText}
           iconColor="text-blue-500"
@@ -272,18 +243,15 @@ export default function TicketsPage() {
           </div>
 
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Estado
                 </label>
                 <select
                   value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value as TicketStatus | '');
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  onChange={(e) => setStatusFilter(e.target.value as TicketStatus | '')}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
                   {STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -299,11 +267,8 @@ export default function TicketsPage() {
                 </label>
                 <select
                   value={priorityFilter}
-                  onChange={(e) => {
-                    setPriorityFilter(e.target.value as TicketPriority | '');
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  onChange={(e) => setPriorityFilter(e.target.value as TicketPriority | '')}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
                   {PRIORITY_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -325,17 +290,8 @@ export default function TicketsPage() {
         ) : tickets.length === 0 ? (
           <EmptyState
             icon={FiFileText}
-            title="No hay tickets"
-            description="No se encontraron tickets. Crea tu primer ticket para comenzar."
-            action={
-              <button
-                onClick={() => navigate('/tickets/create')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
-              >
-                <FiPlus />
-                <span>Crear Ticket</span>
-              </button>
-            }
+            title="No hay tickets asignados"
+            description="No tienes tickets asignados en este momento."
           />
         ) : (
           <>

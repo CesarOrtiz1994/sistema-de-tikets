@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuth } from '../hooks/useAuth';
 import { FiPlus, FiFilter, FiFileText, FiClock, FiCheckCircle } from 'react-icons/fi';
 import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
@@ -76,9 +75,8 @@ const getPriorityBadge = (priority: TicketPriority) => {
   return <Badge variant={variants[priority]} size="sm">{labels[priority]}</Badge>;
 };
 
-export default function TicketsPage() {
+export default function MyTicketsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,29 +91,18 @@ export default function TicketsPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      loadTickets();
-    }
-  }, [currentPage, statusFilter, priorityFilter, user?.id]);
+    loadTickets();
+  }, [currentPage, statusFilter, priorityFilter]);
 
   const loadTickets = async () => {
     try {
       setLoading(true);
-      
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      
-      // SOLO tickets creados por el usuario actual (Mis Tickets)
-      // Forzamos requesterId para que TODOS los roles vean solo sus tickets
       const response = await ticketsService.listTickets({
         page: currentPage,
         limit: 10,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         search: searchTerm || undefined,
-        requesterId: user.id, // FORZAR: Solo tickets que YO creé
       });
 
       setTickets(response.data);

@@ -478,14 +478,14 @@
 - [x] Registrar creación en audit_logs
 
 #### Frontend
-- [ ] Página "Crear Ticket"
-- [ ] Select de departamento (según accesos del usuario)
-- [ ] Cargar formulario dinámico del departamento
-- [ ] Renderizar formulario con DynamicFormRenderer
-- [ ] Select de prioridad
-- [ ] Submit del ticket
-- [ ] Mensaje de confirmación con número de ticket
-- [ ] Redirect a vista del ticket
+- [x] Página "Crear Ticket"
+- [x] Select de departamento (según accesos del usuario)
+- [x] Cargar formulario dinámico del departamento
+- [x] Renderizar formulario con DynamicFormRenderer
+- [x] Select de prioridad
+- [x] Submit del ticket
+- [x] Mensaje de confirmación con número de ticket
+- [x] Redirect a vista del ticket
 
 **Entregable:** Solicitantes pueden crear tickets con formularios dinámicos
 
@@ -507,18 +507,18 @@
 - [x] Registrar cambios en audit_logs
 
 #### Frontend
-- [ ] Página "Mis Tickets" (Solicitante)
-- [ ] Página "Tickets del Departamento" (Admin/Subordinado)
-- [ ] Tabla de tickets con columnas:
+- [x] Página "Mis Tickets" (Solicitante)
+- [x] Página "Tickets del Departamento" (Admin/Subordinado)
+- [x] Tabla de tickets con columnas:
   - Número, Título, Estado, Prioridad, Asignado, Fecha
-- [ ] Filtros:
+- [x] Filtros:
   - Por estado
   - Por prioridad
   - Por asignado
   - Por fecha
-- [ ] Búsqueda por texto
-- [ ] Paginación
-- [ ] Click en ticket abre detalle
+- [x] Búsqueda por texto
+- [x] Paginación
+- [x] Click en ticket abre detalle
 
 **Entregable:** Usuarios ven sus tickets según rol
 

@@ -103,7 +103,15 @@ class TicketsService {
     if (params.limit) queryParams.append('limit', String(params.limit));
 
     const response = await api.get(`/api/tickets?${queryParams.toString()}`);
-    return response.data;
+    
+    // Backend devuelve: { success, data: [...], pagination: { total, page, limit, totalPages } }
+    return {
+      data: response.data.data,
+      total: response.data.pagination.total,
+      page: response.data.pagination.page,
+      limit: response.data.pagination.limit,
+      totalPages: response.data.pagination.totalPages
+    };
   }
 
   async updateTicket(id: string, data: UpdateTicketData): Promise<Ticket> {

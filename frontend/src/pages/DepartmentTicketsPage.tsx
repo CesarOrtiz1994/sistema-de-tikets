@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useAuth } from '../hooks/useAuth';
-import { FiPlus, FiFilter, FiFileText, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiFilter, FiFileText, FiClock, FiCheckCircle } from 'react-icons/fi';
 import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
 import DataTable from '../components/common/DataTable';
@@ -13,6 +12,7 @@ import EmptyState from '../components/common/EmptyState';
 import SearchInput from '../components/common/SearchInput';
 import StatCard from '../components/common/StatCard';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
+import { departmentsService } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
 import { formatDate } from '../utils/dateUtils';
 
@@ -76,11 +76,11 @@ const getPriorityBadge = (priority: TicketPriority) => {
   return <Badge variant={variants[priority]} size="sm">{labels[priority]}</Badge>;
 };
 
-export default function TicketsPage() {
+export default function DepartmentTicketsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -88,34 +88,44 @@ export default function TicketsPage() {
   const [stats, setStats] = useState({ pending: 0, resolved: 0 });
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [departmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | ''>('');
+  const [assignedToFilter, setAssignedToFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      loadTickets();
+    loadTickets();
+  }, [currentPage, statusFilter, priorityFilter, assignedToFilter]);
+
+  useEffect(() => {
+    if (departmentFilter) {
+      loadDepartmentUsers(departmentFilter);
+    } else {
+      setDepartmentUsers([]);
     }
-  }, [currentPage, statusFilter, priorityFilter, user?.id]);
+  }, [departmentFilter]);
+
+  const loadDepartmentUsers = async (departmentId: string) => {
+    try {
+      const users = await departmentsService.getDepartmentUsers(departmentId);
+      setDepartmentUsers(users);
+    } catch (error) {
+      console.error('Error loading department users:', error);
+    }
+  };
 
   const loadTickets = async () => {
     try {
       setLoading(true);
-      
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-      
-      // SOLO tickets creados por el usuario actual (Mis Tickets)
-      // Forzamos requesterId para que TODOS los roles vean solo sus tickets
       const response = await ticketsService.listTickets({
         page: currentPage,
         limit: 10,
+        departmentId: departmentFilter || undefined,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
+        assignedToId: assignedToFilter || undefined,
         search: searchTerm || undefined,
-        requesterId: user.id, // FORZAR: Solo tickets que YO creé
       });
 
       setTickets(response.data);
@@ -166,7 +176,7 @@ export default function TicketsPage() {
             {ticket.title}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {ticket.department?.name}
+            Solicitante: {ticket.requester?.name}
           </p>
         </div>
       ),
@@ -212,17 +222,8 @@ export default function TicketsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Mis Tickets"
-        description="Visualiza y gestiona tus solicitudes"
-        action={
-          <button
-            onClick={() => navigate('/tickets/create')}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
-          >
-            <FiPlus />
-            <span>Nuevo Ticket</span>
-          </button>
-        }
+        title="Tickets del Departamento"
+        description="Gestiona los tickets asignados a tu departamento"
       />
 
       {/* Estadísticas */}
@@ -272,7 +273,7 @@ export default function TicketsPage() {
           </div>
 
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Estado
@@ -312,6 +313,28 @@ export default function TicketsPage() {
                   ))}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Asignado a
+                </label>
+                <select
+                  value={assignedToFilter}
+                  onChange={(e) => {
+                    setAssignedToFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Todos los usuarios</option>
+                  <option value="unassigned">Sin asignar</option>
+                  {departmentUsers.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
         </div>
@@ -326,38 +349,27 @@ export default function TicketsPage() {
           <EmptyState
             icon={FiFileText}
             title="No hay tickets"
-            description="No se encontraron tickets. Crea tu primer ticket para comenzar."
-            action={
-              <button
-                onClick={() => navigate('/tickets/create')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
-              >
-                <FiPlus />
-                <span>Crear Ticket</span>
-              </button>
-            }
+            description="No se encontraron tickets en este departamento."
           />
         ) : (
-          <>
-            <DataTable
-              columns={columns}
-              data={tickets}
-              onRowClick={handleRowClick}
-              getRowKey={(ticket) => ticket.id}
-              loading={loading}
-              emptyMessage="No se encontraron tickets"
+          <DataTable
+            columns={columns}
+            data={tickets}
+            onRowClick={handleRowClick}
+            getRowKey={(ticket) => ticket.id}
+            loading={false}
+            emptyMessage="No se encontraron tickets en este departamento"
+          />
+        )}
+        
+        {totalPages > 1 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
             />
-            
-            {totalPages > 1 && (
-              <div className="mt-6">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-            )}
-          </>
+          </div>
         )}
       </Card>
     </div>

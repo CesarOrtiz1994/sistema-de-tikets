@@ -56,6 +56,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     },
     {
       icon: FiBriefcase,
+      label: 'Tickets del Departamento',
+      path: '/tickets/department',
+      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
+    },
+    {
+      icon: FiBriefcase,
       label: 'Departamentos',
       path: '/departments',
       roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]

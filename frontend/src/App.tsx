@@ -5,6 +5,8 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import DashboardHomePage from './pages/DashboardHomePage';
 import TicketsPage from './pages/TicketsPage';
+import AssignedTicketsPage from './pages/AssignedTicketsPage';
+import DepartmentTicketsPage from './pages/DepartmentTicketsPage';
 import CreateTicketPage from './pages/CreateTicketPage';
 import UsersPage from './pages/UsersPage';
 import AuditPage from './pages/AuditPage';
@@ -106,6 +108,28 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <CreateTicketPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tickets/assigned"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AssignedTicketsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tickets/department"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <DepartmentTicketsPage />
               </Layout>
             </ProtectedRoute>
           }

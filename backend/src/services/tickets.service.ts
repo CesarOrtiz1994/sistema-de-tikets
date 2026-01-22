@@ -351,28 +351,33 @@ export class TicketsService {
       deletedAt: null
     };
 
-    // Filtros de permisos
-    if (user.roleType === 'REQUESTER') {
-      // Solicitantes solo ven sus propios tickets
-      where.requesterId = userId;
-    } else if (user.roleType === 'SUBORDINATE') {
-      // Subordinados ven tickets asignados a ellos o del departamento
-      where.OR = [
-        { assignedToId: userId },
-        { departmentId: user.departmentId || '' }
-      ];
-    } else if (user.roleType === 'DEPT_ADMIN') {
-      // Admins de departamento ven todos los tickets de su departamento
-      where.departmentId = user.departmentId || '';
+    // Si se envía requesterId explícitamente, usarlo (para "Mis Tickets")
+    // Esto permite que cualquier rol vea solo sus propios tickets creados
+    if (requesterId) {
+      where.requesterId = requesterId;
+    } else {
+      // Filtros de permisos por defecto (para otras vistas)
+      if (user.roleType === 'REQUESTER') {
+        // Solicitantes solo ven sus propios tickets
+        where.requesterId = userId;
+      } else if (user.roleType === 'SUBORDINATE') {
+        // Subordinados ven tickets asignados a ellos o del departamento
+        where.OR = [
+          { assignedToId: userId },
+          { departmentId: user.departmentId || '' }
+        ];
+      } else if (user.roleType === 'DEPT_ADMIN') {
+        // Admins de departamento ven todos los tickets de su departamento
+        where.departmentId = user.departmentId || '';
+      }
+      // SUPER_ADMIN ve todos (no agregar filtro)
     }
-    // SUPER_ADMIN ve todos (no agregar filtro)
 
     // Filtros adicionales
     if (departmentId) where.departmentId = departmentId;
     if (status) where.status = status;
     if (priority) where.priority = priority;
     if (assignedToId) where.assignedToId = assignedToId;
-    if (requesterId) where.requesterId = requesterId;
     if (search) {
       where.OR = [
         { ticketNumber: { contains: search, mode: 'insensitive' } },

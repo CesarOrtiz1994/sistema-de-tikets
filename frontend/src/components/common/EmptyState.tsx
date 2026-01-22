@@ -21,7 +21,7 @@ export default function EmptyState({ icon: Icon, title, description, action }: E
         </p>
       )}
       {action && (
-        <div className="mt-6">
+        <div className="mt-6 flex justify-center">
           {action}
         </div>
       )}
