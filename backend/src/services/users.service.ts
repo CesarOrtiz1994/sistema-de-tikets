@@ -335,11 +335,10 @@ export class UsersService {
   }
 
   async getUserStats() {
-    const [total, active, inactive, deleted, byRole] = await Promise.all([
+    const [total, active, inactive, byRole] = await Promise.all([
       prisma.user.count({ where: { deletedAt: null } }),
-      prisma.user.count({ where: { isActive: true, deletedAt: null } }),
-      prisma.user.count({ where: { isActive: false, deletedAt: null } }),
-      prisma.user.count({ where: { deletedAt: { not: null } } }),
+      prisma.user.count({ where: { deletedAt: null, isActive: true } }),
+      prisma.user.count({ where: { deletedAt: null, isActive: false } }),
       prisma.user.groupBy({
         by: ['roleType'],
         where: { deletedAt: null },
@@ -347,18 +346,63 @@ export class UsersService {
       })
     ]);
 
-    const roleStats = byRole.reduce((acc: any, item: any) => {
-      acc[item.roleType] = item._count;
-      return acc;
-    }, {});
-
     return {
       total,
       active,
       inactive,
-      deleted,
-      byRole: roleStats
+      byRole: byRole.map(r => ({
+        role: r.roleType,
+        count: r._count
+      }))
     };
+  }
+
+  async getUserAdminDepartments(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        departmentUsers: {
+          where: { role: 'ADMIN' },
+          select: {
+            role: true,
+            department: {
+              select: {
+                id: true,
+                name: true,
+                prefix: true,
+                description: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    console.log('🔍 getUserAdminDepartments - Usuario:', {
+      userId: user.id,
+      email: user.email,
+      departmentUsersCount: user.departmentUsers.length,
+      departmentUsersDetails: user.departmentUsers.map(du => ({
+        role: du.role,
+        deptId: du.department.id,
+        deptName: du.department.name
+      }))
+    });
+
+    const departments = user.departmentUsers.map(du => {
+      console.log('✅ Departamento donde es ADMIN:', du.department.name);
+      return du.department;
+    });
+
+    console.log('📋 Total departamentos donde es ADMIN:', departments.length, departments.map(d => d.name));
+
+    return departments;
   }
 }
 

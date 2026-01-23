@@ -26,12 +26,7 @@ model User {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  // Nueva relación directa con departamento
-  departmentId   String? @map("department_id")
-  departmentRole String? @default("MEMBER") @map("department_role") // ADMIN o MEMBER
-
-  department         Department?              @relation("UserDepartment", fields: [departmentId], references: [id])
-  departmentUsers    DepartmentUser[]         // Mantener temporalmente para migración
+  departmentUsers    DepartmentUser[]
   ticketAccess       DepartmentTicketAccess[]
   createdDepartments Department[]             @relation("DepartmentCreator")
   sessions           UserSession[]
@@ -39,7 +34,6 @@ model User {
   requestedTickets   Ticket[]                 @relation("TicketRequester")
   assignedTickets    Ticket[]                 @relation("TicketAssignedTo")
 
-  @@index([departmentId])
   @@map("users")
 }
 
@@ -56,7 +50,6 @@ model Department {
 
   users        DepartmentUser[]
   ticketAccess DepartmentTicketAccess[]
-  members      User[]                   @relation("UserDepartment")
   createdBy    User[]                   @relation("DepartmentCreator")
   slaConfigs   DepartmentSLA[]
   forms        TicketForm[]
@@ -302,10 +295,10 @@ model FormField {
   isRequired Boolean @default(false) @map("is_required")
   isVisible  Boolean @default(true) @map("is_visible")
 
-  order Int @default(0)
-  row   Int? @default(0)
-  columnInRow Int? @map("column_in_row") @default(0)
-  columnSpan  Int? @map("column_span") @default(3)
+  order       Int  @default(0)
+  row         Int? @default(0)
+  columnInRow Int? @default(0) @map("column_in_row")
+  columnSpan  Int? @default(3) @map("column_span")
 
   defaultValue String? @map("default_value")
 
@@ -364,34 +357,34 @@ enum TicketPriority {
 }
 
 model Ticket {
-  id            String         @id @default(uuid())
-  ticketNumber  String         @unique @map("ticket_number")
-  
-  departmentId  String         @map("department_id")
-  formId        String         @map("form_id")
-  requesterId   String         @map("requester_id")
-  assignedToId  String?        @map("assigned_to_id")
-  
-  title         String
-  status        TicketStatus   @default(NEW)
-  priority      TicketPriority @default(MEDIUM)
-  
-  formData      Json           @map("form_data")
-  
-  slaDeadline   DateTime?      @map("sla_deadline")
-  slaExceeded   Boolean        @default(false) @map("sla_exceeded")
-  
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  resolvedAt    DateTime?      @map("resolved_at")
-  closedAt      DateTime?      @map("closed_at")
-  deletedAt     DateTime?      @map("deleted_at")
-  
-  department    Department     @relation(fields: [departmentId], references: [id])
-  form          TicketForm     @relation(fields: [formId], references: [id])
-  requester     User           @relation("TicketRequester", fields: [requesterId], references: [id])
-  assignedTo    User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
-  
+  id           String @id @default(uuid())
+  ticketNumber String @unique @map("ticket_number")
+
+  departmentId String  @map("department_id")
+  formId       String  @map("form_id")
+  requesterId  String  @map("requester_id")
+  assignedToId String? @map("assigned_to_id")
+
+  title    String
+  status   TicketStatus   @default(NEW)
+  priority TicketPriority @default(MEDIUM)
+
+  formData Json @map("form_data")
+
+  slaDeadline DateTime? @map("sla_deadline")
+  slaExceeded Boolean   @default(false) @map("sla_exceeded")
+
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  resolvedAt DateTime? @map("resolved_at")
+  closedAt   DateTime? @map("closed_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  department Department @relation(fields: [departmentId], references: [id])
+  form       TicketForm @relation(fields: [formId], references: [id])
+  requester  User       @relation("TicketRequester", fields: [requesterId], references: [id])
+  assignedTo User?      @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
+
   @@index([departmentId])
   @@index([formId])
   @@index([requesterId])

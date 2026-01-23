@@ -21,6 +21,12 @@ router.get(
 );
 
 router.get(
+  '/me/admin-departments',
+  authenticate,
+  usersController.getMyAdminDepartments as any
+);
+
+router.get(
   '/:id',
   authenticate,
   usersController.getUserById as any

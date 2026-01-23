@@ -11,11 +11,12 @@ import AssignUserModal from '../Users/AssignUserModal';
 interface DepartmentUsersModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   departmentId: string;
   departmentName: string;
 }
 
-export default function DepartmentUsersModal({ isOpen, onClose, departmentId, departmentName }: DepartmentUsersModalProps) {
+export default function DepartmentUsersModal({ isOpen, onClose, onSuccess, departmentId, departmentName }: DepartmentUsersModalProps) {
   const [users, setUsers] = useState<DepartmentUser[]>([]);
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,6 +63,7 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
       await loadUsers();
       await loadAvailableUsers();
       setIsAssignModalOpen(false);
+      onSuccess?.(); // Notificar a la página principal para recargar
     } catch (error) {
       console.error('Error al asignar usuario:', error);
       throw error;
@@ -84,6 +86,7 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
       toast.success('Usuario removido del departamento exitosamente');
       await loadUsers();
       await loadAvailableUsers();
+      onSuccess?.(); // Notificar a la página principal para recargar
     } catch (error) {
       console.error('Error al remover usuario:', error);
       toast.error('Error al remover usuario del departamento');

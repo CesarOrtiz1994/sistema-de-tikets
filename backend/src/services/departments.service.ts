@@ -310,19 +310,16 @@ export class DepartmentsService {
       throw new Error('Usuario no encontrado');
     }
 
-    // Verificar que el usuario no esté ya asignado a OTRO departamento
+    // Verificar si el usuario ya está asignado a ESTE departamento específico
     const existingAssignment = await prisma.departmentUser.findFirst({
-      where: {
-        userId
+      where: { 
+        userId,
+        departmentId 
       }
     });
 
     if (existingAssignment) {
-      if (existingAssignment.departmentId === departmentId) {
-        throw new Error('El usuario ya está asignado a este departamento');
-      } else {
-        throw new Error('El usuario ya pertenece a otro departamento. Primero debes removerlo de su departamento actual.');
-      }
+      throw new Error('El usuario ya está asignado a este departamento');
     }
 
     const assignment = await prisma.departmentUser.create({

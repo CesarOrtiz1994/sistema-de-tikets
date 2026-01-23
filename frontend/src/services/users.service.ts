@@ -102,6 +102,11 @@ export const usersService = {
   async getUserStats(): Promise<UserStatsResponse> {
     const response = await api.get('/api/users/stats');
     return response.data.data;
+  },
+
+  async getMyAdminDepartments(): Promise<any[]> {
+    const response = await api.get('/api/users/me/admin-departments');
+    return response.data.data;
   }
 };
 

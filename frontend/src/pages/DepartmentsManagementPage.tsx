@@ -311,6 +311,7 @@ export default function DepartmentsManagementPage() {
       <DepartmentUsersModal
         isOpen={isUsersModalOpen}
         onClose={() => setIsUsersModalOpen(false)}
+        onSuccess={loadDepartments}
         departmentId={selectedDepartment.id}
         departmentName={selectedDepartment.name}
       />
@@ -318,15 +319,16 @@ export default function DepartmentsManagementPage() {
       <DepartmentTicketAccessModal
         isOpen={isTicketAccessModalOpen}
         onClose={() => setIsTicketAccessModalOpen(false)}
+        onSuccess={loadDepartments}
         departmentId={selectedDepartment.id}
         departmentName={selectedDepartment.name}
         isDefaultForRequesters={selectedDepartment.isDefaultForRequesters}
-        onToggleDefault={loadDepartments}
       />
 
       <DepartmentSLAModal
         isOpen={isSLAModalOpen}
         onClose={() => setIsSLAModalOpen(false)}
+        onSuccess={loadDepartments}
         departmentId={selectedDepartment.id}
         departmentName={selectedDepartment.name}
       />

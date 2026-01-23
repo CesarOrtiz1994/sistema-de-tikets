@@ -256,6 +256,39 @@ export class TicketsService {
       throw new Error('Ticket no encontrado');
     }
 
+    if (ticket.deletedAt) {
+      throw new Error('Ticket eliminado');
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        roleType: true,
+        departmentUsers: {
+          select: {
+            departmentId: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    // Verificar si el usuario tiene acceso al departamento del ticket
+    const hasAccessToDepartment = user?.departmentUsers.some(
+      du => du.departmentId === ticket.departmentId
+    );
+
+    const canView =
+      ticket.requesterId === userId ||
+      ticket.assignedToId === userId ||
+      user?.roleType === 'SUPER_ADMIN' ||
+      hasAccessToDepartment;
+
+    if (!canView) {
+      throw new Error('No tienes permisos para ver este ticket');
+    }
+
     // Obtener historial de audit_logs
     const history = await prisma.auditLog.findMany({
       where: {
@@ -277,26 +310,6 @@ export class TicketsService {
     });
 
     // Verificar permisos (el solicitante, asignado, o admin del departamento pueden ver)
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        roleType: true,
-        departmentId: true,
-        departmentRole: true
-      }
-    });
-
-    const canView = 
-      ticket.requesterId === userId ||
-      ticket.assignedToId === userId ||
-      user?.roleType === 'SUPER_ADMIN' ||
-      (user?.departmentId === ticket.departmentId && user?.departmentRole === 'ADMIN');
-
-    if (!canView) {
-      throw new Error('No tienes permisos para ver este ticket');
-    }
-
     return {
       ...ticket,
       history
@@ -335,8 +348,12 @@ export class TicketsService {
       select: {
         id: true,
         roleType: true,
-        departmentId: true,
-        departmentRole: true
+        departmentUsers: {
+          select: {
+            departmentId: true,
+            role: true
+          }
+        }
       }
     });
 
@@ -344,10 +361,32 @@ export class TicketsService {
       throw new Error('Usuario no encontrado');
     }
 
+    // Obtener todos los departamentos donde el usuario es ADMIN
+    const adminDepartmentIds = user.departmentUsers
+      .filter(du => du.role === 'ADMIN')
+      .map(du => du.departmentId);
+
+    // Obtener todos los departamentos donde el usuario es MEMBER (para SUBORDINATE)
+    const memberDepartmentIds = user.departmentUsers
+      .filter(du => du.role === 'MEMBER')
+      .map(du => du.departmentId);
+
+    // Log para depuración
+    logger.info('Filtrado de tickets para usuario:', {
+      userId: user.id,
+      roleType: user.roleType,
+      adminDepartmentIds,
+      memberDepartmentIds,
+      requestedDepartmentId: departmentId
+    });
+
     // Construir filtros según rol
     const where: Prisma.TicketWhereInput = {
       deletedAt: null
     };
+
+    // Determinar si el usuario es administrador de departamento
+    const isDeptAdmin = user.roleType === 'DEPT_ADMIN' || adminDepartmentIds.length > 0;
 
     // Si se envía requesterId explícitamente, usarlo (para "Mis Tickets")
     // Esto permite que cualquier rol vea solo sus propios tickets creados
@@ -359,20 +398,39 @@ export class TicketsService {
         // Solicitantes solo ven sus propios tickets
         where.requesterId = userId;
       } else if (user.roleType === 'SUBORDINATE') {
-        // Subordinados ven tickets asignados a ellos o del departamento
-        where.OR = [
-          { assignedToId: userId },
-          { departmentId: user.departmentId || '' }
-        ];
-      } else if (user.roleType === 'DEPT_ADMIN') {
-        // Admins de departamento ven todos los tickets de su departamento
-        where.departmentId = user.departmentId || '';
+        // Subordinados ven tickets asignados a ellos o de sus departamentos
+        const deptIds = [...adminDepartmentIds, ...memberDepartmentIds];
+        if (deptIds.length > 0) {
+          where.OR = [
+            { assignedToId: userId },
+            { departmentId: { in: deptIds } }
+          ];
+        } else {
+          // Si no tiene departamentos, solo ve tickets asignados a él
+          where.assignedToId = userId;
+        }
+      } else if (isDeptAdmin && adminDepartmentIds.length > 0) {
+        // Admins de departamento ven tickets de TODOS sus departamentos asignados
+        // Si se especifica un departmentId, verificar que sea uno de sus departamentos
+        if (departmentId) {
+          if (adminDepartmentIds.includes(departmentId)) {
+            where.departmentId = departmentId;
+          } else {
+            // Si intenta acceder a un departamento que no le pertenece, no mostrar nada
+            where.departmentId = 'invalid-department-id';
+          }
+        } else {
+          // Si no se especifica departamento, mostrar tickets de TODOS sus departamentos
+          where.departmentId = { in: adminDepartmentIds };
+        }
       }
       // SUPER_ADMIN ve todos (no agregar filtro)
     }
 
-    // Filtros adicionales
-    if (departmentId) where.departmentId = departmentId;
+    // Filtros adicionales (solo para SUPER_ADMIN)
+    if (departmentId && user.roleType === 'SUPER_ADMIN') {
+      where.departmentId = departmentId;
+    }
     if (status) where.status = status;
     if (priority) where.priority = priority;
     if (assignedToId) where.assignedToId = assignedToId;

@@ -13,6 +13,7 @@ import SearchInput from '../components/common/SearchInput';
 import StatCard from '../components/common/StatCard';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { departmentsService, Department } from '../services/departments.service';
+import { usersService } from '../services/users.service';
 import { BadgeVariant } from '../components/common/Badge';
 import { formatDate } from '../utils/dateUtils';
 import { useAuth } from '../hooks/useAuth';
@@ -84,6 +85,7 @@ export default function DepartmentTicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [myAdminDepartments, setMyAdminDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -102,9 +104,9 @@ export default function DepartmentTicketsPage() {
   useEffect(() => {
     if (user) {
       loadTickets();
-      // Solo cargar usuarios del departamento si no es Super Admin y tiene departmentId
-      if (!isSuperAdmin && user.departmentId) {
-        loadDepartmentUsers(user.departmentId);
+      // Cargar departamentos donde el usuario es admin
+      if (!isSuperAdmin) {
+        loadMyAdminDepartments();
       }
       // Cargar departamentos si es Super Admin
       if (isSuperAdmin) {
@@ -113,12 +115,35 @@ export default function DepartmentTicketsPage() {
     }
   }, [currentPage, statusFilter, priorityFilter, assignedToFilter, departmentFilterValue, user?.id]);
 
+  // Cargar usuarios cuando cambia el departamento seleccionado
+  useEffect(() => {
+    if (departmentFilterValue && !isSuperAdmin) {
+      loadDepartmentUsers(departmentFilterValue);
+    }
+  }, [departmentFilterValue]);
+
   const loadDepartments = async () => {
     try {
       const response = await departmentsService.getAllDepartments({ isActive: true });
       setDepartments(response.data || []);
     } catch (error) {
       console.error('Error loading departments:', error);
+    }
+  };
+
+  const loadMyAdminDepartments = async () => {
+    try {
+      const depts = await usersService.getMyAdminDepartments();
+      console.log('📋 Departamentos cargados para el usuario:', depts);
+      setMyAdminDepartments(depts || []);
+      // Si tiene departamentos y no hay uno seleccionado, seleccionar el primero
+      if (depts && depts.length > 0 && !departmentFilterValue) {
+        console.log('✅ Seleccionando primer departamento:', depts[0].name, depts[0].id);
+        setDepartmentFilterValue(depts[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading my admin departments:', error);
+      toast.error('Error al cargar departamentos');
     }
   };
 
@@ -139,11 +164,14 @@ export default function DepartmentTicketsPage() {
     try {
       setLoading(true);
       
-      // Super Admin ve TODOS los tickets (con filtro opcional), Admin de Departamento solo los de su departamento
+      console.log('🎫 Cargando tickets con filtro departmentId:', departmentFilterValue);
+      
+      // Super Admin y Admin de Departamento usan departmentFilterValue
+      // Si no hay departmentFilterValue, no enviar nada (el backend aplicará el filtro correcto)
       const response = await ticketsService.listTickets({
         page: currentPage,
         limit: 10,
-        departmentId: isSuperAdmin ? (departmentFilterValue || undefined) : user.departmentId,
+        departmentId: departmentFilterValue || undefined,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         assignedToId: assignedToFilter || undefined,
@@ -277,6 +305,26 @@ export default function DepartmentTicketsPage() {
 
       <Card>
         <div className="space-y-4">
+          {/* Selector de departamentos para admins de departamento */}
+          {!isSuperAdmin && myAdminDepartments.length > 1 && (
+            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Departamento
+              </label>
+              <select
+                value={departmentFilterValue}
+                onChange={(e) => setDepartmentFilterValue(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {myAdminDepartments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-4">
             <SearchInput
               value={searchTerm}

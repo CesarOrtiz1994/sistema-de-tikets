@@ -24,6 +24,7 @@ interface SLAConfiguration {
 interface DepartmentSLAModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   departmentId: string;
   departmentName: string;
 }
@@ -74,6 +75,7 @@ const formatTime = (minutes: number): string => {
 export default function DepartmentSLAModal({
   isOpen,
   onClose,
+  onSuccess,
   departmentId,
   departmentName
 }: DepartmentSLAModalProps) {
@@ -149,6 +151,7 @@ export default function DepartmentSLAModal({
       toast.success('Configuración SLA asignada exitosamente');
       await loadDepartmentSLAs();
       resetForm();
+      onSuccess?.(); // Notificar a la página principal para recargar
     } catch (error) {
       console.error('Error assigning SLA:', error);
       toast.error('Error al asignar configuración SLA');
@@ -170,6 +173,7 @@ export default function DepartmentSLAModal({
       await departmentSLAService.removeSLAFromDepartment(departmentId, priority);
       toast.success('Configuración SLA eliminada exitosamente');
       await loadDepartmentSLAs();
+      onSuccess?.(); // Notificar a la página principal para recargar
     } catch (error) {
       console.error('Error removing SLA:', error);
       toast.error('Error al eliminar configuración SLA');

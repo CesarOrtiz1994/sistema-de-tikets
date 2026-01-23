@@ -13,10 +13,10 @@ import AssignTicketAccessModal from './AssignTicketAccessModal';
 interface DepartmentTicketAccessModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   departmentId: string;
   departmentName: string;
   isDefaultForRequesters: boolean;
-  onToggleDefault: () => void;
 }
 
 interface UserWithAccess {
@@ -31,11 +31,11 @@ interface UserWithAccess {
 
 export default function DepartmentTicketAccessModal({ 
   isOpen, 
-  onClose, 
+  onClose,
+  onSuccess,
   departmentId, 
   departmentName,
   isDefaultForRequesters,
-  onToggleDefault
 }: DepartmentTicketAccessModalProps) {
   const [users, setUsers] = useState<UserWithAccess[]>([]);
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
@@ -105,7 +105,7 @@ export default function DepartmentTicketAccessModal({
       }
       
       // Notificar al componente padre para actualizar la tabla
-      onToggleDefault();
+      onSuccess?.();
     } catch (error) {
       console.error('Error al cambiar modo de acceso:', error);
       toast.error('Error al cambiar el modo de acceso');
@@ -122,6 +122,7 @@ export default function DepartmentTicketAccessModal({
       await loadUsersWithAccess();
       await loadAvailableUsers();
       setIsAssignModalOpen(false);
+      onSuccess?.(); // Notificar a la página principal para recargar
     } catch (error) {
       console.error('Error al otorgar acceso:', error);
       toast.error('Error al otorgar acceso');
@@ -144,6 +145,7 @@ export default function DepartmentTicketAccessModal({
       toast.success('Acceso revocado exitosamente');
       await loadUsersWithAccess();
       await loadAvailableUsers();
+      onSuccess?.(); // Notificar a la página principal para recargar
     } catch (error) {
       console.error('Error al revocar acceso:', error);
       toast.error('Error al revocar acceso');

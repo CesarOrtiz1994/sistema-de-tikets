@@ -246,3 +246,22 @@ export const getUserStats = async (_req: Request, res: Response) => {
     });
   }
 };
+
+export const getMyAdminDepartments = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const departments = await usersService.getUserAdminDepartments(userId);
+
+    return res.json({
+      success: true,
+      data: departments
+    });
+  } catch (error: any) {
+    console.error('Error al obtener departamentos del usuario:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener departamentos',
+      error: error.message
+    });
+  }
+};
