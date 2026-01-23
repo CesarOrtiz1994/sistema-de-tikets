@@ -49,13 +49,15 @@ export default function FormsManagementPage() {
       if (isSuperAdmin) {
         // Super Admin: cargar todos los departamentos
         const response = await departmentsService.getAllDepartments({ isActive: true });
-        setDepartments(response.data || []);
+        const depts = response.data || [];
+        setDepartments(depts);
         
-        if (response.data.length > 0) {
-          const firstDept = response.data[0];
+        if (depts.length > 0) {
+          const firstDept = depts[0];
           setDepartmentId(firstDept.id);
           setNewFormDepartmentId(firstDept.id);
-          await loadAllForms();
+          // Pasar los departamentos cargados directamente
+          await loadAllForms(depts);
         } else {
           toast.error('No hay departamentos disponibles');
           setLoading(false);
@@ -95,12 +97,13 @@ export default function FormsManagementPage() {
     }
   };
 
-  const loadAllForms = async () => {
+  const loadAllForms = async (depts: Department[]) => {
     try {
       setLoading(true);
       const allForms: TicketForm[] = [];
       
-      for (const dept of departments) {
+      // Cargar formularios de todos los departamentos
+      for (const dept of depts) {
         try {
           const data = await formsService.getDepartmentForms(dept.id);
           allForms.push(...data);

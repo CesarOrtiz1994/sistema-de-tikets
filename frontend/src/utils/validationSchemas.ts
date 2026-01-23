@@ -128,9 +128,16 @@ export const updateDepartmentSchema = departmentSchema.partial();
 // ============================================
 
 export const assignUserSchema = z.object({
-  userId: z.string()
-    .min(1, 'Debes seleccionar un usuario'),
-  role: z.enum(['ADMIN', 'MEMBER'])
+  userId: z.string().uuid('ID de usuario inválido'),
+  role: z.enum(['ADMIN', 'MEMBER'], { message: 'El rol debe ser ADMIN o MEMBER' })
+});
+
+export const assignSLASchema = z.object({
+  slaConfigurationId: z.string().uuid('Configuración SLA inválida'),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'], { 
+    message: 'La prioridad debe ser LOW, MEDIUM, HIGH o CRITICAL' 
+  }),
+  isDefault: z.boolean().optional()
 });
 
 // ============================================

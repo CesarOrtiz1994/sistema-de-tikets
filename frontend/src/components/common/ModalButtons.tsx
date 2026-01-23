@@ -16,8 +16,8 @@ interface ModalButtonsProps {
 
 const variantClasses = {
   primary: 'bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg',
-  danger: 'bg-red-600 hover:bg-red-700',
-  success: 'bg-green-600 hover:bg-green-700'
+  danger: 'bg-gradient-to-r from-red-600 to-rose-600 hover:shadow-lg',
+  success: 'bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-lg'
 };
 
 export default function ModalButtons({

@@ -360,7 +360,7 @@ enum TicketPriority {
   LOW
   MEDIUM
   HIGH
-  URGENT
+  CRITICAL
 }
 
 model Ticket {

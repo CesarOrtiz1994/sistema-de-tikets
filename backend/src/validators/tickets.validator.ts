@@ -15,7 +15,7 @@ export const ticketPriorityEnum = z.enum([
   'LOW',
   'MEDIUM',
   'HIGH',
-  'URGENT'
+  'CRITICAL'
 ]);
 
 // Schema para crear ticket

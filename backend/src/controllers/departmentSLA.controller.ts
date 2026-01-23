@@ -36,6 +36,8 @@ class DepartmentSLAController {
         isDefault
       });
 
+      // TODO: Agregar auditoría cuando se implemente el método createAuditLog en AuditService
+
       return res.json({
         success: true,
         data: result,
@@ -62,6 +64,8 @@ class DepartmentSLAController {
         priority as SLAPriority
       );
 
+      // TODO: Agregar auditoría cuando se implemente el método createAuditLog en AuditService
+
       return res.json({
         success: true,
         data: result
@@ -82,6 +86,31 @@ class DepartmentSLAController {
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+  async getSLAForDepartmentAndPriority(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id, priority } = req.params;
+
+      if (!priority) {
+        return res.status(400).json({
+          success: false,
+          message: 'Priority is required'
+        });
+      }
+
+      const sla = await departmentSLAService.getSLAForDepartmentAndPriority(
+        id,
+        priority as SLAPriority
+      );
+
+      return res.json({
+        success: true,
+        data: sla
+      });
+    } catch (error) {
+      return next(error);
     }
   }
 }

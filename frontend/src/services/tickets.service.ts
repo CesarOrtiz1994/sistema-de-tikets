@@ -1,7 +1,7 @@
 import api from './api';
 
 export type TicketStatus = 'NEW' | 'ASSIGNED' | 'IN_PROGRESS' | 'WAITING' | 'RESOLVED' | 'CLOSED' | 'CANCELLED';
-export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 export interface Ticket {
   id: string;

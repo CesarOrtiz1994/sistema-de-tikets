@@ -15,7 +15,7 @@ const PRIORITY_OPTIONS: { value: TicketPriority; label: string; color: string }[
   { value: 'LOW', label: 'Baja', color: 'bg-gray-100 text-gray-800 border-gray-300' },
   { value: 'MEDIUM', label: 'Media', color: 'bg-blue-100 text-blue-800 border-blue-300' },
   { value: 'HIGH', label: 'Alta', color: 'bg-orange-100 text-orange-800 border-orange-300' },
-  { value: 'URGENT', label: 'Urgente', color: 'bg-red-100 text-red-800 border-red-300' },
+  { value: 'CRITICAL', label: 'Crítica', color: 'bg-red-100 text-red-800 border-red-300' },
 ];
 
 export default function CreateTicketPage() {

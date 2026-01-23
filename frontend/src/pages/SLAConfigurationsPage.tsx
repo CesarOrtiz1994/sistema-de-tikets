@@ -172,7 +172,7 @@ export default function SLAConfigurationsPage() {
             isSuperAdmin ? (
               <button 
                 onClick={handleCreate}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
               >
                 <FiPlus className="inline mr-2" />
                 Crear Configuración SLA

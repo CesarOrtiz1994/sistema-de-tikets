@@ -529,26 +529,26 @@
 **Objetivo:** Página completa de un ticket
 
 #### Frontend
-- [ ] Página TicketDetails
-- [ ] Header con:
+- [x] Página TicketDetails
+- [x] Header con:
   - Número de ticket
   - Estado (badge colorido)
   - Prioridad
   - Botones de acción según rol
-- [ ] Sección de información:
+- [x] Sección de información:
   - Solicitante
   - Departamento
   - Asignado a
   - Fechas (creación, cierre)
   - SLA countdown
-- [ ] Sección de formulario:
+- [x] Sección de formulario:
   - Renderizar respuestas del form_data
   - Mostrar etiquetas y valores
   - Preview de archivos adjuntos
-- [ ] Sección de historial:
+- [x] Sección de historial:
   - Timeline de cambios
   - Quién, qué, cuándo
-- [ ] Acciones según rol:
+- [x] Acciones según rol:
   - Admin: Asignar, Cambiar estado, Cambiar prioridad
   - Subordinado: Cambiar estado, Marcar resuelto
   - Solicitante: Cancelar (si está en NEW)

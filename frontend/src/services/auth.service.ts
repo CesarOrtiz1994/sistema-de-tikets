@@ -6,6 +6,7 @@ export interface User {
   name: string;
   profilePicture?: string;
   roleType: string;
+  departmentId?: string;
   language: string;
   isActive: boolean;
   createdAt: string;

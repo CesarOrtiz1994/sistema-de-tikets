@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const ticketPrioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
+export const ticketPrioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
 
 export const createTicketSchema = z.object({
   departmentId: z.string().uuid('ID de departamento inválido'),

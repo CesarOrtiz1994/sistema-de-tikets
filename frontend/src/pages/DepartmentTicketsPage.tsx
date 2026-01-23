@@ -12,9 +12,10 @@ import EmptyState from '../components/common/EmptyState';
 import SearchInput from '../components/common/SearchInput';
 import StatCard from '../components/common/StatCard';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
-import { departmentsService } from '../services/departments.service';
+import { departmentsService, Department } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
 import { formatDate } from '../utils/dateUtils';
+import { useAuth } from '../hooks/useAuth';
 
 const STATUS_OPTIONS: { value: TicketStatus | ''; label: string }[] = [
   { value: '', label: 'Todos los estados' },
@@ -31,7 +32,7 @@ const PRIORITY_OPTIONS: { value: TicketPriority | ''; label: string }[] = [
   { value: 'LOW', label: 'Baja' },
   { value: 'MEDIUM', label: 'Media' },
   { value: 'HIGH', label: 'Alta' },
-  { value: 'URGENT', label: 'Urgente' },
+  { value: 'CRITICAL', label: 'Crítica' },
 ];
 
 const getStatusBadge = (status: TicketStatus) => {
@@ -60,17 +61,17 @@ const getStatusBadge = (status: TicketStatus) => {
 
 const getPriorityBadge = (priority: TicketPriority) => {
   const variants: Record<TicketPriority, BadgeVariant> = {
-    LOW: 'gray',
-    MEDIUM: 'blue',
+    LOW: 'green',
+    MEDIUM: 'yellow',
     HIGH: 'orange',
-    URGENT: 'red',
+    CRITICAL: 'red',
   };
   
   const labels: Record<TicketPriority, string> = {
     LOW: 'Baja',
     MEDIUM: 'Media',
     HIGH: 'Alta',
-    URGENT: 'Urgente',
+    CRITICAL: 'Crítica',
   };
 
   return <Badge variant={variants[priority]} size="sm">{labels[priority]}</Badge>;
@@ -78,9 +79,11 @@ const getPriorityBadge = (priority: TicketPriority) => {
 
 export default function DepartmentTicketsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -88,46 +91,65 @@ export default function DepartmentTicketsPage() {
   const [stats, setStats] = useState({ pending: 0, resolved: 0 });
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [departmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | ''>('');
   const [assignedToFilter, setAssignedToFilter] = useState('');
+  const [departmentFilterValue, setDepartmentFilterValue] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    loadTickets();
-  }, [currentPage, statusFilter, priorityFilter, assignedToFilter]);
+  const isSuperAdmin = user?.roleType === 'SUPER_ADMIN';
 
   useEffect(() => {
-    if (departmentFilter) {
-      loadDepartmentUsers(departmentFilter);
-    } else {
-      setDepartmentUsers([]);
+    if (user) {
+      loadTickets();
+      // Solo cargar usuarios del departamento si no es Super Admin y tiene departmentId
+      if (!isSuperAdmin && user.departmentId) {
+        loadDepartmentUsers(user.departmentId);
+      }
+      // Cargar departamentos si es Super Admin
+      if (isSuperAdmin) {
+        loadDepartments();
+      }
     }
-  }, [departmentFilter]);
+  }, [currentPage, statusFilter, priorityFilter, assignedToFilter, departmentFilterValue, user?.id]);
+
+  const loadDepartments = async () => {
+    try {
+      const response = await departmentsService.getAllDepartments({ isActive: true });
+      setDepartments(response.data || []);
+    } catch (error) {
+      console.error('Error loading departments:', error);
+    }
+  };
 
   const loadDepartmentUsers = async (departmentId: string) => {
     try {
-      const users = await departmentsService.getDepartmentUsers(departmentId);
+      const response = await departmentsService.getDepartmentUsers(departmentId);
+      const users = response.data?.map((du: any) => du.user) || [];
       setDepartmentUsers(users);
     } catch (error) {
       console.error('Error loading department users:', error);
+      setDepartmentUsers([]);
     }
   };
 
   const loadTickets = async () => {
+    if (!user) return;
+
     try {
       setLoading(true);
+      
+      // Super Admin ve TODOS los tickets (con filtro opcional), Admin de Departamento solo los de su departamento
       const response = await ticketsService.listTickets({
         page: currentPage,
         limit: 10,
-        departmentId: departmentFilter || undefined,
+        departmentId: isSuperAdmin ? (departmentFilterValue || undefined) : user.departmentId,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         assignedToId: assignedToFilter || undefined,
         search: searchTerm || undefined,
       });
-
+      
       setTickets(response.data);
       setTotalPages(response.totalPages);
       setTotalTickets(response.total);
@@ -162,7 +184,7 @@ export default function DepartmentTicketsPage() {
       key: 'ticketNumber',
       header: 'Número',
       render: (ticket: Ticket) => (
-        <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">
+        <span className="font-mono text-sm text-blue-600 dark:text-blue-400 font-semibold">
           {ticket.ticketNumber}
         </span>
       ),
@@ -171,16 +193,21 @@ export default function DepartmentTicketsPage() {
       key: 'title',
       header: 'Título',
       render: (ticket: Ticket) => (
-        <div className="max-w-md">
-          <p className="font-medium text-gray-900 dark:text-white truncate">
-            {ticket.title}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Solicitante: {ticket.requester?.name}
-          </p>
-        </div>
+        <span className="text-sm font-medium text-gray-900 dark:text-white">
+          {ticket.title}
+        </span>
       ),
     },
+    // Columna de Departamento (solo para Super Admin)
+    ...(isSuperAdmin ? [{
+      key: 'department',
+      header: 'Departamento',
+      render: (ticket: Ticket) => (
+        <span className="text-sm text-gray-700 dark:text-gray-300">
+          {ticket.department?.name || '-'}
+        </span>
+      ),
+    }] : []),
     {
       key: 'status',
       header: 'Estado',
@@ -222,8 +249,8 @@ export default function DepartmentTicketsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tickets del Departamento"
-        description="Gestiona los tickets asignados a tu departamento"
+        title={isSuperAdmin ? "Tickets" : "Tickets del Departamento"}
+        description={isSuperAdmin ? "Gestiona todos los tickets del sistema" : "Gestiona los tickets asignados a tu departamento"}
       />
 
       {/* Estadísticas */}
@@ -259,7 +286,7 @@ export default function DepartmentTicketsPage() {
             />
             <button
               onClick={handleSearch}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
             >
               Buscar
             </button>
@@ -273,69 +300,84 @@ export default function DepartmentTicketsPage() {
           </div>
 
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Estado
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value as TicketStatus | '');
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <Card>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Filtro de Departamento (solo Super Admin) */}
+                {isSuperAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Departamento
+                    </label>
+                    <select
+                      value={departmentFilterValue}
+                      onChange={(e) => setDepartmentFilterValue(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Todos los departamentos</option>
+                      {departments.map((dept) => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Prioridad
-                </label>
-                <select
-                  value={priorityFilter}
-                  onChange={(e) => {
-                    setPriorityFilter(e.target.value as TicketPriority | '');
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {PRIORITY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Estado
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as TicketStatus | '')}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Asignado a
-                </label>
-                <select
-                  value={assignedToFilter}
-                  onChange={(e) => {
-                    setAssignedToFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">Todos los usuarios</option>
-                  <option value="unassigned">Sin asignar</option>
-                  {departmentUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Prioridad
+                  </label>
+                  <select
+                    value={priorityFilter}
+                    onChange={(e) => setPriorityFilter(e.target.value as TicketPriority | '')}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {!isSuperAdmin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Asignado a
+                    </label>
+                    <select
+                      value={assignedToFilter}
+                      onChange={(e) => setAssignedToFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Todos</option>
+                      {departmentUsers.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
-            </div>
+            </Card>
           )}
         </div>
       </Card>

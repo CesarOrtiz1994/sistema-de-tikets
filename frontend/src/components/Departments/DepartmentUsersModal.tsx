@@ -45,7 +45,10 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
     try {
       const response = await usersService.listUsers({ page: 1, limit: 100 });
       const assignedUserIds = users.map(u => u.userId);
-      const available = response.users.filter((user: any) => !assignedUserIds.includes(user.id));
+      // Filtrar usuarios ya asignados Y excluir SUPER_ADMIN
+      const available = response.users.filter(
+        (user: any) => !assignedUserIds.includes(user.id) && user.roleType !== 'SUPER_ADMIN'
+      );
       setAvailableUsers(available);
     } catch (error) {
       console.error('Error al cargar usuarios disponibles:', error);
@@ -113,7 +116,7 @@ export default function DepartmentUsersModal({ isOpen, onClose, departmentId, de
               </h3>
               <button
                 onClick={() => setIsAssignModalOpen(true)}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
               >
                 <FiUserPlus />
                 Asignar Usuario

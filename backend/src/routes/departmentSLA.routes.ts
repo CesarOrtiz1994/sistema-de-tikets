@@ -13,6 +13,13 @@ router.get(
   departmentSLAController.getDepartmentSLAs
 );
 
+router.get(
+  '/:id/sla/priority/:priority',
+  authenticate,
+  isDeptAdmin(),
+  departmentSLAController.getSLAForDepartmentAndPriority
+);
+
 // Obtener SLA por defecto de un departamento
 router.get(
   '/:id/sla/default',

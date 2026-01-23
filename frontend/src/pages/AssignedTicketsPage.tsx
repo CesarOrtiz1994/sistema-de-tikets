@@ -30,7 +30,7 @@ const PRIORITY_OPTIONS: { value: TicketPriority | ''; label: string }[] = [
   { value: 'LOW', label: 'Baja' },
   { value: 'MEDIUM', label: 'Media' },
   { value: 'HIGH', label: 'Alta' },
-  { value: 'URGENT', label: 'Urgente' },
+  { value: 'CRITICAL', label: 'Crítica' },
 ];
 
 const getStatusBadge = (status: TicketStatus) => {
@@ -59,17 +59,17 @@ const getStatusBadge = (status: TicketStatus) => {
 
 const getPriorityBadge = (priority: TicketPriority) => {
   const variants: Record<TicketPriority, BadgeVariant> = {
-    LOW: 'gray',
-    MEDIUM: 'blue',
+    LOW: 'green',
+    MEDIUM: 'yellow',
     HIGH: 'orange',
-    URGENT: 'red',
+    CRITICAL: 'red',
   };
   
   const labels: Record<TicketPriority, string> = {
     LOW: 'Baja',
     MEDIUM: 'Media',
     HIGH: 'Alta',
-    URGENT: 'Urgente',
+    CRITICAL: 'Crítica',
   };
 
   return <Badge variant={variants[priority]} size="sm">{labels[priority]}</Badge>;
@@ -229,7 +229,7 @@ export default function AssignedTicketsPage() {
             />
             <button
               onClick={handleSearch}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
             >
               Buscar
             </button>

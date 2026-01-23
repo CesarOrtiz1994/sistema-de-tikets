@@ -3,6 +3,7 @@ import { TicketStatus, TicketPriority, Prisma } from '@prisma/client';
 import { formValidationService } from './formValidation.service';
 import { sanitizationService } from './sanitization.service';
 import slaDeadlineService from './slaDeadline.service';
+import departmentSLAService from './departmentSLA.service';
 import logger from '../config/logger';
 
 interface CreateTicketData {
@@ -118,20 +119,17 @@ export class TicketsService {
       const ticketNumber = await this.generateTicketNumber(data.departmentId);
 
       // 5. Calcular SLA deadline según prioridad
-      const departmentSLA = await prisma.departmentSLA.findFirst({
-        where: {
-          departmentId: data.departmentId,
-          priority: data.priority as any // Cast necesario porque TicketPriority y SLAPriority son el mismo enum
-        },
-        include: {
-          slaConfiguration: true
-        }
-      });
+      // Busca SLA del departamento o usa SLA global de la misma prioridad
+      const slaConfig = await departmentSLAService.getSLAForDepartmentAndPriority(
+        data.departmentId,
+        data.priority as any // Cast necesario porque TicketPriority y SLAPriority son el mismo enum
+      );
 
       let slaDeadline: Date | null = null;
-      if (departmentSLA) {
+      if (slaConfig) {
+        const slaConfigId = (slaConfig as any).sla_configuration_id || (slaConfig as any).id;
         const slaResult = await slaDeadlineService.calculateSLADeadline({
-          slaConfigurationId: departmentSLA.slaConfigurationId
+          slaConfigurationId: slaConfigId
         });
         slaDeadline = slaResult.resolutionDeadline;
       }
@@ -490,16 +488,16 @@ export class TicketsService {
       });
 
       // Recalcular SLA si cambia la prioridad
-      const newDepartmentSLA = await prisma.departmentSLA.findFirst({
-        where: {
-          departmentId: ticket.departmentId,
-          priority: data.priority as any // Cast necesario porque TicketPriority y SLAPriority son el mismo enum
-        }
-      });
+      // Busca SLA del departamento o usa SLA global de la misma prioridad
+      const newSlaConfig = await departmentSLAService.getSLAForDepartmentAndPriority(
+        ticket.departmentId,
+        data.priority as any // Cast necesario porque TicketPriority y SLAPriority son el mismo enum
+      );
 
-      if (newDepartmentSLA) {
+      if (newSlaConfig) {
+        const slaConfigId = (newSlaConfig as any).sla_configuration_id || (newSlaConfig as any).id;
         const newSlaResult = await slaDeadlineService.calculateSLADeadline({
-          slaConfigurationId: newDepartmentSLA.slaConfigurationId
+          slaConfigurationId: slaConfigId
         });
         updates.slaDeadline = newSlaResult.resolutionDeadline;
       }

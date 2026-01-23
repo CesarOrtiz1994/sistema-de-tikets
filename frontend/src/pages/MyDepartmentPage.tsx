@@ -52,7 +52,10 @@ export default function MyDepartmentPage() {
     try {
       const response = await usersService.listUsers({ page: 1, limit: 100 });
       const assignedUserIds = users.map(u => u.userId);
-      const available = response.users.filter((user: any) => !assignedUserIds.includes(user.id));
+      // Filtrar usuarios ya asignados Y excluir SUPER_ADMIN
+      const available = response.users.filter(
+        (user: any) => !assignedUserIds.includes(user.id) && user.roleType !== 'SUPER_ADMIN'
+      );
       setAvailableUsers(available);
     } catch (error) {
       console.error('Error al cargar usuarios disponibles:', error);

@@ -222,7 +222,7 @@ export default function DepartmentTicketAccessModal({
                 </h3>
                 <button
                   onClick={() => setIsAssignModalOpen(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                 >
                   <FiUserPlus />
                   Otorgar Acceso

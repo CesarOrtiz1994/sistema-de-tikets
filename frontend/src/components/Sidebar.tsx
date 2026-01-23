@@ -52,11 +52,11 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       icon: FiUserCheck,
       label: 'Tickets Asignados',
       path: '/tickets/assigned',
-      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN, RoleType.SUBORDINATE]
+      roles: [RoleType.SUBORDINATE]
     },
     {
       icon: FiBriefcase,
-      label: 'Tickets del Departamento',
+      label: userRole === RoleType.SUPER_ADMIN ? 'Tickets' : 'Tickets del Departamento',
       path: '/tickets/department',
       roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
     },

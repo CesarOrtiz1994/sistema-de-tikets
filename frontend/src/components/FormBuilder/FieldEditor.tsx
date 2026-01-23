@@ -399,7 +399,7 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
               </h3>
               <button
                 onClick={handleAddOption}
-                className="flex items-center gap-1 px-3 py-1 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                className="flex items-center gap-1 px-3 py-1 text-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
               >
                 <FiPlus className="w-4 h-4" />
                 Agregar

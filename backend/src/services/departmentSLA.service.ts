@@ -88,17 +88,18 @@ class DepartmentSLAService {
       await prisma.$executeRaw`
         UPDATE department_sla 
         SET sla_configuration_id = ${slaConfigurationId},
-            is_default = ${isDefault}
+            is_default = ${isDefault},
+            updated_at = NOW()
         WHERE department_id = ${departmentId} 
         AND priority = ${priority}
       `;
 
       return await this.getDepartmentSLAByPriority(departmentId, priority);
     } else {
-      // Crear nueva asignación
+      // Crear nueva asignación con UUID generado
       await prisma.$executeRaw`
-        INSERT INTO department_sla (department_id, sla_configuration_id, priority, is_default)
-        VALUES (${departmentId}, ${slaConfigurationId}, ${priority}, ${isDefault})
+        INSERT INTO department_sla (id, department_id, sla_configuration_id, priority, is_default, created_at, updated_at)
+        VALUES (gen_random_uuid(), ${departmentId}, ${slaConfigurationId}, ${priority}, ${isDefault}, NOW(), NOW())
       `;
 
       return await this.getDepartmentSLAByPriority(departmentId, priority);
@@ -171,6 +172,32 @@ class DepartmentSLAService {
     }
 
     return result[0];
+  }
+
+  /**
+   * Obtiene la configuración SLA aplicable para un departamento y prioridad específica
+   * Si no existe configuración específica del departamento, busca una configuración global con esa prioridad
+   */
+  async getSLAForDepartmentAndPriority(departmentId: string, priority: SLAPriority) {
+    // 1. Buscar configuración específica del departamento para esta prioridad
+    const departmentSLA = await this.getDepartmentSLAByPriority(departmentId, priority);
+    
+    if (departmentSLA) {
+      return departmentSLA;
+    }
+
+    // 2. Si no existe, buscar configuración SLA global activa con esta prioridad
+    const globalSLA = await prisma.sLAConfiguration.findFirst({
+      where: { 
+        priority: priority,
+        isActive: true 
+      },
+      orderBy: {
+        isDefault: 'desc' // Priorizar las marcadas como default
+      }
+    });
+
+    return globalSLA;
   }
 }
 

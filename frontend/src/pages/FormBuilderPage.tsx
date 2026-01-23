@@ -214,7 +214,7 @@ export default function FormBuilderPage() {
 
                   <button
                     onClick={handlePublish}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                   >
                     <FiEye className="w-4 h-4" />
                     Publicar
@@ -226,7 +226,7 @@ export default function FormBuilderPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FiSave className="w-4 h-4" />
                   {saving ? 'Guardando...' : 'Guardar Cambios'}

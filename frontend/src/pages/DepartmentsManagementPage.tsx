@@ -9,11 +9,12 @@ import Card from '../components/common/Card';
 import SearchInput from '../components/common/SearchInput';
 import Badge from '../components/common/Badge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FiPlus, FiEdit2, FiTrash2, FiUsers, FiBriefcase, FiFileText } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiUsers, FiBriefcase, FiFileText, FiClock } from 'react-icons/fi';
 import { departmentsService, Department, CreateDepartmentData, UpdateDepartmentData } from '../services/departments.service';
 import DepartmentModal from '../components/Departments/DepartmentModal';
 import DepartmentUsersModal from '../components/Departments/DepartmentUsersModal';
 import DepartmentTicketAccessModal from '../components/Departments/DepartmentTicketAccessModal';
+import DepartmentSLAModal from '../components/Departments/DepartmentSLAModal';
 import { usePermissions } from '../hooks/usePermissions';
 import { RoleType } from '../types/permissions';
 
@@ -26,6 +27,7 @@ export default function DepartmentsManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isTicketAccessModalOpen, setIsTicketAccessModalOpen] = useState(false);
+  const [isSLAModalOpen, setIsSLAModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { hasRole } = usePermissions();
@@ -83,6 +85,11 @@ export default function DepartmentsManagementPage() {
   const handleManageTicketAccess = (department: Department) => {
     setSelectedDepartment(department);
     setIsTicketAccessModalOpen(true);
+  };
+
+  const handleManageSLA = (department: Department) => {
+    setSelectedDepartment(department);
+    setIsSLAModalOpen(true);
   };
 
   const handleSaveDepartment = async (data: CreateDepartmentData | UpdateDepartmentData) => {
@@ -241,13 +248,22 @@ export default function DepartmentsManagementPage() {
                   <FiUsers size={18} />
                 </button>
                 {isSuperAdmin && (
-                  <button
-                    onClick={() => handleManageTicketAccess(department)}
-                    className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                    title="Acceso para Crear Tickets"
-                  >
-                    <FiFileText size={18} />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleManageTicketAccess(department)}
+                      className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                      title="Acceso para Crear Tickets"
+                    >
+                      <FiFileText size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleManageSLA(department)}
+                      className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                      title="Configurar SLA"
+                    >
+                      <FiClock size={18} />
+                    </button>
+                  </>
                 )}
                 {isSuperAdmin && (
                   <>
@@ -306,6 +322,13 @@ export default function DepartmentsManagementPage() {
         departmentName={selectedDepartment.name}
         isDefaultForRequesters={selectedDepartment.isDefaultForRequesters}
         onToggleDefault={loadDepartments}
+      />
+
+      <DepartmentSLAModal
+        isOpen={isSLAModalOpen}
+        onClose={() => setIsSLAModalOpen(false)}
+        departmentId={selectedDepartment.id}
+        departmentName={selectedDepartment.name}
       />
     </>
   )}
