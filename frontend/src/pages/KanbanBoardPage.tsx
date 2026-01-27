@@ -16,6 +16,7 @@ import kanbanService, { KanbanColumn as KanbanColumnType, KanbanTicket, KanbanFi
 import { ticketsService } from '../services/tickets.service';
 import { usersService } from '../services/users.service';
 import { departmentsService } from '../services/departments.service';
+import permissionsService from '../services/permissions.service';
 import KanbanColumn from '../components/Kanban/KanbanColumn';
 import TicketCard from '../components/Kanban/TicketCard';
 import TicketDetailModal from '../components/Kanban/TicketDetailModal';
@@ -63,21 +64,31 @@ export default function KanbanBoardPage() {
   useEffect(() => {
     if (selectedDepartmentId) {
       loadKanbanBoard();
-      loadDepartmentUsers();
+      if (isDeptAdmin) {
+        loadDepartmentUsers();
+      }
     }
   }, [selectedDepartmentId, filters]);
 
   const loadMyAdminDepartments = async () => {
     try {
-      const depts = await usersService.getMyAdminDepartments();
+      const depts = isDeptAdmin
+        ? await usersService.getMyAdminDepartments()
+        : await permissionsService.getMyDepartments();
+
       setMyAdminDepartments(depts || []);
-      
+
       if (depts && depts.length > 0 && !selectedDepartmentId) {
         setSelectedDepartmentId(depts[0].id);
+      }
+
+      if (!depts || depts.length === 0) {
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error loading admin departments:', error);
       toast.error('Error al cargar departamentos');
+      setLoading(false);
     }
   };
 
@@ -99,11 +110,12 @@ export default function KanbanBoardPage() {
       
       if (!selectedDepartmentId) {
         setColumns([]);
+        setLoading(false);
         return;
       }
 
       // Si es subordinado, aplicar filtro "solo míos" automáticamente
-      const appliedFilters = isSubordinate 
+      const appliedFilters = isSubordinate
         ? { ...filters, onlyMine: true }
         : filters;
 
@@ -209,7 +221,7 @@ export default function KanbanBoardPage() {
     return <LoadingSpinner />;
   }
 
-  // Solo DEPT_ADMIN y SUBORDINATE pueden ver el Kanban
+  // Solo DEPT_ADMIN, SUBORDINATE y REQUESTER pueden ver el Kanban
   if (!isDeptAdmin && !isSubordinate) {
     return (
       <div className="flex items-center justify-center h-96">

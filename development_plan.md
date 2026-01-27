@@ -567,23 +567,23 @@
   - `PUT /api/tickets/:id/quick-assign` - Asignación rápida desde Kanban
 
 #### Frontend
-- [ ] Página KanbanBoard
-- [ ] Componente Board con columnas:
+- [x] Página KanbanBoard
+- [x] Componente Board con columnas:
   - NUEVO, ASIGNADO, EN PROCESO, ESPERANDO, RESUELTO
-- [ ] Drag & drop de tickets entre columnas con @dnd-kit:
+- [x] Drag & drop de tickets entre columnas con @dnd-kit:
   - Cambiar estado al mover
   - Asignar al arrastrar a subordinado
-- [ ] Componente TicketCard:
+- [x] Componente TicketCard:
   - Número, título
   - Prioridad (indicador colorido)
   - Avatar del asignado
   - Tiempo en ese estado
-- [ ] Filtros rápidos:
+- [x] Filtros rápidos:
   - Por prioridad
   - Por asignado
   - Solo míos
-- [ ] Contador de tickets por columna
-- [ ] Animaciones suaves
+- [x] Contador de tickets por columna
+- [x] Animaciones suaves
 
 **Entregable:** Tablero Kanban funcional con drag & drop
 
