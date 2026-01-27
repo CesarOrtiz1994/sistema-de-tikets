@@ -1,24 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import {
-  FiArrowLeft,
-  FiCalendar,
-  FiClock,
-  FiEdit,
-  FiUserCheck,
-  FiAlertCircle,
-  FiCheckCircle,
-  FiXCircle,
-  FiBriefcase,
-  FiFileText,
-} from 'react-icons/fi';
 import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
 import Badge from '../components/common/Badge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import WorkScheduleInfo from '../components/Tickets/WorkScheduleInfo';
 import Modal from '../components/common/Modal';
 import ModalButtons from '../components/common/ModalButtons';
+import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit} from 'react-icons/fi';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { departmentsService } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
@@ -422,6 +412,24 @@ export default function TicketDetailPage() {
                 </div>
               )}
 
+              {ticket.createdOutsideBusinessHours && ticket.slaStartTime && (
+                <div className="col-span-2">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <FiClock className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                          Ticket creado fuera de horario laboral
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          El SLA comenzó a contar el <strong>{formatDate(ticket.slaStartTime)}</strong> (inicio del siguiente horario laboral)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {ticket.resolvedAt && (
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -451,6 +459,14 @@ export default function TicketDetailPage() {
               )}
             </div>
           </Card>
+
+          {/* Horario de Atención del Departamento */}
+          {ticket.department && (
+            <WorkScheduleInfo
+              departmentId={ticket.department.id}
+              departmentName={ticket.department.name}
+            />
+          )}
 
           {/* Formulario del ticket */}
           <Card>

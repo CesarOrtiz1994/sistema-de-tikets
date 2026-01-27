@@ -16,6 +16,10 @@ export interface Ticket {
   formData: Record<string, any>;
   slaDeadline?: string;
   slaExceeded: boolean;
+  slaPausedAt?: string;
+  slaTotalPausedMinutes: number;
+  slaStartTime?: string;
+  createdOutsideBusinessHours?: boolean;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;

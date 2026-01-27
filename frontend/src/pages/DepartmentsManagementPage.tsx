@@ -15,6 +15,7 @@ import DepartmentModal from '../components/Departments/DepartmentModal';
 import DepartmentUsersModal from '../components/Departments/DepartmentUsersModal';
 import DepartmentTicketAccessModal from '../components/Departments/DepartmentTicketAccessModal';
 import DepartmentSLAModal from '../components/Departments/DepartmentSLAModal';
+import DepartmentWorkScheduleModal from '../components/Departments/DepartmentWorkScheduleModal';
 import { usePermissions } from '../hooks/usePermissions';
 import { RoleType } from '../types/permissions';
 
@@ -28,6 +29,7 @@ export default function DepartmentsManagementPage() {
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isTicketAccessModalOpen, setIsTicketAccessModalOpen] = useState(false);
   const [isSLAModalOpen, setIsSLAModalOpen] = useState(false);
+  const [isWorkScheduleModalOpen, setIsWorkScheduleModalOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
   const { hasRole } = usePermissions();
@@ -90,6 +92,11 @@ export default function DepartmentsManagementPage() {
   const handleManageSLA = (department: Department) => {
     setSelectedDepartment(department);
     setIsSLAModalOpen(true);
+  };
+
+  const handleManageWorkSchedule = (department: Department) => {
+    setSelectedDepartment(department);
+    setIsWorkScheduleModalOpen(true);
   };
 
   const handleSaveDepartment = async (data: CreateDepartmentData | UpdateDepartmentData) => {
@@ -265,6 +272,15 @@ export default function DepartmentsManagementPage() {
                     </button>
                   </>
                 )}
+                {(isSuperAdmin || isDeptAdmin) && (
+                  <button
+                    onClick={() => handleManageWorkSchedule(department)}
+                    className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
+                    title="Horario Laboral"
+                  >
+                    <FiClock size={18} />
+                  </button>
+                )}
                 {isSuperAdmin && (
                   <>
                     <button
@@ -328,6 +344,14 @@ export default function DepartmentsManagementPage() {
       <DepartmentSLAModal
         isOpen={isSLAModalOpen}
         onClose={() => setIsSLAModalOpen(false)}
+        onSuccess={loadDepartments}
+        departmentId={selectedDepartment.id}
+        departmentName={selectedDepartment.name}
+      />
+
+      <DepartmentWorkScheduleModal
+        isOpen={isWorkScheduleModalOpen}
+        onClose={() => setIsWorkScheduleModalOpen(false)}
         onSuccess={loadDepartments}
         departmentId={selectedDepartment.id}
         departmentName={selectedDepartment.name}

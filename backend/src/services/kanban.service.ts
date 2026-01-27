@@ -136,6 +136,9 @@ export class KanbanService {
           status: true,
           createdAt: true,
           updatedAt: true,
+          slaDeadline: true,
+          slaExceeded: true,
+          slaPausedAt: true,
           requester: {
             select: {
               id: true,

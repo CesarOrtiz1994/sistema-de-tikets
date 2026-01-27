@@ -126,12 +126,18 @@ export class TicketsService {
       );
 
       let slaDeadline: Date | null = null;
+      let slaStartTime: Date | null = null;
+      let createdOutsideBusinessHours = false;
+      
       if (slaConfig) {
         const slaConfigId = (slaConfig as any).sla_configuration_id || (slaConfig as any).id;
         const slaResult = await slaDeadlineService.calculateSLADeadline({
-          slaConfigurationId: slaConfigId
+          slaConfigurationId: slaConfigId,
+          departmentId: data.departmentId
         });
         slaDeadline = slaResult.resolutionDeadline;
+        slaStartTime = slaResult.slaStartTime;
+        createdOutsideBusinessHours = slaResult.createdOutsideBusinessHours;
       }
 
       // 6. Crear el ticket en una transacción
@@ -148,6 +154,8 @@ export class TicketsService {
             status: TicketStatus.NEW,
             formData: sanitizedFormData as Prisma.InputJsonValue,
             slaDeadline,
+            slaStartTime,
+            createdOutsideBusinessHours,
             slaExceeded: false
           },
           include: {
@@ -534,6 +542,49 @@ export class TicketsService {
       if (data.status === TicketStatus.CLOSED) {
         updates.closedAt = new Date();
       }
+
+      // === LÓGICA DE PAUSA/REANUDACIÓN DE SLA ===
+      
+      // Si cambia A WAITING: pausar el SLA
+      if (data.status === TicketStatus.WAITING && ticket.status !== TicketStatus.WAITING) {
+        updates.slaPausedAt = new Date();
+        historyEntries.push({
+          action: 'SLA_PAUSED',
+          field: 'slaPausedAt',
+          newValue: 'SLA pausado - ticket en espera'
+        });
+      }
+
+      // Si cambia DESDE WAITING a otro estado: reanudar el SLA
+      if (ticket.status === TicketStatus.WAITING && data.status !== TicketStatus.WAITING) {
+        if (ticket.slaPausedAt) {
+          // Calcular cuántos minutos estuvo pausado
+          const pausedDuration = Math.floor(
+            (new Date().getTime() - new Date(ticket.slaPausedAt).getTime()) / (1000 * 60)
+          );
+          
+          // Acumular el tiempo pausado
+          const totalPausedMinutes = (ticket.slaTotalPausedMinutes || 0) + pausedDuration;
+          updates.slaTotalPausedMinutes = totalPausedMinutes;
+          
+          // Extender el deadline sumando el tiempo pausado
+          if (ticket.slaDeadline) {
+            const newDeadline = new Date(ticket.slaDeadline);
+            newDeadline.setMinutes(newDeadline.getMinutes() + pausedDuration);
+            updates.slaDeadline = newDeadline;
+          }
+          
+          // Limpiar la fecha de pausa
+          updates.slaPausedAt = null;
+          
+          historyEntries.push({
+            action: 'SLA_RESUMED',
+            field: 'slaPausedAt',
+            oldValue: `Pausado ${pausedDuration} minutos`,
+            newValue: 'SLA reanudado'
+          });
+        }
+      }
     }
 
     if (data.priority && data.priority !== ticket.priority) {
@@ -555,7 +606,8 @@ export class TicketsService {
       if (newSlaConfig) {
         const slaConfigId = (newSlaConfig as any).sla_configuration_id || (newSlaConfig as any).id;
         const newSlaResult = await slaDeadlineService.calculateSLADeadline({
-          slaConfigurationId: slaConfigId
+          slaConfigurationId: slaConfigId,
+          departmentId: ticket.departmentId
         });
         updates.slaDeadline = newSlaResult.resolutionDeadline;
       }

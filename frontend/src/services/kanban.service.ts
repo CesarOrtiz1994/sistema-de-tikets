@@ -9,6 +9,9 @@ export interface KanbanTicket {
   createdAt: string;
   updatedAt: string;
   timeInStatus: number;
+  slaDeadline?: string;
+  slaExceeded: boolean;
+  slaPausedAt?: string;
   requester: {
     id: string;
     name: string;

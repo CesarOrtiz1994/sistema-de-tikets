@@ -20,6 +20,7 @@ import departmentAccessRoutes from './routes/departmentAccess.routes';
 import fieldTypeRoutes from './routes/fieldType.routes';
 import slaConfigurationRoutes from './routes/slaConfiguration.routes';
 import departmentSLARoutes from './routes/departmentSLA.routes';
+import departmentWorkScheduleRoutes from './routes/departmentWorkSchedule.routes';
 import ticketFormRoutes from './routes/ticketForm.routes';
 import uploadRoutes from './routes/upload.routes';
 import fileCleanupRoutes from './routes/fileCleanup.routes';
@@ -66,6 +67,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/departments', departmentAccessRoutes);
 app.use('/api/departments', departmentsRoutes);
 app.use('/api/departments', departmentSLARoutes);
+app.use('/api/departments', departmentWorkScheduleRoutes);
 
 // Rutas de tipos de campo (FASE 2)
 app.use('/api/field-types', fieldTypeRoutes);

@@ -1,4 +1,4 @@
-import { FiClock, FiUser } from 'react-icons/fi';
+import { FiClock, FiUser, FiAlertCircle, FiPauseCircle } from 'react-icons/fi';
 import Badge from '../common/Badge';
 import { KanbanTicket } from '../../services/kanban.service';
 import { BadgeVariant } from '../common/Badge';
@@ -29,8 +29,66 @@ const formatTimeInStatus = (minutes: number): string => {
   return `${hours}h`;
 };
 
+const formatTimeRemaining = (milliseconds: number): string => {
+  const minutes = Math.floor(milliseconds / (1000 * 60));
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+};
+
+const getSLAStatus = (ticket: KanbanTicket): 'exceeded' | 'warning' | 'ok' | 'paused' | null => {
+  // Si está pausado (WAITING)
+  if (ticket.slaPausedAt) {
+    return 'paused';
+  }
+  
+  // Si ya excedió el SLA
+  if (ticket.slaExceeded) {
+    return 'exceeded';
+  }
+  
+  // Si no tiene deadline, no hay SLA
+  if (!ticket.slaDeadline) {
+    return null;
+  }
+  
+  const now = new Date().getTime();
+  const deadline = new Date(ticket.slaDeadline).getTime();
+  const timeRemaining = deadline - now;
+  
+  // Si ya pasó el deadline
+  if (timeRemaining < 0) {
+    return 'exceeded';
+  }
+  
+  // Si quedan menos de 30 minutos
+  if (timeRemaining < 30 * 60 * 1000) {
+    return 'warning';
+  }
+  
+  return 'ok';
+};
+
 export default function TicketCard({ ticket, isDragging, onClick }: TicketCardProps) {
   const priorityConfig = PRIORITY_CONFIG[ticket.priority];
+  const slaStatus = getSLAStatus(ticket);
+  
+  // Calcular tiempo restante para mostrar
+  let timeRemainingText = '';
+  if (ticket.slaDeadline && !ticket.slaExceeded && !ticket.slaPausedAt) {
+    const now = new Date().getTime();
+    const deadline = new Date(ticket.slaDeadline).getTime();
+    const timeRemaining = deadline - now;
+    if (timeRemaining > 0) {
+      timeRemainingText = formatTimeRemaining(timeRemaining);
+    }
+  }
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -41,11 +99,22 @@ export default function TicketCard({ ticket, isDragging, onClick }: TicketCardPr
     <div
       onClick={handleClick}
       className={`
-        bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700
-        hover:shadow-md transition-shadow cursor-pointer
+        bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700
+        hover:shadow-md transition-shadow cursor-pointer overflow-hidden
         ${isDragging ? 'opacity-50 rotate-2' : ''}
       `}
     >
+      {/* Barra de estado SLA en la parte superior */}
+      {slaStatus && (
+        <div className={`h-1 w-full ${
+          slaStatus === 'exceeded' ? 'bg-red-500' :
+          slaStatus === 'warning' ? 'bg-yellow-500' :
+          slaStatus === 'paused' ? 'bg-gray-400' :
+          'bg-green-500'
+        }`} />
+      )}
+      
+      <div className="p-4">
       {/* Header: Número y Prioridad */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
@@ -57,9 +126,33 @@ export default function TicketCard({ ticket, isDragging, onClick }: TicketCardPr
       </div>
 
       {/* Título */}
-      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 line-clamp-2">
+      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2 line-clamp-2">
         {ticket.title}
       </h4>
+      
+      {/* Badge de SLA */}
+      {slaStatus && slaStatus !== 'ok' && (
+        <div className="mb-3">
+          {slaStatus === 'exceeded' && (
+            <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs">
+              <FiAlertCircle className="w-3 h-3" />
+              <span className="font-semibold">SLA Excedido</span>
+            </div>
+          )}
+          {slaStatus === 'warning' && timeRemainingText && (
+            <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 text-xs">
+              <FiClock className="w-3 h-3" />
+              <span className="font-semibold">Quedan {timeRemainingText}</span>
+            </div>
+          )}
+          {slaStatus === 'paused' && (
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs">
+              <FiPauseCircle className="w-3 h-3" />
+              <span className="font-semibold">SLA Pausado</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Footer: Avatar y Tiempo */}
       <div className="flex items-center justify-between">
@@ -95,6 +188,7 @@ export default function TicketCard({ ticket, isDragging, onClick }: TicketCardPr
           <FiClock className="w-3 h-3" />
           <span className="text-xs">{formatTimeInStatus(ticket.timeInStatus)}</span>
         </div>
+      </div>
       </div>
     </div>
   );

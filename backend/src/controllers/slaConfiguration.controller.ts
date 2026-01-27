@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import slaConfigurationService from '../services/slaConfiguration.service';
 import logger from '../config/logger';
 import { SLAPriority } from '@prisma/client';
+import prisma from '../config/database';
 
 export class SLAConfigurationController {
   async getAllSLAConfigurations(req: Request, res: Response) {
@@ -64,10 +65,50 @@ export class SLAConfigurationController {
 
   async createSLAConfiguration(req: Request, res: Response) {
     try {
+      const userId = (req as any).user?.id;
       const slaConfiguration = await slaConfigurationService.createSLAConfiguration(req.body);
+      
+      // Auditoría
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          action: 'CREATE_SLA_CONFIGURATION',
+          resource: 'SLA_CONFIGURATION',
+          resourceId: slaConfiguration.id,
+          details: {
+            name: req.body.name,
+            priority: req.body.priority,
+            responseTime: req.body.responseTime,
+            resolutionTime: req.body.resolutionTime,
+            isDefault: req.body.isDefault || false
+          },
+          status: 'SUCCESS',
+          ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+          userAgent: req.get('user-agent') || 'unknown'
+        }
+      });
+      
       res.status(201).json(slaConfiguration);
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error creating SLA configuration:', error);
+      
+      // Auditoría de error
+      const userId = (req as any).user?.id;
+      if (userId) {
+        await prisma.auditLog.create({
+          data: {
+            userId,
+            action: 'CREATE_SLA_CONFIGURATION',
+            resource: 'SLA_CONFIGURATION',
+            resourceId: null,
+            details: { error: error.message },
+            status: 'ERROR',
+            ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+            userAgent: req.get('user-agent') || 'unknown'
+          }
+        }).catch(err => logger.error('Error creating audit log:', err));
+      }
+      
       res.status(500).json({ 
         message: 'Error al crear configuración SLA',
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -78,10 +119,46 @@ export class SLAConfigurationController {
   async updateSLAConfiguration(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const userId = (req as any).user?.id;
       const slaConfiguration = await slaConfigurationService.updateSLAConfiguration(id, req.body);
+      
+      // Auditoría
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          action: 'UPDATE_SLA_CONFIGURATION',
+          resource: 'SLA_CONFIGURATION',
+          resourceId: id,
+          details: {
+            changes: req.body
+          },
+          status: 'SUCCESS',
+          ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+          userAgent: req.get('user-agent') || 'unknown'
+        }
+      });
+      
       res.json(slaConfiguration);
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error updating SLA configuration:', error);
+      
+      // Auditoría de error
+      const userId = (req as any).user?.id;
+      if (userId) {
+        await prisma.auditLog.create({
+          data: {
+            userId,
+            action: 'UPDATE_SLA_CONFIGURATION',
+            resource: 'SLA_CONFIGURATION',
+            resourceId: req.params.id,
+            details: { error: error.message },
+            status: 'ERROR',
+            ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+            userAgent: req.get('user-agent') || 'unknown'
+          }
+        }).catch(err => logger.error('Error creating audit log:', err));
+      }
+      
       res.status(500).json({ 
         message: 'Error al actualizar configuración SLA',
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -92,10 +169,46 @@ export class SLAConfigurationController {
   async deleteSLAConfiguration(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const userId = (req as any).user?.id;
+      
       await slaConfigurationService.deleteSLAConfiguration(id);
+      
+      // Auditoría
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          action: 'DELETE_SLA_CONFIGURATION',
+          resource: 'SLA_CONFIGURATION',
+          resourceId: id,
+          details: {
+            message: 'Configuración SLA eliminada'
+          },
+          status: 'SUCCESS',
+          ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+          userAgent: req.get('user-agent') || 'unknown'
+        }
+      });
+      
       return res.json({ message: 'Configuración SLA eliminada correctamente' });
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error deleting SLA configuration:', error);
+      
+      // Auditoría de error
+      const userId = (req as any).user?.id;
+      if (userId) {
+        await prisma.auditLog.create({
+          data: {
+            userId,
+            action: 'DELETE_SLA_CONFIGURATION',
+            resource: 'SLA_CONFIGURATION',
+            resourceId: req.params.id,
+            details: { error: error.message },
+            status: 'ERROR',
+            ipAddress: req.ip || req.socket.remoteAddress || 'unknown',
+            userAgent: req.get('user-agent') || 'unknown'
+          }
+        }).catch(err => logger.error('Error creating audit log:', err));
+      }
       
       if (error instanceof Error && error.message.includes('por defecto')) {
         return res.status(400).json({ message: error.message });

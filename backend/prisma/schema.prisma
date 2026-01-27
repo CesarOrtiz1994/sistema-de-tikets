@@ -48,12 +48,13 @@ model Department {
   updatedAt              DateTime  @updatedAt @map("updated_at")
   deletedAt              DateTime? @map("deleted_at")
 
-  users        DepartmentUser[]
-  ticketAccess DepartmentTicketAccess[]
-  createdBy    User[]                   @relation("DepartmentCreator")
-  slaConfigs   DepartmentSLA[]
-  forms        TicketForm[]
-  tickets      Ticket[]
+  users         DepartmentUser[]
+  ticketAccess  DepartmentTicketAccess[]
+  createdBy     User[]                   @relation("DepartmentCreator")
+  slaConfigs    DepartmentSLA[]
+  workSchedules DepartmentWorkSchedule[]
+  forms         TicketForm[]
+  tickets       Ticket[]
 
   @@map("departments")
 }
@@ -248,6 +249,25 @@ model DepartmentSLA {
   @@map("department_sla")
 }
 
+model DepartmentWorkSchedule {
+  id           String  @id @default(uuid())
+  departmentId String  @map("department_id")
+  dayOfWeek    Int     @map("day_of_week")
+  startHour    Int     @map("start_hour")
+  startMinute  Int     @default(0) @map("start_minute")
+  endHour      Int     @map("end_hour")
+  endMinute    Int     @default(0) @map("end_minute")
+  isWorkday    Boolean @default(true) @map("is_workday")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, dayOfWeek])
+  @@index([departmentId])
+  @@map("department_work_schedules")
+}
+
 // ============================================
 // FASE 3: FORM BUILDER - SEMANA 7
 // Formularios personalizados para tickets
@@ -373,6 +393,10 @@ model Ticket {
 
   slaDeadline DateTime? @map("sla_deadline")
   slaExceeded Boolean   @default(false) @map("sla_exceeded")
+  slaPausedAt DateTime? @map("sla_paused_at")
+  slaTotalPausedMinutes Int @default(0) @map("sla_total_paused_minutes")
+  slaStartTime DateTime? @map("sla_start_time")
+  createdOutsideBusinessHours Boolean @default(false) @map("created_outside_business_hours")
 
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")

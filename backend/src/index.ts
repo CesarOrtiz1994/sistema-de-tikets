@@ -3,6 +3,7 @@ import { env } from './config/env';
 import logger from './config/logger';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import fileCleanupJob from './jobs/fileCleanup.job';
+import slaCheckerWorker from './workers/slaChecker.worker';
 
 const startServer = async () => {
   try {
@@ -16,6 +17,9 @@ const startServer = async () => {
       
       // Iniciar jobs de limpieza de archivos
       fileCleanupJob.start();
+      
+      // Iniciar worker de verificación SLA (cada 5 minutos)
+      slaCheckerWorker.startScheduled(5);
     });
 
     // Manejo de errores no capturados
