@@ -15,6 +15,7 @@ import FieldTypesPage from './pages/FieldTypesPage';
 import SLAConfigurationsPage from './pages/SLAConfigurationsPage';
 import FormBuilderPage from './pages/FormBuilderPage';
 import FormsManagementPage from './pages/FormsManagementPage';
+import KanbanBoardPage from './pages/KanbanBoardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import DepartmentRoute from './components/Departments/DepartmentRoute';
 import Layout from './components/Layout';
@@ -131,6 +132,17 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <DepartmentTicketsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tickets/kanban"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <KanbanBoardPage />
               </Layout>
             </ProtectedRoute>
           }

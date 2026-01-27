@@ -24,6 +24,7 @@ import ticketFormRoutes from './routes/ticketForm.routes';
 import uploadRoutes from './routes/upload.routes';
 import fileCleanupRoutes from './routes/fileCleanup.routes';
 import ticketsRoutes from './routes/tickets.routes';
+import kanbanRoutes from './routes/kanban.routes';
 
 const app: Application = express();
 
@@ -83,6 +84,9 @@ app.use('/api/file-cleanup', fileCleanupRoutes);
 
 // Rutas de tickets (FASE 3 - SEMANA 12)
 app.use('/api/tickets', ticketsRoutes);
+
+// Rutas de Kanban (SEMANA 15)
+app.use('/api', kanbanRoutes);
 
 // Servir archivos estáticos desde /uploads
 app.use('/uploads', express.static('uploads'));

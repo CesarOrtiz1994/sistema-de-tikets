@@ -562,7 +562,7 @@
 **Objetivo:** Vista de tablero para admins
 
 #### Backend
-- [ ] Endpoint:
+- [x] Endpoint:
   - `GET /api/departments/:id/kanban` - Tickets agrupados por estado
   - `PUT /api/tickets/:id/quick-assign` - Asignación rápida desde Kanban
 

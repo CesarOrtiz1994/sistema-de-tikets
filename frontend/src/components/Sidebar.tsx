@@ -11,10 +11,10 @@ import {
   FiX,
   FiActivity,
   FiBriefcase,
-  FiUserCheck,
   FiType,
   FiClock,
-  FiEdit3
+  FiEdit3,
+  FiColumns
 } from 'react-icons/fi';
 
 interface MenuItem {
@@ -49,16 +49,16 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN, RoleType.SUBORDINATE, RoleType.REQUESTER]
     },
     {
-      icon: FiUserCheck,
-      label: 'Tickets Asignados',
-      path: '/tickets/assigned',
-      roles: [RoleType.SUBORDINATE]
+      icon: FiBriefcase,
+      label: 'Tickets',
+      path: '/tickets/department',
+      roles: [RoleType.SUPER_ADMIN]
     },
     {
-      icon: FiBriefcase,
-      label: userRole === RoleType.SUPER_ADMIN ? 'Tickets' : 'Tickets del Departamento',
-      path: '/tickets/department',
-      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
+      icon: FiColumns,
+      label: userRole === RoleType.DEPT_ADMIN ? 'Tickets del Departamento' : 'Tickets Asignados',
+      path: '/tickets/kanban',
+      roles: [RoleType.DEPT_ADMIN, RoleType.SUBORDINATE]
     },
     {
       icon: FiBriefcase,

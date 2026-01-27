@@ -1,0 +1,419 @@
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
+import { useAuth } from '../hooks/useAuth';
+import { usePermissions } from '../hooks/usePermissions';
+import { RoleType } from '../types/permissions';
+import kanbanService, { KanbanColumn as KanbanColumnType, KanbanTicket, KanbanFilters } from '../services/kanban.service';
+import { ticketsService } from '../services/tickets.service';
+import { usersService } from '../services/users.service';
+import { departmentsService } from '../services/departments.service';
+import KanbanColumn from '../components/Kanban/KanbanColumn';
+import TicketCard from '../components/Kanban/TicketCard';
+import TicketDetailModal from '../components/Kanban/TicketDetailModal';
+import PageHeader from '../components/common/PageHeader';
+import Card from '../components/common/Card';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import { FiFilter, FiRefreshCw } from 'react-icons/fi';
+
+export default function KanbanBoardPage() {
+  const { user } = useAuth();
+  const { hasRole } = usePermissions();
+  const [columns, setColumns] = useState<KanbanColumnType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTicket, setActiveTicket] = useState<KanbanTicket | null>(null);
+  const [myAdminDepartments, setMyAdminDepartments] = useState<any[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
+  const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
+  
+  // Modal de detalle
+  const [selectedTicket, setSelectedTicket] = useState<KanbanTicket | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Filtros
+  const [filters, setFilters] = useState<KanbanFilters>({});
+  const [showFilters, setShowFilters] = useState(false);
+
+  const isDeptAdmin = hasRole(RoleType.DEPT_ADMIN);
+  const isSubordinate = hasRole(RoleType.SUBORDINATE);
+
+  // Configurar sensores para drag & drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8
+      }
+    })
+  );
+
+  useEffect(() => {
+    if (user) {
+      loadMyAdminDepartments();
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (selectedDepartmentId) {
+      loadKanbanBoard();
+      loadDepartmentUsers();
+    }
+  }, [selectedDepartmentId, filters]);
+
+  const loadMyAdminDepartments = async () => {
+    try {
+      const depts = await usersService.getMyAdminDepartments();
+      setMyAdminDepartments(depts || []);
+      
+      if (depts && depts.length > 0 && !selectedDepartmentId) {
+        setSelectedDepartmentId(depts[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading admin departments:', error);
+      toast.error('Error al cargar departamentos');
+    }
+  };
+
+  const loadDepartmentUsers = async () => {
+    try {
+      if (!selectedDepartmentId) return;
+
+      const response = await departmentsService.getDepartmentUsers(selectedDepartmentId);
+      const users = response.data?.map((du: any) => du.user) || [];
+      setDepartmentUsers(users);
+    } catch (error) {
+      console.error('Error loading department users:', error);
+    }
+  };
+
+  const loadKanbanBoard = async () => {
+    try {
+      setLoading(true);
+      
+      if (!selectedDepartmentId) {
+        setColumns([]);
+        return;
+      }
+
+      // Si es subordinado, aplicar filtro "solo míos" automáticamente
+      const appliedFilters = isSubordinate 
+        ? { ...filters, onlyMine: true }
+        : filters;
+
+      const data = await kanbanService.getDepartmentKanban(
+        selectedDepartmentId,
+        appliedFilters
+      );
+      
+      setColumns(data);
+    } catch (error: any) {
+      console.error('Error loading kanban board:', error);
+      toast.error('Error al cargar el tablero Kanban');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    
+    // Encontrar el ticket que se está arrastrando
+    for (const column of columns) {
+      const ticket = column.tickets.find(t => t.id === active.id);
+      if (ticket) {
+        setActiveTicket(ticket);
+        break;
+      }
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveTicket(null);
+
+    if (!over) return;
+
+    const ticketId = active.id as string;
+    const newStatus = over.id as string;
+
+    // Encontrar el ticket y su estado actual
+    let currentStatus = '';
+    let ticket: KanbanTicket | undefined;
+    
+    for (const column of columns) {
+      ticket = column.tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        currentStatus = column.status;
+        break;
+      }
+    }
+
+    if (!ticket || currentStatus === newStatus) return;
+
+    try {
+      // Actualizar el estado del ticket en el backend
+      await ticketsService.updateTicket(ticketId, {
+        status: newStatus as any
+      });
+
+      toast.success('Ticket actualizado exitosamente');
+      
+      // Recargar el tablero
+      await loadKanbanBoard();
+    } catch (error: any) {
+      console.error('Error updating ticket status:', error);
+      toast.error('Error al actualizar el ticket');
+    }
+  };
+
+  const handleTicketClick = (ticketId: string) => {
+    // Buscar el ticket en las columnas
+    for (const column of columns) {
+      const ticket = column.tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        setSelectedTicket(ticket);
+        setShowDetailModal(true);
+        break;
+      }
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowDetailModal(false);
+    setSelectedTicket(null);
+  };
+
+  const handleTicketUpdate = async () => {
+    await loadKanbanBoard();
+  };
+
+  const handleFilterChange = (key: keyof KanbanFilters, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value || undefined
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+  };
+
+  if (!user) {
+    return <LoadingSpinner />;
+  }
+
+  // Solo DEPT_ADMIN y SUBORDINATE pueden ver el Kanban
+  if (!isDeptAdmin && !isSubordinate) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Acceso Denegado
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            No tienes permisos para ver el tablero Kanban
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (myAdminDepartments.length === 0 && !loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Sin Departamentos
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            No estás asignado a ningún departamento
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Tablero Kanban"
+        description="Gestiona tickets con drag & drop"
+        action={
+          <button
+            onClick={loadKanbanBoard}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
+          >
+            <FiRefreshCw />
+            <span>Actualizar</span>
+          </button>
+        }
+      />
+
+      {/* Selector de Departamento y Filtros */}
+      <Card>
+        <div className="space-y-4">
+          {/* Selector de Departamento */}
+          {myAdminDepartments.length > 1 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Departamento
+              </label>
+              <select
+                value={selectedDepartmentId}
+                onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {myAdminDepartments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Botón de Filtros */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <FiFilter />
+              <span>Filtros</span>
+              {(filters.priority || filters.assignedToId || filters.onlyMine) && (
+                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+              )}
+            </button>
+
+            {(filters.priority || filters.assignedToId || (filters.onlyMine && !isSubordinate)) && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+
+          {/* Panel de Filtros */}
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              {/* Filtro de Prioridad */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Prioridad
+                </label>
+                <select
+                  value={filters.priority || ''}
+                  onChange={(e) => handleFilterChange('priority', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="">Todas</option>
+                  <option value="LOW">Baja</option>
+                  <option value="MEDIUM">Media</option>
+                  <option value="HIGH">Alta</option>
+                  <option value="CRITICAL">Crítica</option>
+                </select>
+              </div>
+
+              {/* Filtro de Asignado */}
+              {isDeptAdmin && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Asignado a
+                  </label>
+                  <select
+                    value={filters.assignedToId || ''}
+                    onChange={(e) => handleFilterChange('assignedToId', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Todos</option>
+                    {departmentUsers.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Filtro Solo Míos (solo para admins) */}
+              {isDeptAdmin && !isSubordinate && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Mostrar
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filters.onlyMine || false}
+                      onChange={(e) => handleFilterChange('onlyMine', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      Solo mis tickets
+                    </span>
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Tablero Kanban */}
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {columns.map((column) => (
+              <KanbanColumn 
+                key={column.status} 
+                column={column}
+                onTicketClick={handleTicketClick}
+              />
+            ))}
+          </div>
+
+          {/* Overlay para mostrar el ticket mientras se arrastra */}
+          <DragOverlay>
+            {activeTicket && <TicketCard ticket={activeTicket} isDragging />}
+          </DragOverlay>
+        </DndContext>
+      )}
+
+      {/* Mensaje si no hay tickets */}
+      {!loading && columns.every(col => col.tickets.length === 0) && (
+        <Card>
+          <div className="text-center py-12">
+            <p className="text-gray-500 dark:text-gray-400">
+              No hay tickets en este departamento
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Modal de detalle de ticket */}
+      {showDetailModal && selectedTicket && (
+        <TicketDetailModal
+          ticket={selectedTicket}
+          onClose={handleCloseModal}
+          onUpdate={handleTicketUpdate}
+          canEdit={isDeptAdmin}
+        />
+      )}
+    </div>
+  );
+}
