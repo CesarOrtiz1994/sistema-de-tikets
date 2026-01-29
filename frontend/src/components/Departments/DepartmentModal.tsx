@@ -16,7 +16,9 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
     name: '',
     prefix: '',
     description: '',
-    isDefaultForRequesters: false
+    isDefaultForRequesters: false,
+    requireRating: true,
+    autoCloseAfterDays: 8
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -27,14 +29,18 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
         name: department.name,
         prefix: department.prefix,
         description: department.description || '',
-        isDefaultForRequesters: department.isDefaultForRequesters
+        isDefaultForRequesters: department.isDefaultForRequesters,
+        requireRating: department.requireRating ?? true,
+        autoCloseAfterDays: (department as any).autoCloseAfterDays ?? 8
       });
     } else {
       setFormData({
         name: '',
         prefix: '',
         description: '',
-        isDefaultForRequesters: false
+        isDefaultForRequesters: false,
+        requireRating: true,
+        autoCloseAfterDays: 8
       });
     }
     setErrors({});
@@ -157,6 +163,43 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
           <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">
             Cualquier usuario podrá crear tickets en este departamento sin necesidad de asignarle acceso específico
           </p>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="requireRating"
+              checked={formData.requireRating}
+              onChange={(e) => setFormData({ ...formData, requireRating: e.target.checked })}
+              className="w-4 h-4 text-purple-600 border-gray-300 dark:border-gray-600 rounded focus:ring-purple-500"
+            />
+            <label htmlFor="requireRating" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              Requerir calificación al cerrar tickets
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">
+            Los usuarios deberán calificar el servicio (1-5 estrellas) antes de cerrar un ticket resuelto
+          </p>
+
+          <div>
+            <label htmlFor="autoCloseAfterDays" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Auto-cerrar tickets después de (días hábiles)
+            </label>
+            <input
+              type="number"
+              id="autoCloseAfterDays"
+              value={formData.autoCloseAfterDays}
+              onChange={(e) => setFormData({ ...formData, autoCloseAfterDays: parseInt(e.target.value) || 8 })}
+              min="1"
+              max="90"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            />
+            {errors.autoCloseAfterDays && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.autoCloseAfterDays}</p>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Los tickets en estado "Resuelto" se cerrarán automáticamente después de este número de días hábiles (tomando en cuenta el horario laboral del departamento)
+            </p>
+          </div>
 
       </form>
     </Modal>

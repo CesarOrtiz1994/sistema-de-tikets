@@ -9,20 +9,41 @@ const createDepartmentSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   prefix: z.string().min(2, 'El prefijo debe tener al menos 2 caracteres').max(10, 'El prefijo no puede tener más de 10 caracteres'),
   description: z.string().optional(),
-  isDefaultForRequesters: z.boolean().optional()
+  isDefaultForRequesters: z.boolean().optional(),
+  requireRating: z.boolean().optional()
 });
 
 const updateDepartmentSchema = z.object({
   name: z.string().min(2).optional(),
   prefix: z.string().min(2).max(10).optional(),
   description: z.string().optional(),
-  isDefaultForRequesters: z.boolean().optional()
+  isDefaultForRequesters: z.boolean().optional(),
+  requireRating: z.boolean().optional()
 });
 
 const assignUserSchema = z.object({
   userId: z.string().uuid('ID de usuario inválido'),
   role: z.enum(['ADMIN', 'MEMBER'], { message: 'El rol debe ser ADMIN o MEMBER' })
 });
+
+export const getMyAdminDepartments = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?.id;
+    
+    const departments = await departmentsService.getUserAdminDepartments(userId);
+
+    return res.json({
+      success: true,
+      data: departments
+    });
+  } catch (error) {
+    console.error('Error al obtener departamentos del administrador:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener departamentos'
+    });
+  }
+};
 
 export const getAllDepartments = async (req: Request, res: Response) => {
   try {
@@ -111,7 +132,44 @@ export const createDepartment = async (req: Request, res: Response) => {
 export const updateDepartment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const validatedData = updateDepartmentSchema.parse(req.body);
+    const userId = (req.user as any)?.id;
+    const userRole = (req.user as any)?.roleType;
+    
+    console.log('🔍 UPDATE DEPARTMENT - Datos recibidos:', {
+      id,
+      userId,
+      userRole,
+      body: req.body
+    });
+    
+    let validatedData = updateDepartmentSchema.parse(req.body);
+    
+    console.log('✅ Datos validados:', validatedData);
+
+    // Si es DEPT_ADMIN, verificar que sea su departamento y limitar campos editables
+    if (userRole === 'DEPT_ADMIN') {
+      // Verificar que el usuario sea admin de este departamento
+      const isAdmin = await departmentsService.isUserAdminOfDepartment(userId, id);
+      
+      if (!isAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: 'No tienes permiso para actualizar este departamento'
+        });
+      }
+
+      // DEPT_ADMIN solo puede actualizar requireRating y description
+      const allowedFields = ['requireRating', 'description'];
+      const filteredData: any = {};
+      
+      for (const key of allowedFields) {
+        if (key in validatedData) {
+          filteredData[key] = (validatedData as any)[key];
+        }
+      }
+      
+      validatedData = filteredData;
+    }
 
     const department = await departmentsService.updateDepartment(id, validatedData);
 

@@ -19,10 +19,6 @@ export default function DashboardHomePage() {
   const { userRole } = usePermissions();
   const navigate = useNavigate();
 
-  console.log('DashboardHomePage - userRole:', userRole);
-  console.log('DashboardHomePage - RoleType.SUPER_ADMIN:', RoleType.SUPER_ADMIN);
-  console.log('DashboardHomePage - Comparación:', userRole === RoleType.SUPER_ADMIN);
-
   if (!user) return null;
 
   const stats = [

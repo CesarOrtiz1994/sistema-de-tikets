@@ -827,25 +827,38 @@
 **Objetivo:** Flujo completo de cierre de ticket
 
 #### Backend
-- [ ] Tabla ticket_ratings
-- [ ] Endpoints:
-  - `PUT /api/tickets/:id/resolve` - Marcar resuelto
-  - `POST /api/tickets/:id/rate` - Calificar ticket
-  - `PUT /api/tickets/:id/close` - Cerrar ticket
-  - `POST /api/tickets/:id/reopen` - Reabrir
-- [ ] Job programado para auto-cerrar tickets:
-  - Si están en RESOLVED por X días
-  - Cambiar a CLOSED automáticamente
-  - Enviar email final
+- [x] Tabla ticket_ratings
+- [x] Campo `requireRating` en departamentos para hacer calificación opcional/obligatoria
+- [x] Endpoints:
+  - [x] `PUT /api/tickets/:id/resolve` - Marcar resuelto
+  - [x] `POST /api/tickets/:id/rate` - Calificar ticket
+  - [x] `PUT /api/tickets/:id/close` - Cerrar ticket (con validación Zod)
+  - [x] `POST /api/tickets/:id/reopen` - Reabrir (con validación Zod)
+- [x] Validadores Zod para todos los endpoints de calificación
+- [x] Incluir calificación en respuesta de getTicketById
+- [x] Job programado para auto-cerrar tickets:
+  - [x] Campo `autoCloseAfterDays` configurable por departamento (default: 8 días)
+  - [x] Calcula días hábiles usando el horario laboral del departamento
+  - [x] Si están en RESOLVED por X días hábiles, cambiar a CLOSED automáticamente
+  - [x] Registra en audit log cada auto-cierre
+  - [x] Worker ejecutándose cada 1 hora
+  - [ ] Enviar email final (pendiente implementar EmailService)
 
 #### Frontend
-- [ ] Modal de calificación:
-  - Componente de estrellas (1-5)
-  - Textarea para comentario opcional
-  - Botón confirmar
-- [ ] Modal de confirmación de cierre
-- [ ] Modal para reabrir con justificación
-- [ ] Badge de calificación en tickets cerrados
+- [x] Modal de calificación (CloseTicketModal):
+  - [x] Componente de estrellas (1-5) usando StarRating de common
+  - [x] Textarea para comentario opcional
+  - [x] Botón confirmar dinámico según requireRating
+  - [x] Validación con Zod
+  - [x] Toast notifications con sonner
+  - [x] Dos flujos: con calificación obligatoria y sin calificación
+- [x] Modal de confirmación de cierre (integrado en CloseTicketModal)
+- [x] Modal para reabrir con justificación (ReopenTicketModal):
+  - [x] Validación Zod
+  - [x] Componentes de common (Modal, ModalButtons, ValidationError)
+- [x] Visualización de calificación en tickets cerrados (TicketDetailPage)
+- [x] Botón dinámico según requireRating ("Cerrar y Calificar" vs "Cerrar Ticket")
+- [ ] Badge de calificación en tarjetas de tickets (KanbanBoard/TicketList)
 - [ ] Encuesta de satisfacción (opcional)
 
 **Entregable:** Ciclo completo de ticket hasta cierre

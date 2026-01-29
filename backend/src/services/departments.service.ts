@@ -5,6 +5,8 @@ export interface CreateDepartmentData {
   prefix: string;
   description?: string;
   isDefaultForRequesters?: boolean;
+  requireRating?: boolean;
+  autoCloseAfterDays?: number;
   createdById?: string;
 }
 
@@ -13,6 +15,8 @@ export interface UpdateDepartmentData {
   prefix?: string;
   description?: string;
   isDefaultForRequesters?: boolean;
+  requireRating?: boolean;
+  autoCloseAfterDays?: number;
 }
 
 export interface DepartmentFilters {
@@ -23,6 +27,54 @@ export interface DepartmentFilters {
 }
 
 export class DepartmentsService {
+  /**
+   * Obtiene todos los departamentos donde el usuario es administrador
+   */
+  async getUserAdminDepartments(userId: string) {
+    const departments = await prisma.department.findMany({
+      where: {
+        deletedAt: null,
+        users: {
+          some: {
+            userId,
+            role: 'ADMIN'
+          }
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        prefix: true,
+        description: true,
+        requireRating: true,
+        autoCloseAfterDays: true,
+        _count: {
+          select: {
+            users: true
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    return departments;
+  }
+
+  /**
+   * Verifica si un usuario es administrador de un departamento específico
+   */
+  async isUserAdminOfDepartment(userId: string, departmentId: string): Promise<boolean> {
+    const departmentUser = await prisma.departmentUser.findFirst({
+      where: {
+        userId,
+        departmentId,
+        role: 'ADMIN'
+      }
+    });
+
+    return !!departmentUser;
+  }
+
   async getAllDepartments(filters: DepartmentFilters = {}, userId?: string, userRole?: string) {
     const {
       search,
@@ -168,6 +220,7 @@ export class DepartmentsService {
         prefix: data.prefix,
         description: data.description,
         isDefaultForRequesters: data.isDefaultForRequesters || false,
+        requireRating: data.requireRating ?? true,
         createdBy: {
           connect: { id: data.createdById }
         }
@@ -228,14 +281,22 @@ export class DepartmentsService {
       });
     }
 
+    // Filtrar campos undefined para no sobrescribir datos existentes
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.prefix !== undefined) updateData.prefix = data.prefix;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.isDefaultForRequesters !== undefined) updateData.isDefaultForRequesters = data.isDefaultForRequesters;
+    if (data.requireRating !== undefined) updateData.requireRating = data.requireRating;
+
+    console.log('📝 UPDATE DEPARTMENT SERVICE - Datos a guardar:', {
+      id,
+      data: updateData
+    });
+
     const department = await prisma.department.update({
       where: { id },
-      data: {
-        name: data.name,
-        prefix: data.prefix,
-        description: data.description,
-        isDefaultForRequesters: data.isDefaultForRequesters
-      },
+      data: updateData,
       include: {
         createdBy: {
           select: {

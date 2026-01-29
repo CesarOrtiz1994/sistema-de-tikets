@@ -4,6 +4,7 @@ import logger from './config/logger';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import fileCleanupJob from './jobs/fileCleanup.job';
 import slaCheckerWorker from './workers/slaChecker.worker';
+import autoCloseTicketsWorker from './workers/autoCloseTickets.worker';
 
 const startServer = async () => {
   try {
@@ -20,6 +21,9 @@ const startServer = async () => {
       
       // Iniciar worker de verificación SLA (cada 5 minutos)
       slaCheckerWorker.startScheduled(5);
+      
+      // Iniciar worker de auto-cierre de tickets (cada 1 hora)
+      autoCloseTicketsWorker.startScheduled(1);
     });
 
     // Manejo de errores no capturados

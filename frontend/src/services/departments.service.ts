@@ -6,6 +6,8 @@ export interface Department {
   prefix: string;
   description?: string;
   isDefaultForRequesters: boolean;
+  requireRating?: boolean;
+  isActive: boolean;
   createdById?: string;
   deletedAt?: string;
   createdAt: string;
@@ -26,6 +28,7 @@ export interface CreateDepartmentData {
   prefix: string;
   description?: string;
   isDefaultForRequesters?: boolean;
+  requireRating?: boolean;
 }
 
 export interface UpdateDepartmentData {
@@ -33,6 +36,7 @@ export interface UpdateDepartmentData {
   prefix?: string;
   description?: string;
   isDefaultForRequesters?: boolean;
+  requireRating?: boolean;
 }
 
 export interface DepartmentFilters {
@@ -72,6 +76,11 @@ export const departmentsService = {
 
   async getDepartmentById(id: string) {
     const response = await api.get(`/api/departments/${id}`);
+    return response.data;
+  },
+
+  async getMyAdminDepartments(): Promise<{ success: boolean; data: Department[] }> {
+    const response = await api.get('/api/departments/my-admin-departments');
     return response.data;
   },
 

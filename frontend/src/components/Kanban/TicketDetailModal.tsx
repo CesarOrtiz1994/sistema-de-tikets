@@ -233,6 +233,53 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                   </div>
                 </div>
 
+                {/* SLA Deadline */}
+                {ticket.slaDeadline && (
+                  <div className={`flex items-center gap-3 p-4 rounded-lg border-2 ${
+                    ticket.slaExceeded 
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700' 
+                      : new Date(ticket.slaDeadline) < new Date(Date.now() + 24 * 60 * 60 * 1000)
+                        ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700'
+                        : 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                  }`}>
+                    <FiClock className={`w-5 h-5 ${
+                      ticket.slaExceeded 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : new Date(ticket.slaDeadline) < new Date(Date.now() + 24 * 60 * 60 * 1000)
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-green-600 dark:text-green-400'
+                    }`} />
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${
+                        ticket.slaExceeded 
+                          ? 'text-red-700 dark:text-red-300' 
+                          : new Date(ticket.slaDeadline) < new Date(Date.now() + 24 * 60 * 60 * 1000)
+                            ? 'text-orange-700 dark:text-orange-300'
+                            : 'text-green-700 dark:text-green-300'
+                      }`}>
+                        {ticket.slaExceeded ? '⚠️ SLA Excedido' : '⏰ Fecha de Entrega Estimada'}
+                      </p>
+                      <p className={`font-bold ${
+                        ticket.slaExceeded 
+                          ? 'text-red-900 dark:text-red-200' 
+                          : new Date(ticket.slaDeadline) < new Date(Date.now() + 24 * 60 * 60 * 1000)
+                            ? 'text-orange-900 dark:text-orange-200'
+                            : 'text-green-900 dark:text-green-200'
+                      }`}>
+                        {formatDate(ticket.slaDeadline)}
+                      </p>
+                      {ticket.slaPausedAt && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          ⏸️ SLA pausado temporalmente
+                        </p>
+                      )}
+                    </div>
+                    {ticket.slaExceeded && (
+                      <FiAlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                    )}
+                  </div>
+                )}
+
                 {/* Asignación */}
                 {canEdit && (
                   <div className="space-y-3">
@@ -320,15 +367,51 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                     {Array.isArray(fullTicket?.formFields) && fullTicket.formFields.length > 0 ? (
                       fullTicket.formFields.map((field: any) => {
                         const value = fullTicket?.formData?.[field.id];
-
-                        return (
-                          <div key={field.id} className="border-b border-gray-200 dark:border-gray-600 pb-3 last:border-0 last:pb-0">
-                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              {field.label || field.name || field.title || field.id}
-                              {field.isRequired && <span className="text-red-500 ml-1">*</span>}
-                            </p>
-                            <div className="text-gray-900 dark:text-white">
-                              {field.fieldType?.type === 'FILE' && value ? (
+                        
+                        // Función para renderizar el valor según su tipo
+                        const renderFieldValue = () => {
+                          const fieldTypeName = field.fieldType?.name?.toUpperCase() || field.fieldType?.type?.toUpperCase();
+                          
+                          // Si es un campo de archivo (FILE, IMAGE, MULTIFILE)
+                          if (['FILE', 'IMAGE', 'MULTIFILE'].includes(fieldTypeName) && value) {
+                            // Si es un array de archivos
+                            if (Array.isArray(value) && value.length > 0 && value[0]?.filename) {
+                              const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+                              return (
+                                <div className="space-y-2">
+                                  {value.map((file: any, index: number) => {
+                                    // Decodificar HTML entities del file.path
+                                    const decodedPath = file.path
+                                      .replace(/&#x2F;/g, '/')
+                                      .replace(/&amp;/g, '&')
+                                      .replace(/&lt;/g, '<')
+                                      .replace(/&gt;/g, '>')
+                                      .replace(/&quot;/g, '"');
+                                    
+                                    // Construir URL completa
+                                    const fileUrl = `${API_BASE_URL}/${decodedPath}`;
+                                    console.log('🔍 File URL Debug:', { file, decodedPath, fileUrl, API_BASE_URL });
+                                    
+                                    return (
+                                      <button
+                                        key={index}
+                                        onClick={() => window.open(fileUrl, '_blank')}
+                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
+                                      >
+                                        <span>📎</span>
+                                        <span className="underline">{file.originalName || file.filename}</span>
+                                        <span className="text-xs text-gray-500">
+                                          ({(file.size / 1024).toFixed(1)} KB)
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            }
+                            // Fallback para formato antiguo (string URL)
+                            if (typeof value === 'string') {
+                              return (
                                 <a
                                   href={value}
                                   target="_blank"
@@ -337,13 +420,43 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                                 >
                                   Ver archivo adjunto
                                 </a>
-                              ) : field.fieldType?.type === 'CHECKBOX' ? (
-                                <span>{value ? 'Sí' : 'No'}</span>
-                              ) : field.fieldType?.type === 'SELECT' || field.fieldType?.type === 'RADIO' ? (
-                                <span>{field.options?.find((opt: any) => opt.value === value)?.label || value || '-'}</span>
-                              ) : (
-                                <span className="whitespace-pre-wrap">{value || '-'}</span>
-                              )}
+                              );
+                            }
+                          }
+                          
+                          // Si es un array normal (MULTISELECT, CHECKBOX)
+                          if (Array.isArray(value)) {
+                            return <span>{value.join(', ')}</span>;
+                          }
+                          
+                          // Si es booleano (TOGGLE, CHECKBOX)
+                          if (typeof value === 'boolean') {
+                            return <span>{value ? 'Sí' : 'No'}</span>;
+                          }
+                          
+                          // Si es SELECT o RADIO
+                          if (['SELECT', 'RADIO'].includes(fieldTypeName)) {
+                            const option = field.options?.find((opt: any) => opt.value === value);
+                            return <span>{option?.label || value || '-'}</span>;
+                          }
+                          
+                          // Si es un objeto (no manejado arriba)
+                          if (typeof value === 'object' && value !== null) {
+                            return <pre className="text-xs">{JSON.stringify(value, null, 2)}</pre>;
+                          }
+                          
+                          // Valor simple
+                          return <span className="whitespace-pre-wrap">{value || '-'}</span>;
+                        };
+
+                        return (
+                          <div key={field.id} className="border-b border-gray-200 dark:border-gray-600 pb-3 last:border-0 last:pb-0">
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              {field.label || field.name || field.title || field.id}
+                              {field.isRequired && <span className="text-red-500 ml-1">*</span>}
+                            </p>
+                            <div className="text-gray-900 dark:text-white">
+                              {renderFieldValue()}
                             </div>
                           </div>
                         );
@@ -351,14 +464,71 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                     ) : fullTicket?.formData && Object.keys(fullTicket.formData).length > 0 ? (
                       Object.entries(fullTicket.formData).map(([fieldId, value]: [string, any]) => {
                         const fieldLabel = fullTicket.fieldLabels?.[fieldId] || fieldId;
+                        
+                        // Función para renderizar el valor según su tipo
+                        const renderValue = () => {
+                          // Si es un array de archivos
+                          if (Array.isArray(value) && value.length > 0 && value[0]?.filename) {
+                            const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+                            return (
+                              <div className="space-y-2">
+                                {value.map((file: any, index: number) => {
+                                  // Decodificar HTML entities del file.path
+                                  const decodedPath = file.path
+                                    .replace(/&#x2F;/g, '/')
+                                    .replace(/&amp;/g, '&')
+                                    .replace(/&lt;/g, '<')
+                                    .replace(/&gt;/g, '>')
+                                    .replace(/&quot;/g, '"');
+                                  
+                                  // Construir URL completa
+                                  const fileUrl = `${API_BASE_URL}/${decodedPath}`;
+                                  
+                                  return (
+                                    <button
+                                      key={index}
+                                      onClick={() => window.open(fileUrl, '_blank')}
+                                      className="flex items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
+                                    >
+                                      <span>📎</span>
+                                      <span className="underline">{file.originalName || file.filename}</span>
+                                      <span className="text-xs text-gray-500">
+                                        ({(file.size / 1024).toFixed(1)} KB)
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            );
+                          }
+                          
+                          // Si es un array normal
+                          if (Array.isArray(value)) {
+                            return value.join(', ');
+                          }
+                          
+                          // Si es un objeto (pero no archivo)
+                          if (typeof value === 'object' && value !== null) {
+                            return JSON.stringify(value, null, 2);
+                          }
+                          
+                          // Si es booleano
+                          if (typeof value === 'boolean') {
+                            return value ? 'Sí' : 'No';
+                          }
+                          
+                          // Valor simple
+                          return String(value);
+                        };
+                        
                         return (
                           <div key={fieldId} className="border-b border-gray-200 dark:border-gray-600 pb-3 last:border-0 last:pb-0">
                             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                               {fieldLabel}
                             </p>
-                            <p className="text-gray-900 dark:text-white">
-                              {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
-                            </p>
+                            <div className="text-gray-900 dark:text-white">
+                              {renderValue()}
+                            </div>
                           </div>
                         );
                       })

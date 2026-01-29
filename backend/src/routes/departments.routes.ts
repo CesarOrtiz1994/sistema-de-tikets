@@ -7,7 +7,8 @@ import {
   deleteDepartment,
   assignUserToDepartment,
   removeUserFromDepartment,
-  getDepartmentUsers
+  getDepartmentUsers,
+  getMyAdminDepartments
 } from '../controllers/departments.controller';
 import { authenticate, authorize } from '../middlewares/auth';
 import { auditAction } from '../middlewares/audit.middleware';
@@ -16,6 +17,9 @@ const router = Router();
 
 // Todas las rutas requieren autenticación
 router.use(authenticate);
+
+// Obtener departamentos donde el usuario es administrador
+router.get('/my-admin-departments', getMyAdminDepartments);
 
 // Obtener todos los departamentos - SUPER_ADMIN ve todos, DEPT_ADMIN solo el suyo
 router.get('/', getAllDepartments);
@@ -26,8 +30,8 @@ router.get('/:id', getDepartmentById);
 // Crear departamento - Solo SUPER_ADMIN
 router.post('/', authorize('SUPER_ADMIN'), auditAction('CREATE_DEPARTMENT', 'department') as any, createDepartment);
 
-// Actualizar departamento - Solo SUPER_ADMIN
-router.put('/:id', authorize('SUPER_ADMIN'), auditAction('UPDATE_DEPARTMENT', 'department') as any, updateDepartment);
+// Actualizar departamento - SUPER_ADMIN (todos los campos) y DEPT_ADMIN (solo su departamento y campos permitidos)
+router.put('/:id', authorize('SUPER_ADMIN', 'DEPT_ADMIN'), auditAction('UPDATE_DEPARTMENT', 'department') as any, updateDepartment);
 
 // Eliminar departamento - Solo SUPER_ADMIN
 router.delete('/:id', authorize('SUPER_ADMIN'), auditAction('DELETE_DEPARTMENT', 'department') as any, deleteDepartment);

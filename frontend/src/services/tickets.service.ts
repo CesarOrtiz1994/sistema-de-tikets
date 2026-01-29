@@ -28,6 +28,7 @@ export interface Ticket {
     id: string;
     name: string;
     prefix: string;
+    requireRating?: boolean;
   };
   form?: {
     id: string;
@@ -128,9 +129,29 @@ class TicketsService {
     return response.data.data;
   }
 
-  async changeStatus(id: string, status: TicketStatus): Promise<Ticket> {
-    const response = await api.put(`/api/tickets/${id}/status`, { status });
-    return response.data.data;
+  async changeStatus(ticketId: string, status: TicketStatus) {
+    const response = await api.put(`/api/tickets/${ticketId}/status`, { status });
+    return response.data;
+  }
+
+  async resolveTicket(ticketId: string) {
+    const response = await api.put(`/api/tickets/${ticketId}/resolve`);
+    return response.data;
+  }
+
+  async rateTicket(ticketId: string, rating: number, comment?: string) {
+    const response = await api.post(`/api/tickets/${ticketId}/rate`, { rating, comment });
+    return response.data;
+  }
+
+  async closeTicket(ticketId: string, rating?: number, comment?: string) {
+    const response = await api.put(`/api/tickets/${ticketId}/close`, { rating, comment });
+    return response.data;
+  }
+
+  async reopenTicket(ticketId: string, reason: string) {
+    const response = await api.post(`/api/tickets/${ticketId}/reopen`, { reason });
+    return response.data;
   }
 
   async changePriority(id: string, priority: TicketPriority): Promise<Ticket> {

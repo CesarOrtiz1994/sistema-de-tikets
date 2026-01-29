@@ -2,33 +2,50 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
-import { FiUsers, FiUserPlus, FiTrash2, FiInfo } from 'react-icons/fi';
+import { FiUsers, FiUserPlus, FiTrash2, FiInfo, FiChevronDown } from 'react-icons/fi';
 import { departmentsService, Department, DepartmentUser } from '../services/departments.service';
 import { usersService } from '../services/users.service';
 import AssignUserModal from '../components/Users/AssignUserModal';
 
 export default function MyDepartmentPage() {
   const [department, setDepartment] = useState<Department | null>(null);
+  const [myDepartments, setMyDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<DepartmentUser[]>([]);
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
 
   useEffect(() => {
     loadMyDepartment();
   }, []);
 
+  // Cerrar el selector al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showDepartmentSelector && !target.closest('.department-selector')) {
+        setShowDepartmentSelector(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDepartmentSelector]);
+
   const loadMyDepartment = async () => {
     try {
       setLoading(true);
-      // Obtener el departamento del DEPT_ADMIN (el backend ya filtra)
-      const response = await departmentsService.getAllDepartments({ page: 1, limit: 1 });
+      // Obtener todos los departamentos donde el usuario es administrador
+      const response = await departmentsService.getMyAdminDepartments();
       
-      if (response.data.length > 0) {
-        const myDept = response.data[0];
-        setDepartment(myDept);
-        await loadUsers(myDept.id);
+      if (response.data && response.data.length > 0) {
+        setMyDepartments(response.data);
+        // Seleccionar el primer departamento por defecto
+        const firstDept = response.data[0];
+        setDepartment(firstDept);
+        await loadUsers(firstDept.id);
       }
     } catch (error) {
       console.error('Error al cargar departamento:', error);
@@ -105,6 +122,47 @@ export default function MyDepartmentPage() {
     setIsAssignModalOpen(true);
   };
 
+  const handleChangeDepartment = async (dept: Department) => {
+    setDepartment(dept);
+    setShowDepartmentSelector(false);
+    await loadUsers(dept.id);
+  };
+
+  const handleToggleRequireRating = async () => {
+    if (!department) return;
+
+    try {
+      const newValue = !department.requireRating;
+      
+      // Solo enviar el campo requireRating, sin otros campos
+      const updateData: { requireRating: boolean } = {
+        requireRating: newValue
+      };
+      
+      await departmentsService.updateDepartment(department.id, updateData);
+      
+      // Actualizar el estado local
+      setDepartment({
+        ...department,
+        requireRating: newValue
+      });
+
+      // Actualizar en la lista de departamentos también
+      setMyDepartments(myDepartments.map(d => 
+        d.id === department.id ? { ...d, requireRating: newValue } : d
+      ));
+
+      toast.success(
+        newValue 
+          ? 'Calificación activada: Los usuarios deberán calificar al cerrar tickets' 
+          : 'Calificación desactivada: Los usuarios pueden cerrar tickets sin calificar'
+      );
+    } catch (error) {
+      console.error('Error al actualizar requireRating:', error);
+      toast.error('Error al actualizar la configuración de calificaciones');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -131,8 +189,77 @@ export default function MyDepartmentPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Mi Departamento</h1>
-        <p className="text-gray-600 dark:text-gray-300">Gestiona los miembros de tu departamento</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Mi Departamento</h1>
+            <p className="text-gray-600 dark:text-gray-300">Gestiona los miembros de tu departamento</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Selector de Departamentos - Solo si tiene más de uno */}
+            {myDepartments.length > 1 && (
+              <div className="relative department-selector">
+                <button
+                  onClick={() => setShowDepartmentSelector(!showDepartmentSelector)}
+                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {department?.name}
+                  </span>
+                  <FiChevronDown className={`text-gray-500 transition-transform ${showDepartmentSelector ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown de departamentos */}
+                {showDepartmentSelector && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                    <div className="p-2">
+                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-3 py-2">
+                        Cambiar Departamento
+                      </div>
+                      {myDepartments.map((dept) => (
+                        <button
+                          key={dept.id}
+                          onClick={() => handleChangeDepartment(dept)}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                            dept.id === department?.id
+                              ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          <div className="font-medium">{dept.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Prefijo: {dept.prefix} • {(dept as any)._count?.users || 0} miembros
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Switch de Requerir Calificación */}
+            <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Requerir calificación
+              </span>
+              <button
+                onClick={handleToggleRequireRating}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                  department?.requireRating
+                    ? 'bg-purple-600'
+                    : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    department?.requireRating ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Información del Departamento */}

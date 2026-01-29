@@ -8,7 +8,10 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import WorkScheduleInfo from '../components/Tickets/WorkScheduleInfo';
 import Modal from '../components/common/Modal';
 import ModalButtons from '../components/common/ModalButtons';
-import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit} from 'react-icons/fi';
+import CloseTicketModal from '../components/Tickets/CloseTicketModal';
+import ReopenTicketModal from '../components/Tickets/ReopenTicketModal';
+import StarRating from '../components/common/StarRating';
+import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw} from 'react-icons/fi';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { departmentsService } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
@@ -89,6 +92,8 @@ export default function TicketDetailPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [showReopenModal, setShowReopenModal] = useState(false);
 
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('NEW');
@@ -200,10 +205,40 @@ export default function TicketDetailPage() {
     }
   };
 
+  const handleCloseTicket = async (rating?: number, comment?: string) => {
+    if (!ticket) return;
+
+    try {
+      await ticketsService.closeTicket(ticket.id, rating, comment);
+      toast.success('Ticket cerrado exitosamente');
+      loadTicket();
+    } catch (error: any) {
+      console.error('Error closing ticket:', error);
+      toast.error(error.response?.data?.message || 'Error al cerrar el ticket');
+      throw error;
+    }
+  };
+
+  const handleReopenTicket = async (reason: string) => {
+    if (!ticket) return;
+
+    try {
+      await ticketsService.reopenTicket(ticket.id, reason);
+      toast.success('Ticket reabierto exitosamente');
+      loadTicket();
+    } catch (error: any) {
+      console.error('Error reopening ticket:', error);
+      toast.error(error.response?.data?.message || 'Error al reabrir el ticket');
+      throw error;
+    }
+  };
+
   const canAssign = userRole === RoleType.DEPT_ADMIN || userRole === RoleType.SUPER_ADMIN;
   const canChangeStatus = ticket?.assignedToId === user?.id || canAssign;
   const canChangePriority = canAssign;
   const canCancel = ticket?.requesterId === user?.id && ticket?.status === 'NEW';
+  const canCloseTicket = ticket?.requesterId === user?.id && ticket?.status === 'RESOLVED';
+  const canReopenTicket = ticket?.requesterId === user?.id && ticket?.status === 'CLOSED';
 
   if (loading) {
     return (
@@ -298,6 +333,24 @@ export default function TicketDetailPage() {
               >
                 <FiXCircle />
                 <span>Cancelar Ticket</span>
+              </button>
+            )}
+            {canCloseTicket && (
+              <button
+                onClick={() => setShowCloseModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
+              >
+                <FiCheckCircle />
+                <span>{ticket?.department?.requireRating ? 'Cerrar y Calificar' : 'Cerrar Ticket'}</span>
+              </button>
+            )}
+            {canReopenTicket && (
+              <button
+                onClick={() => setShowReopenModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
+              >
+                <FiRotateCcw />
+                <span>Reabrir Ticket</span>
               </button>
             )}
           </div>
@@ -460,6 +513,53 @@ export default function TicketDetailPage() {
             </div>
           </Card>
 
+          {/* Calificación del Ticket (si existe) */}
+          {(ticket as any).rating && (
+            <Card>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Calificación del Servicio
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                    Calificación
+                  </label>
+                  <StarRating
+                    rating={(ticket as any).rating.rating}
+                    readonly={true}
+                    size="lg"
+                    showLabel={true}
+                  />
+                </div>
+                
+                {(ticket as any).rating.comment && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                      Comentario
+                    </label>
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        {(ticket as any).rating.comment}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Fecha de Calificación
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <FiCalendar className="text-gray-500" />
+                    <span className="text-sm text-gray-900 dark:text-white">
+                      {formatDate((ticket as any).rating.ratedAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Horario de Atención del Departamento */}
           {ticket.department && (
             <WorkScheduleInfo
@@ -478,14 +578,49 @@ export default function TicketDetailPage() {
                 (ticket.form as any).fields.map((field: any) => {
                   const value = ticket.formData?.[field.id];
                   
-                  return (
-                    <div key={field.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
-                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                        {field.label}
-                        {field.isRequired && <span className="text-red-500 ml-1">*</span>}
-                      </label>
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {field.fieldType.type === 'FILE' && value ? (
+                  // Función para renderizar el valor según su tipo
+                  const renderFieldValue = () => {
+                    const fieldTypeName = field.fieldType?.name?.toUpperCase() || field.fieldType?.type?.toUpperCase();
+                    
+                    // Si es un campo de archivo (FILE, IMAGE, MULTIFILE)
+                    if (['FILE', 'IMAGE', 'MULTIFILE'].includes(fieldTypeName) && value) {
+                      // Si es un array de archivos
+                      if (Array.isArray(value) && value.length > 0 && value[0]?.filename) {
+                        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+                        return (
+                          <div className="space-y-2">
+                            {value.map((file: any, index: number) => {
+                              // Decodificar HTML entities del file.path
+                              const decodedPath = file.path
+                                .replace(/&#x2F;/g, '/')
+                                .replace(/&amp;/g, '&')
+                                .replace(/&lt;/g, '<')
+                                .replace(/&gt;/g, '>')
+                                .replace(/&quot;/g, '"');
+                              
+                              // Construir URL completa
+                              const fileUrl = `${API_BASE_URL}/${decodedPath}`;
+                              
+                              return (
+                                <button
+                                  key={index}
+                                  onClick={() => window.open(fileUrl, '_blank')}
+                                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
+                                >
+                                  <FiFileText />
+                                  <span className="underline">{file.originalName || file.filename}</span>
+                                  <span className="text-xs text-gray-500">
+                                    ({(file.size / 1024).toFixed(1)} KB)
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                      // Fallback para formato antiguo (string URL)
+                      if (typeof value === 'string') {
+                        return (
                           <a
                             href={value}
                             target="_blank"
@@ -495,13 +630,38 @@ export default function TicketDetailPage() {
                             <FiFileText />
                             Ver archivo adjunto
                           </a>
-                        ) : field.fieldType.type === 'CHECKBOX' ? (
-                          <span>{value ? 'Sí' : 'No'}</span>
-                        ) : field.fieldType.type === 'SELECT' || field.fieldType.type === 'RADIO' ? (
-                          <span>{field.options?.find((opt: any) => opt.value === value)?.label || value}</span>
-                        ) : (
-                          <span className="whitespace-pre-wrap">{value || '-'}</span>
-                        )}
+                        );
+                      }
+                    }
+                    
+                    // Si es un array normal (MULTISELECT, CHECKBOX)
+                    if (Array.isArray(value)) {
+                      return <span>{value.join(', ')}</span>;
+                    }
+                    
+                    // Si es booleano (TOGGLE)
+                    if (typeof value === 'boolean') {
+                      return <span>{value ? 'Sí' : 'No'}</span>;
+                    }
+                    
+                    // Si es SELECT o RADIO
+                    if (['SELECT', 'RADIO'].includes(fieldTypeName)) {
+                      const option = field.options?.find((opt: any) => opt.value === value);
+                      return <span>{option?.label || value || '-'}</span>;
+                    }
+                    
+                    // Valor simple
+                    return <span className="whitespace-pre-wrap">{value || '-'}</span>;
+                  };
+                  
+                  return (
+                    <div key={field.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+                      <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        {field.label}
+                        {field.isRequired && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {renderFieldValue()}
                       </div>
                     </div>
                   );
@@ -664,6 +824,23 @@ export default function TicketDetailPage() {
           </select>
         </div>
       </Modal>
+
+      {/* Modal Cerrar Ticket */}
+      <CloseTicketModal
+        isOpen={showCloseModal}
+        onClose={() => setShowCloseModal(false)}
+        onConfirm={handleCloseTicket}
+        requireRating={ticket?.department?.requireRating ?? false}
+        ticketNumber={ticket?.ticketNumber || ''}
+      />
+
+      {/* Modal Reabrir Ticket */}
+      <ReopenTicketModal
+        isOpen={showReopenModal}
+        onClose={() => setShowReopenModal(false)}
+        onConfirm={handleReopenTicket}
+        ticketNumber={ticket?.ticketNumber || ''}
+      />
     </div>
   );
 }

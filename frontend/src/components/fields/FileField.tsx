@@ -129,8 +129,9 @@ export default function FileField({
     setUploadedFiles(prev => [...prev, ...uploaded]);
     setUploading(false);
     
-    // Notificar cambio al formulario
-    onChange?.(multiple ? uploaded : uploaded[0]);
+    // Notificar cambio al formulario - SIEMPRE enviar array
+    const allUploadedFiles = [...uploadedFiles, ...uploaded];
+    onChange?.(allUploadedFiles);
   };
 
   const removeFile = async (index: number) => {
@@ -146,7 +147,8 @@ export default function FileField({
 
     const newUploadedFiles = uploadedFiles.filter((_, i) => i !== index);
     setUploadedFiles(newUploadedFiles);
-    onChange?.(multiple ? newUploadedFiles : newUploadedFiles[0]);
+    // SIEMPRE enviar array
+    onChange?.(newUploadedFiles);
   };
 
   const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {

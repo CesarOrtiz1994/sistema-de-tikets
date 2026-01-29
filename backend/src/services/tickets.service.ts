@@ -224,7 +224,8 @@ export class TicketsService {
           select: {
             id: true,
             name: true,
-            prefix: true
+            prefix: true,
+            requireRating: true
           }
         },
         form: {
@@ -255,6 +256,15 @@ export class TicketsService {
             name: true,
             email: true,
             profilePicture: true
+          }
+        },
+        rating: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            ratedBy: true,
+            ratedAt: true
           }
         }
       }
