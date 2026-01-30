@@ -22,9 +22,19 @@ export interface DepartmentSLA {
 }
 
 export interface AssignSLAData {
-  slaConfigurationId: string;
+  slaConfigurationId?: string;
   priority: SLAPriority;
   isDefault?: boolean;
+  // Campos para crear SLA completo
+  name?: string;
+  description?: string;
+  responseTime?: number;
+  resolutionTime?: number;
+  businessHoursOnly?: boolean;
+  escalationEnabled?: boolean;
+  escalationTime?: number | null;
+  notifyOnBreach?: boolean;
+  notifyBefore?: number | null;
 }
 
 class DepartmentSLAService {

@@ -46,6 +46,7 @@ export class DepartmentsService {
         name: true,
         prefix: true,
         description: true,
+        isDefaultForRequesters: true,
         requireRating: true,
         autoCloseAfterDays: true,
         _count: {
@@ -288,8 +289,9 @@ export class DepartmentsService {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.isDefaultForRequesters !== undefined) updateData.isDefaultForRequesters = data.isDefaultForRequesters;
     if (data.requireRating !== undefined) updateData.requireRating = data.requireRating;
+    if (data.autoCloseAfterDays !== undefined) updateData.autoCloseAfterDays = data.autoCloseAfterDays;
 
-    console.log('📝 UPDATE DEPARTMENT SERVICE - Datos a guardar:', {
+    console.log('UPDATE DEPARTMENT SERVICE - Datos a guardar:', {
       id,
       data: updateData
     });

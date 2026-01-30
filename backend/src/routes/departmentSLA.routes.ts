@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import departmentSLAController from '../controllers/departmentSLA.controller';
 import { authenticate } from '../middlewares/auth';
-import { isSuperAdmin, isDeptAdmin } from '../middlewares/permissions.middleware';
+import { isDeptAdmin } from '../middlewares/permissions.middleware';
 
 const router = Router();
 
@@ -32,7 +32,7 @@ router.get(
 router.post(
   '/:id/sla',
   authenticate,
-  isSuperAdmin(),
+  isDeptAdmin(),
   departmentSLAController.assignSLAToDepartment
 );
 
@@ -40,7 +40,7 @@ router.post(
 router.delete(
   '/:id/sla/:priority',
   authenticate,
-  isSuperAdmin(),
+  isDeptAdmin(),
   departmentSLAController.removeSLAFromDepartment
 );
 

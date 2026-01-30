@@ -22,22 +22,81 @@ class DepartmentSLAController {
   async assignSLAToDepartment(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { slaConfigurationId, priority, isDefault } = req.body;
+      const { 
+        slaConfigurationId, 
+        priority, 
+        isDefault,
+        // Campos para crear SLA completo
+        name,
+        description,
+        responseTime,
+        resolutionTime,
+        businessHoursOnly,
+        escalationEnabled,
+        escalationTime,
+        notifyOnBreach,
+        notifyBefore
+      } = req.body;
 
-      if (!slaConfigurationId || !priority) {
+      if (!priority) {
         return res.status(400).json({
           success: false,
-          message: 'slaConfigurationId and priority are required'
+          message: 'priority is required'
         });
       }
 
       const userId = (req as any).user?.id;
-      const result = await departmentSLAService.assignSLAToDepartment({
-        departmentId: id,
-        slaConfigurationId,
-        priority: priority as SLAPriority,
-        isDefault
-      });
+      const userRole = (req as any).user?.roleType;
+
+      // Si es DEPT_ADMIN, verificar que sea admin de este departamento
+      if (userRole === 'DEPT_ADMIN') {
+        const departmentUser = await prisma.departmentUser.findFirst({
+          where: {
+            departmentId: id,
+            userId: userId,
+            role: 'ADMIN'
+          }
+        });
+
+        if (!departmentUser) {
+          return res.status(403).json({
+            success: false,
+            message: 'No tienes permiso para configurar SLA de este departamento'
+          });
+        }
+      }
+      // Si se proporciona slaConfigurationId, usar el método antiguo
+      // Si se proporcionan los campos completos, crear SLA directamente
+      let result;
+      if (slaConfigurationId) {
+        result = await departmentSLAService.assignSLAToDepartment({
+          departmentId: id,
+          slaConfigurationId,
+          priority: priority as SLAPriority,
+          isDefault
+        });
+      } else if (name && responseTime && resolutionTime) {
+        // Crear configuración SLA completa
+        result = await departmentSLAService.createDepartmentSLADirect({
+          departmentId: id,
+          priority: priority as SLAPriority,
+          name,
+          description,
+          responseTime,
+          resolutionTime,
+          businessHoursOnly: businessHoursOnly ?? true,
+          escalationEnabled: escalationEnabled ?? false,
+          escalationTime,
+          notifyOnBreach: notifyOnBreach ?? true,
+          notifyBefore,
+          isDefault: isDefault ?? false
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Either slaConfigurationId or complete SLA configuration (name, responseTime, resolutionTime) is required'
+        });
+      }
 
       // Auditoría
       await prisma.auditLog.create({
@@ -47,8 +106,9 @@ class DepartmentSLAController {
           resource: 'DEPARTMENT_SLA',
           resourceId: id,
           details: {
-            slaConfigurationId,
+            slaConfigurationId: slaConfigurationId || 'direct',
             priority,
+            name,
             isDefault: isDefault || false
           },
           status: 'SUCCESS',
@@ -98,6 +158,26 @@ class DepartmentSLAController {
       }
 
       const userId = (req as any).user?.id;
+      const userRole = (req as any).user?.roleType;
+
+      // Si es DEPT_ADMIN, verificar que sea admin de este departamento
+      if (userRole === 'DEPT_ADMIN') {
+        const departmentUser = await prisma.departmentUser.findFirst({
+          where: {
+            departmentId: id,
+            userId: userId,
+            role: 'ADMIN'
+          }
+        });
+
+        if (!departmentUser) {
+          return res.status(403).json({
+            success: false,
+            message: 'No tienes permiso para configurar SLA de este departamento'
+          });
+        }
+      }
+
       const result = await departmentSLAService.removeSLAFromDepartment(
         id,
         priority as SLAPriority

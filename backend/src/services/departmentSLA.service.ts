@@ -8,6 +8,21 @@ interface CreateDepartmentSLAData {
   isDefault?: boolean;
 }
 
+interface CreateDepartmentSLADirectData {
+  departmentId: string;
+  priority: SLAPriority;
+  name: string;
+  description?: string;
+  responseTime: number;
+  resolutionTime: number;
+  businessHoursOnly: boolean;
+  escalationEnabled: boolean;
+  escalationTime?: number | null;
+  notifyOnBreach: boolean;
+  notifyBefore?: number | null;
+  isDefault?: boolean;
+}
+
 class DepartmentSLAService {
   async getDepartmentSLAConfigurations(departmentId: string) {
     const department = await prisma.department.findUnique({
@@ -99,7 +114,7 @@ class DepartmentSLAService {
       // Crear nueva asignación con UUID generado
       await prisma.$executeRaw`
         INSERT INTO department_sla (id, department_id, sla_configuration_id, priority, is_default, created_at, updated_at)
-        VALUES (gen_random_uuid(), ${departmentId}, ${slaConfigurationId}, ${priority}, ${isDefault}, NOW(), NOW())
+        VALUES (gen_random_uuid(), ${departmentId}, ${slaConfigurationId}, ${priority}::"SLAPriority", ${isDefault}, NOW(), NOW())
       `;
 
       return await this.getDepartmentSLAByPriority(departmentId, priority);
@@ -130,6 +145,106 @@ class DepartmentSLAService {
     `;
 
     return result[0] || null;
+  }
+
+  async createDepartmentSLADirect(data: CreateDepartmentSLADirectData) {
+    const {
+      departmentId,
+      priority,
+      name,
+      description,
+      responseTime,
+      resolutionTime,
+      businessHoursOnly,
+      escalationEnabled,
+      escalationTime,
+      notifyOnBreach,
+      notifyBefore,
+      isDefault = false
+    } = data;
+
+    // Verificar que el departamento existe
+    const department = await prisma.department.findUnique({
+      where: { id: departmentId }
+    });
+
+    if (!department) {
+      throw new Error('Department not found');
+    }
+
+    // Si se marca como default, desmarcar otros defaults del mismo departamento
+    if (isDefault) {
+      await prisma.$executeRaw`
+        UPDATE department_sla 
+        SET is_default = false 
+        WHERE department_id = ${departmentId}
+      `;
+    }
+
+    // Verificar si ya existe una asignación para esta prioridad
+    const existing = await prisma.$queryRaw<any[]>`
+      SELECT id, sla_configuration_id FROM department_sla 
+      WHERE department_id = ${departmentId} 
+      AND priority = ${priority}
+    `;
+
+    if (existing.length > 0) {
+      // Ya existe - actualizar la configuración SLA existente
+      const existingSlaConfigId = existing[0].sla_configuration_id;
+      
+      await prisma.sLAConfiguration.update({
+        where: { id: existingSlaConfigId },
+        data: {
+          name,
+          description,
+          priority: priority, // Actualizar también la prioridad para consistencia
+          responseTime,
+          resolutionTime,
+          businessHoursOnly,
+          escalationEnabled,
+          escalationTime,
+          notifyOnBreach,
+          notifyBefore,
+          isActive: true
+        }
+      });
+
+      // Actualizar is_default en department_sla
+      await prisma.$executeRaw`
+        UPDATE department_sla 
+        SET is_default = ${isDefault},
+            updated_at = NOW()
+        WHERE department_id = ${departmentId} 
+        AND priority = ${priority}
+      `;
+    } else {
+      // No existe - crear nueva configuración SLA
+      // Se guarda la prioridad en ambas tablas para consistencia
+      const slaConfig = await prisma.sLAConfiguration.create({
+        data: {
+          name,
+          description,
+          priority: priority, // Guardar la prioridad correcta
+          responseTime,
+          resolutionTime,
+          businessHoursOnly,
+          escalationEnabled,
+          escalationTime,
+          notifyOnBreach,
+          notifyBefore,
+          isActive: true,
+          isDefault: false
+        }
+      });
+
+      // Crear nueva asignación
+      await prisma.$executeRaw`
+        INSERT INTO department_sla (id, department_id, sla_configuration_id, priority, is_default, created_at, updated_at)
+        VALUES (gen_random_uuid(), ${departmentId}, ${slaConfig.id}, ${priority}::"SLAPriority", ${isDefault}, NOW(), NOW())
+      `;
+    }
+
+    return await this.getDepartmentSLAByPriority(departmentId, priority);
   }
 
   async removeSLAFromDepartment(departmentId: string, priority: SLAPriority) {

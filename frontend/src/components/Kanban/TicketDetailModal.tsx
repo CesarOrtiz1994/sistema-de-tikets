@@ -17,7 +17,7 @@ interface TicketDetailModalProps {
 }
 
 const PRIORITY_CONFIG = {
-  LOW: { variant: 'success' as BadgeVariant, label: 'Baja' },
+  LOW: { variant: 'success' as BadgeVariant, label: 'Bajo' },
   MEDIUM: { variant: 'warning' as BadgeVariant, label: 'Media' },
   HIGH: { variant: 'orange' as BadgeVariant, label: 'Alta' },
   CRITICAL: { variant: 'danger' as BadgeVariant, label: 'Crítica' }

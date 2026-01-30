@@ -31,7 +31,7 @@ interface DepartmentSLAModalProps {
 
 const PRIORITY_CONFIG = {
   LOW: {
-    label: 'Baja',
+    label: 'Bajo',
     color: 'green' as const,
     icon: FiCheckCircle,
     bgClass: 'bg-green-50 dark:bg-green-900/20',

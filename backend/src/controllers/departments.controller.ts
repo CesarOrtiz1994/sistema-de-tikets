@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { DepartmentsService } from '../services/departments.service';
 import { z } from 'zod';
+import prisma from '../config/database';
 
 const departmentsService = new DepartmentsService();
 
@@ -18,7 +19,8 @@ const updateDepartmentSchema = z.object({
   prefix: z.string().min(2).max(10).optional(),
   description: z.string().optional(),
   isDefaultForRequesters: z.boolean().optional(),
-  requireRating: z.boolean().optional()
+  requireRating: z.boolean().optional(),
+  autoCloseAfterDays: z.number().int().min(1).max(90).optional()
 });
 
 const assignUserSchema = z.object({
@@ -135,7 +137,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
     const userId = (req.user as any)?.id;
     const userRole = (req.user as any)?.roleType;
     
-    console.log('🔍 UPDATE DEPARTMENT - Datos recibidos:', {
+    console.log('UPDATE DEPARTMENT - Datos recibidos:', {
       id,
       userId,
       userRole,
@@ -144,7 +146,8 @@ export const updateDepartment = async (req: Request, res: Response) => {
     
     let validatedData = updateDepartmentSchema.parse(req.body);
     
-    console.log('✅ Datos validados:', validatedData);
+    console.log('Datos validados:', validatedData);
+    console.log('autoCloseAfterDays en validatedData:', (validatedData as any).autoCloseAfterDays);
 
     // Si es DEPT_ADMIN, verificar que sea su departamento y limitar campos editables
     if (userRole === 'DEPT_ADMIN') {
@@ -158,13 +161,56 @@ export const updateDepartment = async (req: Request, res: Response) => {
         });
       }
 
-      // DEPT_ADMIN solo puede actualizar requireRating y description
-      const allowedFields = ['requireRating', 'description'];
+      // DEPT_ADMIN puede actualizar la mayoría de campos de su departamento
+      const allowedFields = [
+        'name',
+        'prefix',
+        'description',
+        'isDefaultForRequesters',
+        'requireRating',
+        'autoCloseAfterDays'
+      ];
       const filteredData: any = {};
       
       for (const key of allowedFields) {
         if (key in validatedData) {
           filteredData[key] = (validatedData as any)[key];
+        }
+      }
+      
+      // Validar unicidad de name si se está actualizando
+      if (filteredData.name) {
+        const existingByName = await prisma.department.findFirst({
+          where: {
+            name: filteredData.name,
+            id: { not: id },
+            deletedAt: null
+          }
+        });
+        
+        if (existingByName) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ya existe un departamento con ese nombre'
+          });
+        }
+      }
+      
+      // Validar unicidad de prefix si se está actualizando
+      if (filteredData.prefix) {
+        const existingByPrefix = await prisma.department.findFirst({
+          where: {
+            prefix: filteredData.prefix,
+            id: { not: id },
+            deletedAt: null
+          }
+        });
+        
+        if (existingByPrefix) {
+          return res.status(400).json({
+            success: false,
+            message: 'Ya existe un departamento con ese prefijo'
+          });
         }
       }
       

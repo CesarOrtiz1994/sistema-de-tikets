@@ -58,7 +58,7 @@ class AutoCloseTicketsWorker {
    */
   async autoCloseResolvedTickets(): Promise<void> {
     try {
-      logger.info('🔍 Iniciando verificación de tickets para auto-cierre...');
+      logger.info('Iniciando verificación de tickets para auto-cierre...');
 
       // Buscar todos los tickets en estado RESOLVED
       const resolvedTickets = await prisma.ticket.findMany({
@@ -92,11 +92,11 @@ class AutoCloseTicketsWorker {
       });
 
       if (resolvedTickets.length === 0) {
-        logger.info('✅ No hay tickets resueltos pendientes de auto-cierre');
+        logger.info('No hay tickets resueltos pendientes de auto-cierre');
         return;
       }
 
-      logger.info(`📋 Verificando ${resolvedTickets.length} tickets resueltos...`);
+      logger.info(`Verificando ${resolvedTickets.length} tickets resueltos...`);
 
       let closedCount = 0;
 
@@ -152,19 +152,19 @@ class AutoCloseTicketsWorker {
           //   subject: `Ticket ${ticket.ticketNumber} cerrado automáticamente`,
           //   context: { ticketNumber, departmentName, etc... }
           // });
-          logger.info(`📧 TODO: Enviar email de auto-cierre a ${ticket.requester.email}`);
+          logger.info(`TODO: Enviar email de auto-cierre a ${ticket.requester.email}`);
         }
       }
 
       if (closedCount > 0) {
-        logger.info(`✅ ${closedCount} tickets auto-cerrados exitosamente`);
+        logger.info(`${closedCount} tickets auto-cerrados exitosamente`);
       } else {
-        logger.info('✅ No hay tickets que cumplan los criterios para auto-cierre');
+        logger.info('No hay tickets que cumplan los criterios para auto-cierre');
       }
 
-      logger.info('✅ Verificación de auto-cierre completada');
+      logger.info('Verificación de auto-cierre completada');
     } catch (error) {
-      logger.error('❌ Error en verificación de auto-cierre:', error);
+      logger.error('Error en verificación de auto-cierre:', error);
       throw error;
     }
   }
@@ -173,7 +173,7 @@ class AutoCloseTicketsWorker {
    * Ejecuta el worker manualmente (para testing)
    */
   async runOnce(): Promise<void> {
-    logger.info('🚀 Ejecutando worker de auto-cierre manualmente...');
+    logger.info('Ejecutando worker de auto-cierre manualmente...');
     await this.autoCloseResolvedTickets();
   }
 
@@ -181,7 +181,7 @@ class AutoCloseTicketsWorker {
    * Inicia el worker en modo continuo (ejecuta cada X horas)
    */
   startScheduled(intervalHours: number = 1): void {
-    logger.info(`🚀 Iniciando worker de auto-cierre (cada ${intervalHours} hora(s))...`);
+    logger.info(`Iniciando worker de auto-cierre (cada ${intervalHours} hora(s))...`);
     
     // Ejecutar inmediatamente
     this.autoCloseResolvedTickets();

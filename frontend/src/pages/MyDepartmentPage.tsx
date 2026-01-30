@@ -1,11 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import SearchInput from '../components/common/SearchInput';
+import Pagination from '../components/common/Pagination';
 import { FiUsers, FiUserPlus, FiTrash2, FiInfo, FiChevronDown } from 'react-icons/fi';
 import { departmentsService, Department, DepartmentUser } from '../services/departments.service';
 import { usersService } from '../services/users.service';
 import AssignUserModal from '../components/Users/AssignUserModal';
+import DepartmentTabs, { TabId } from '../components/Departments/DepartmentTabs';
+import DepartmentInfoForm from '../components/Departments/DepartmentInfoForm';
+import DepartmentSLAConfig from '../components/Departments/DepartmentSLAConfig';
+import DepartmentWorkScheduleConfig from '../components/Departments/DepartmentWorkScheduleConfig';
 
 export default function MyDepartmentPage() {
   const [department, setDepartment] = useState<Department | null>(null);
@@ -15,6 +22,10 @@ export default function MyDepartmentPage() {
   const [loading, setLoading] = useState(true);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [showDepartmentSelector, setShowDepartmentSelector] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>('info');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
 
   useEffect(() => {
@@ -128,45 +139,39 @@ export default function MyDepartmentPage() {
     await loadUsers(dept.id);
   };
 
-  const handleToggleRequireRating = async () => {
-    if (!department) return;
-
-    try {
-      const newValue = !department.requireRating;
-      
-      // Solo enviar el campo requireRating, sin otros campos
-      const updateData: { requireRating: boolean } = {
-        requireRating: newValue
-      };
-      
-      await departmentsService.updateDepartment(department.id, updateData);
-      
-      // Actualizar el estado local
-      setDepartment({
-        ...department,
-        requireRating: newValue
-      });
-
-      // Actualizar en la lista de departamentos también
-      setMyDepartments(myDepartments.map(d => 
-        d.id === department.id ? { ...d, requireRating: newValue } : d
-      ));
-
-      toast.success(
-        newValue 
-          ? 'Calificación activada: Los usuarios deberán calificar al cerrar tickets' 
-          : 'Calificación desactivada: Los usuarios pueden cerrar tickets sin calificar'
-      );
-    } catch (error) {
-      console.error('Error al actualizar requireRating:', error);
-      toast.error('Error al actualizar la configuración de calificaciones');
-    }
+  const handleDepartmentUpdate = async () => {
+    // Recargar departamento después de actualizar
+    await loadMyDepartment();
   };
+
+  // Filtrar y paginar miembros
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm) return users;
+    
+    const term = searchTerm.toLowerCase();
+    return users.filter(departmentUser => 
+      departmentUser.user.name.toLowerCase().includes(term) ||
+      departmentUser.user.email.toLowerCase().includes(term) ||
+      departmentUser.role.toLowerCase().includes(term)
+    );
+  }, [users, searchTerm]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredUsers.slice(startIndex, endIndex);
+  }, [filteredUsers, currentPage, itemsPerPage]);
+
+  // Reset a página 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -192,73 +197,50 @@ export default function MyDepartmentPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Mi Departamento</h1>
-            <p className="text-gray-600 dark:text-gray-300">Gestiona los miembros de tu departamento</p>
+            <p className="text-gray-600 dark:text-gray-300">Administra la configuración completa de tu departamento</p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Selector de Departamentos - Solo si tiene más de uno */}
-            {myDepartments.length > 1 && (
-              <div className="relative department-selector">
-                <button
-                  onClick={() => setShowDepartmentSelector(!showDepartmentSelector)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {department?.name}
-                  </span>
-                  <FiChevronDown className={`text-gray-500 transition-transform ${showDepartmentSelector ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Dropdown de departamentos */}
-                {showDepartmentSelector && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-                    <div className="p-2">
-                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-3 py-2">
-                        Cambiar Departamento
-                      </div>
-                      {myDepartments.map((dept) => (
-                        <button
-                          key={dept.id}
-                          onClick={() => handleChangeDepartment(dept)}
-                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                            dept.id === department?.id
-                              ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
-                              : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          <div className="font-medium">{dept.name}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            Prefijo: {dept.prefix} • {(dept as any)._count?.users || 0} miembros
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Switch de Requerir Calificación */}
-            <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Requerir calificación
-              </span>
+          {/* Selector de Departamentos - Solo si tiene más de uno */}
+          {myDepartments.length > 1 && (
+            <div className="relative department-selector">
               <button
-                onClick={handleToggleRequireRating}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-                  department?.requireRating
-                    ? 'bg-purple-600'
-                    : 'bg-gray-300 dark:bg-gray-600'
-                }`}
+                onClick={() => setShowDepartmentSelector(!showDepartmentSelector)}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    department?.requireRating ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {department?.name}
+                </span>
+                <FiChevronDown className={`text-gray-500 transition-transform ${showDepartmentSelector ? 'rotate-180' : ''}`} />
               </button>
+
+              {/* Dropdown de departamentos */}
+              {showDepartmentSelector && (
+                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                  <div className="p-2">
+                    <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-3 py-2">
+                      Cambiar Departamento
+                    </div>
+                    {myDepartments.map((dept) => (
+                      <button
+                        key={dept.id}
+                        onClick={() => handleChangeDepartment(dept)}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                          dept.id === department?.id
+                            ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div className="font-medium">{dept.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Prefijo: {dept.prefix} • {(dept as any)._count?.users || 0} miembros
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -280,88 +262,152 @@ export default function MyDepartmentPage() {
               </span>
             </div>
           </div>
-          <button
-            onClick={handleOpenAssignModal}
-            className="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50 transition-colors flex items-center gap-2 font-semibold"
-          >
-            <FiUserPlus />
-            Agregar Miembro
-          </button>
         </div>
       </div>
 
-      {/* Lista de Miembros */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md transition-colors">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white">Miembros del Departamento</h3>
-        </div>
+      {/* Tabs de Navegación */}
+      <div className="mb-6">
+        <DepartmentTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
 
-        {users.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 dark:text-gray-400">
-            <FiUsers className="mx-auto mb-4 text-gray-400 dark:text-gray-500" size={48} />
-            <p className="text-lg font-medium mb-2">No hay miembros asignados</p>
-            <p className="text-sm">Haz clic en "Agregar Miembro" para comenzar</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {users.map((departmentUser) => (
-              <div
-                key={departmentUser.id}
-                className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                      {departmentUser.user.profilePicture ? (
-                        <img
-                          src={departmentUser.user.profilePicture}
-                          alt={departmentUser.user.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-purple-600 dark:text-purple-300 font-bold text-lg">
-                          {departmentUser.user.name.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
+      {/* Contenido según tab activo */}
+      <div className="mt-6">
+        {activeTab === 'info' && (
+          <DepartmentInfoForm 
+            department={department} 
+            onUpdate={handleDepartmentUpdate}
+          />
+        )}
 
-                    {/* Info del Usuario */}
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-white text-lg">
-                        {departmentUser.user.name}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {departmentUser.user.email}
-                      </div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        Rol del sistema: {departmentUser.user.roleType}
-                      </div>
-                    </div>
-                  </div>
+        {activeTab === 'sla' && (
+          <DepartmentSLAConfig 
+            departmentId={department.id}
+            onUpdate={handleDepartmentUpdate}
+          />
+        )}
 
-                  {/* Rol y Acciones */}
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`px-4 py-2 text-sm font-semibold rounded-full ${
-                        departmentUser.role === 'ADMIN'
-                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                      }`}
-                    >
-                      {departmentUser.role === 'ADMIN' ? 'Administrador' : 'Miembro'}
-                    </span>
-                    <button
-                      onClick={() => handleRemoveUser(departmentUser.userId)}
-                      className="text-red-600 hover:text-red-900 dark:hover:text-red-400 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="Remover del departamento"
-                    >
-                      <FiTrash2 size={20} />
-                    </button>
-                  </div>
-                </div>
+        {activeTab === 'schedule' && (
+          <DepartmentWorkScheduleConfig 
+            departmentId={department.id}
+            onUpdate={handleDepartmentUpdate}
+          />
+        )}
+
+        {activeTab === 'members' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md transition-colors">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Miembros del Departamento</h3>
+                <button
+                  onClick={handleOpenAssignModal}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                >
+                  <FiUserPlus />
+                  Agregar Miembro
+                </button>
               </div>
-            ))}
+              
+              {users.length > 0 && (
+                <div className="flex items-center justify-between">
+                  <SearchInput
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    placeholder="Buscar por nombre, email o rol..."
+                  />
+                  <span className="text-sm text-gray-500 dark:text-gray-400 ml-4">
+                    {filteredUsers.length} {filteredUsers.length === 1 ? 'miembro' : 'miembros'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {users.length === 0 ? (
+              <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+                <FiUsers className="mx-auto mb-4 text-gray-400 dark:text-gray-500" size={48} />
+                <p className="text-lg font-medium mb-2">No hay miembros asignados</p>
+                <p className="text-sm">Haz clic en "Agregar Miembro" para comenzar</p>
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+                <FiUsers className="mx-auto mb-4 text-gray-400 dark:text-gray-500" size={48} />
+                <p className="text-lg font-medium mb-2">No se encontraron miembros</p>
+                <p className="text-sm">Intenta con otro término de búsqueda</p>
+              </div>
+            ) : (
+              <>
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {paginatedUsers.map((departmentUser) => (
+                  <div
+                    key={departmentUser.id}
+                    className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {/* Avatar */}
+                        <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                          {departmentUser.user.profilePicture ? (
+                            <img
+                              src={departmentUser.user.profilePicture}
+                              alt={departmentUser.user.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-purple-600 dark:text-purple-300 font-bold text-lg">
+                              {departmentUser.user.name.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Info del Usuario */}
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white text-lg">
+                            {departmentUser.user.name}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {departmentUser.user.email}
+                          </div>
+                          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            Rol del sistema: {departmentUser.user.roleType}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rol y Acciones */}
+                      <div className="flex items-center gap-4">
+                        <span
+                          className={`px-4 py-2 text-sm font-semibold rounded-full ${
+                            departmentUser.role === 'ADMIN'
+                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                          }`}
+                        >
+                          {departmentUser.role === 'ADMIN' ? 'Administrador' : 'Miembro'}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveUser(departmentUser.userId)}
+                          className="text-red-600 hover:text-red-900 dark:hover:text-red-400 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title="Remover del departamento"
+                        >
+                          <FiTrash2 size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Paginación */}
+              {totalPages > 1 && (
+                <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </>
+            )}
           </div>
         )}
       </div>

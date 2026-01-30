@@ -82,7 +82,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       icon: FiType,
       label: 'Tipos de Campos',
       path: '/field-types',
-      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
+      roles: [RoleType.SUPER_ADMIN]
     },
     {
       icon: FiEdit3,
@@ -94,7 +94,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       icon: FiClock,
       label: 'Configuración SLA',
       path: '/sla-configurations',
-      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
+      roles: [RoleType.SUPER_ADMIN]
     },
     {
       icon: FiSettings,

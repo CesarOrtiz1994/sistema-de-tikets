@@ -14,7 +14,7 @@ class SLACheckerWorker {
     try {
       const now = new Date();
       
-      logger.info('🔍 Iniciando verificación de SLA...');
+      logger.info('Iniciando verificación de SLA...');
 
       // Buscar tickets que excedieron el SLA
       const breachedTickets = await prisma.ticket.findMany({
@@ -43,7 +43,7 @@ class SLACheckerWorker {
       });
 
       if (breachedTickets.length > 0) {
-        logger.warn(`⚠️  ${breachedTickets.length} tickets han excedido su SLA`);
+        logger.warn(`${breachedTickets.length} tickets han excedido su SLA`);
 
         // Actualizar todos los tickets que excedieron el SLA
         await prisma.ticket.updateMany({
@@ -73,21 +73,21 @@ class SLACheckerWorker {
             }
           });
 
-          logger.warn(`⚠️  Ticket ${ticket.ticketNumber} excedió SLA - Deadline: ${ticket.slaDeadline}`);
+          logger.warn(`Ticket ${ticket.ticketNumber} excedió SLA - Deadline: ${ticket.slaDeadline}`);
         }
 
         // TODO: Enviar notificaciones por email/webhook
         // await this.sendSLABreachNotifications(breachedTickets);
       } else {
-        logger.info('✅ No hay tickets con SLA excedido');
+        logger.info('No hay tickets con SLA excedido');
       }
 
       // Verificar tickets cerca de exceder el SLA (próximos 30 minutos)
       await this.checkUpcomingSLABreaches(now);
 
-      logger.info('✅ Verificación de SLA completada');
+      logger.info('Verificación de SLA completada');
     } catch (error) {
-      logger.error('❌ Error en verificación de SLA:', error);
+      logger.error('Error en verificación de SLA:', error);
       throw error;
     }
   }
@@ -147,7 +147,7 @@ class SLACheckerWorker {
    * Ejecuta el worker manualmente (para testing)
    */
   async runOnce(): Promise<void> {
-    logger.info('🚀 Ejecutando worker de SLA manualmente...');
+    logger.info('Ejecutando worker de SLA manualmente...');
     await this.checkSLABreaches();
   }
 
@@ -155,7 +155,7 @@ class SLACheckerWorker {
    * Inicia el worker en modo continuo (ejecuta cada X minutos)
    */
   startScheduled(intervalMinutes: number = 5): void {
-    logger.info(`🚀 Iniciando worker de SLA (cada ${intervalMinutes} minutos)...`);
+    logger.info(`Iniciando worker de SLA (cada ${intervalMinutes} minutos)...`);
     
     // Ejecutar inmediatamente
     this.checkSLABreaches();
