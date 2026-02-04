@@ -34,6 +34,7 @@ model User {
   requestedTickets   Ticket[]                 @relation("TicketRequester")
   assignedTickets    Ticket[]                 @relation("TicketAssignedTo")
   ticketRatings      TicketRating[]
+  ticketMessages     TicketMessage[]
 
   @@map("users")
 }
@@ -412,7 +413,8 @@ model Ticket {
   requester  User       @relation("TicketRequester", fields: [requesterId], references: [id])
   assignedTo User?      @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
 
-  rating  TicketRating?
+  rating   TicketRating?
+  messages TicketMessage[]
 
   @@index([departmentId])
   @@index([formId])
@@ -444,4 +446,25 @@ model TicketRating {
   @@index([ratedBy])
   @@index([rating])
   @@map("ticket_ratings")
+}
+
+model TicketMessage {
+  id           String   @id @default(uuid())
+  ticketId     String   @map("ticket_id")
+  userId       String   @map("user_id")
+  message      String   @db.Text
+  attachmentUrl String?  @map("attachment_url")
+  attachmentName String? @map("attachment_name")
+  attachmentType String? @map("attachment_type")
+  attachmentSize Int?    @map("attachment_size")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("ticket_messages")
 }

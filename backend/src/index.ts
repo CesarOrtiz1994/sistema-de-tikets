@@ -2,6 +2,8 @@ import app from './app';
 import { env } from './config/env';
 import logger from './config/logger';
 import { connectDatabase, disconnectDatabase } from './config/database';
+import { initializeSocket } from './config/socket';
+import { setupTicketChatHandlers } from './sockets/ticketChat.handler';
 import fileCleanupJob from './jobs/fileCleanup.job';
 import slaCheckerWorker from './workers/slaChecker.worker';
 import autoCloseTicketsWorker from './workers/autoCloseTickets.worker';
@@ -25,6 +27,11 @@ const startServer = async () => {
       // Iniciar worker de auto-cierre de tickets (cada 1 hora)
       autoCloseTicketsWorker.startScheduled(1);
     });
+
+    // Inicializar Socket.io
+    const io = initializeSocket(server);
+    setupTicketChatHandlers(io);
+    logger.info('Socket.IO initialized and handlers configured');
 
     // Manejo de errores no capturados
     process.on('unhandledRejection', (reason: Error) => {

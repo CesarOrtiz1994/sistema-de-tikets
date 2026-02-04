@@ -27,6 +27,8 @@ import fileCleanupRoutes from './routes/fileCleanup.routes';
 import ticketsRoutes from './routes/tickets.routes';
 import kanbanRoutes from './routes/kanban.routes';
 import ticketRatingRoutes from './routes/ticketRating.routes';
+import ticketMessagesRoutes from './routes/ticketMessages.routes';
+import chatAttachmentRoutes from './routes/chatAttachment.routes';
 
 const app: Application = express();
 
@@ -93,6 +95,12 @@ app.use('/api/tickets', ticketRatingRoutes);
 
 // Rutas de Kanban (SEMANA 15)
 app.use('/api', kanbanRoutes);
+
+// Rutas de mensajes de tickets (SEMANA 17)
+app.use('/api', ticketMessagesRoutes);
+
+// Rutas de archivos adjuntos en chat (SEMANA 17)
+app.use('/api', chatAttachmentRoutes);
 
 // Servir archivos estáticos desde /uploads
 app.use('/uploads', express.static('uploads'));

@@ -11,11 +11,13 @@ import ModalButtons from '../components/common/ModalButtons';
 import CloseTicketModal from '../components/Tickets/CloseTicketModal';
 import ReopenTicketModal from '../components/Tickets/ReopenTicketModal';
 import StarRating from '../components/common/StarRating';
+import ChatWindow from '../components/Chat/ChatWindow';
 import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw} from 'react-icons/fi';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { departmentsService } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
 import { formatDate } from '../utils/dateUtils';
+import { getHistoryMessage, getHistoryIcon } from '../utils/historyUtils';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { RoleType } from '../types/permissions';
@@ -676,40 +678,44 @@ export default function TicketDetailPage() {
         </div>
 
         {/* Columna lateral - Historial */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
+          {/* Historial de Cambios */}
           <Card>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Historial de Cambios
             </h3>
             <div className="space-y-4">
               {ticket.history && ticket.history.length > 0 ? (
-                <div className="relative">
+                <div className="relative max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                   <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
-                  {ticket.history.map((entry: any) => (
-                    <div key={entry.id} className="relative pl-10 pb-6 last:pb-0">
-                      <div className="absolute left-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                        {entry.user?.name?.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                        <div className="flex items-start justify-between mb-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {entry.user?.name || 'Sistema'}
-                          </p>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDate(entry.createdAt)}
-                          </span>
+                  {ticket.history.map((entry: any) => {
+                    const message = getHistoryMessage(entry.action, entry.details);
+                    const icon = getHistoryIcon(entry.action);
+                    
+                    return (
+                      <div key={entry.id} className="relative pl-10 pb-6 last:pb-0">
+                        <div className="absolute left-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                          {entry.user?.name?.charAt(0).toUpperCase() || icon}
                         </div>
-                        <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">
-                          {entry.action}
-                        </p>
-                        {entry.details && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                            {typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details)}
-                          </p>
-                        )}
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                          <div className="flex items-start justify-between mb-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {entry.user?.name || 'Sistema'}
+                            </p>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatDate(entry.createdAt)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{icon}</span>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              {message}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-sm text-gray-500 dark:text-gray-400 italic">
@@ -718,6 +724,28 @@ export default function TicketDetailPage() {
               )}
             </div>
           </Card>
+
+          {/* Chat del Ticket */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            {/* Header del Chat */}
+            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <h3 className="text-sm font-semibold text-white">
+                  Chat en Tiempo Real
+                </h3>
+              </div>
+            </div>
+            
+            {/* Contenido del Chat */}
+            <div className="h-[500px]">
+              <ChatWindow 
+                ticketId={ticket.id}
+                ticketStatus={ticket.status}
+                assignedToId={ticket.assignedToId}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

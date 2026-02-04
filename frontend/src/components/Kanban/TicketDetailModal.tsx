@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { FiX, FiUser, FiClock, FiAlertCircle, FiCalendar } from 'react-icons/fi';
+import { FiX, FiUser, FiClock, FiAlertCircle, FiCalendar, FiFileText, FiMessageSquare, FiPaperclip } from 'react-icons/fi';
 import { KanbanTicket } from '../../services/kanban.service';
 import { ticketsService } from '../../services/tickets.service';
 import { formsService } from '../../services/forms.service';
@@ -8,6 +8,7 @@ import { departmentsService } from '../../services/departments.service';
 import Badge from '../common/Badge';
 import { BadgeVariant } from '../common/Badge';
 import LoadingSpinner from '../common/LoadingSpinner';
+import ChatWindow from '../Chat/ChatWindow';
 
 interface TicketDetailModalProps {
   ticket: KanbanTicket;
@@ -31,6 +32,8 @@ const STATUS_CONFIG = {
   RESOLVED: { label: 'Resuelto', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' }
 };
 
+type TabType = 'details' | 'chat' | 'files';
+
 export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }: TicketDetailModalProps) {
   const [loading, setLoading] = useState(false);
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
@@ -38,6 +41,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
   const [selectedPriority, setSelectedPriority] = useState<string>(ticket.priority);
   const [fullTicket, setFullTicket] = useState<any>(null);
   const [loadingTicket, setLoadingTicket] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('details');
 
   useEffect(() => {
     if (canEdit) {
@@ -194,12 +198,54 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
             </div>
           </div>
 
+          {/* Tabs */}
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <nav className="flex -mb-px">
+              <button
+                onClick={() => setActiveTab('details')}
+                className={`flex items-center gap-2 px-6 py-3 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'details'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <FiFileText className="w-4 h-4" />
+                Detalles
+              </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`flex items-center gap-2 px-6 py-3 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'chat'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <FiMessageSquare className="w-4 h-4" />
+                Chat
+              </button>
+              <button
+                onClick={() => setActiveTab('files')}
+                className={`flex items-center gap-2 px-6 py-3 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'files'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                <FiPaperclip className="w-4 h-4" />
+                Archivos
+              </button>
+            </nav>
+          </div>
+
           {/* Body */}
           <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
             {loadingTicket ? (
               <LoadingSpinner />
             ) : (
-              <div className="space-y-6">
+              <>
+                {/* Tab: Detalles */}
+                {activeTab === 'details' && (
+                  <div className="space-y-6">
                 {/* Título */}
                 <div>
                   <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -540,6 +586,31 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                   </div>
                 </div>
               </div>
+                )}
+
+                {/* Tab: Chat */}
+                {activeTab === 'chat' && (
+                  <div className="h-[60vh]">
+                    <ChatWindow 
+                      ticketId={ticket.id}
+                      ticketStatus={ticket.status}
+                      assignedToId={ticket.assignedTo?.id}
+                    />
+                  </div>
+                )}
+
+                {/* Tab: Archivos */}
+                {activeTab === 'files' && (
+                  <div className="space-y-4">
+                    <div className="text-center py-12">
+                      <FiPaperclip className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Gestión de archivos disponible próximamente
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

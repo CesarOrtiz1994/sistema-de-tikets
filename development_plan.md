@@ -596,25 +596,31 @@
 **Objetivo:** Infraestructura de tiempo real
 
 #### Backend
-- [ ] Instalar Socket.io
-- [ ] Configurar Socket.io server
-- [ ] Implementar rooms por ticket
-- [ ] Events:
+- [x] Instalar Socket.io
+- [x] Configurar Socket.io server
+- [x] Implementar rooms por ticket
+- [x] Events:
   - `join-ticket` - Usuario se une a room
   - `leave-ticket` - Usuario sale de room
   - `send-message` - Enviar mensaje
   - `typing` - Usuario escribiendo
-- [ ] Autenticación de sockets (JWT)
-- [ ] Middleware de permisos para sockets
+- [x] Autenticación de sockets (JWT)
+- [x] Middleware de permisos para sockets
+- [x] Validaciones Zod para todos los eventos
+- [x] Auditoría completa (audit_logs) para eventos críticos
 
 #### Frontend
-- [ ] Instalar socket.io-client
-- [ ] Servicio socket.ts para manejar conexión
-- [ ] Hook useSocket
-- [ ] Conectar al servidor
-- [ ] Join automático al abrir ticket
+- [x] Instalar socket.io-client
+- [x] Servicio socket.ts para manejar conexión
+- [x] Hook useSocket
+- [x] Conectar al servidor
+- [x] Join automático al abrir ticket
+- [x] Validaciones Zod para eventos del cliente
+- [x] Componentes de Chat (ChatWindow, ChatMessageList, ChatInput, ChatTypingIndicator)
+- [x] Integración en TicketDetailPage (panel lateral para solicitantes)
+- [x] Integración en TicketDetailModal (tabs para subordinados/agentes)
 
-**Entregable:** Infraestructura de WebSockets lista
+**Entregable:** Infraestructura de WebSockets lista ✅
 
 ---
 
@@ -623,28 +629,33 @@
 **Objetivo:** Chat en tiempo real funcional
 
 #### Backend
-- [ ] Tabla ticket_messages
-- [ ] Endpoints REST (fallback si socket falla):
+- [x] Tabla ticket_messages
+- [x] Endpoints REST (fallback si socket falla):
   - `GET /api/tickets/:id/messages` - Historial
   - `POST /api/tickets/:id/messages` - Enviar mensaje
-- [ ] Guardar mensajes en BD cuando se envían
-- [ ] Broadcast a todos en el room
+- [x] Guardar mensajes en BD cuando se envían
+- [x] Broadcast a todos en el room
+- [x] Validaciones Zod en todos los endpoints
+- [x] Logs de errores (auditoría solo para intentos denegados)
 
 #### Frontend
-- [ ] Componente ChatWindow en vista de ticket
-- [ ] Lista de mensajes:
-  - Scroll automático al nuevo mensaje
-  - Diferentes estilos según quien envía
-  - Mostrar fecha/hora
-  - Avatar del usuario
-- [ ] Input de mensaje:
-  - Textarea con auto-grow
-  - Botón enviar
-  - Indicador "escribiendo..."
-  - Upload de archivos en chat
-- [ ] Notificación visual de nuevo mensaje
-- [ ] Badge de mensajes no leídos
-- [ ] Paginación infinita en historial (scroll up)
+- [x] Componente ChatWindow en vista de ticket
+- [x] Lista de mensajes:
+  - [x] Scroll automático al nuevo mensaje
+  - [x] Diferentes estilos según quien envía
+  - [x] Mostrar fecha/hora
+  - [x] Avatar del usuario
+- [x] Input de mensaje:
+  - [x] Textarea con auto-grow
+  - [x] Botón enviar
+  - [x] Indicador "escribiendo..."
+  - [x] Upload de archivos en chat (PNG, JPG, JPEG, SVG, PDF - máx 10MB)
+- [x] Cargar historial de mensajes al abrir chat
+- [x] Validaciones Zod en cliente
+- [x] Alertas con toast para errores
+- [ ] Notificación visual de nuevo mensaje (pendiente)
+- [ ] Badge de mensajes no leídos (pendiente)
+- [ ] Paginación infinita en historial (pendiente)
 
 **Entregable:** Chat en tiempo real completamente funcional
 
