@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FiX, FiDownload } from 'react-icons/fi';
 
 interface ImagePreviewModalProps {
@@ -15,27 +16,54 @@ export default function ImagePreviewModal({ imageUrl, imageName, onClose }: Imag
       }
     };
 
+    // Guardar el valor original del overflow
+    const originalOverflow = document.body.style.overflow;
+    
     document.addEventListener('keydown', handleEscape);
     document.body.style.overflow = 'hidden';
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      // Restaurar el valor original
+      document.body.style.overflow = originalOverflow;
     };
   }, [onClose]);
 
-  const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = imageName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async () => {
+    try {
+      // Fetch la imagen para evitar problemas de CORS
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Crear URL temporal del blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Crear link de descarga
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = imageName;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      // Fallback: intentar descarga directa
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = imageName;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
       onClick={onClose}
     >
       <div className="relative max-w-7xl max-h-[90vh] w-full mx-4">
@@ -82,4 +110,6 @@ export default function ImagePreviewModal({ imageUrl, imageName, onClose }: Imag
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

@@ -34,5 +34,16 @@ export const ticketMessagesService = {
       }
     );
     return response.data;
+  },
+
+  async searchMessages(ticketId: string, query: string, limit: number = 50, offset: number = 0): Promise<GetMessagesResponse & { query: string }> {
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(`${API_URL}/api/tickets/${ticketId}/messages/search`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      params: { q: query, limit, offset }
+    });
+    return response.data;
   }
 };

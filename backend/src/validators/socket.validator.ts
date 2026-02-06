@@ -25,7 +25,8 @@ export const sendMessageSchema = z.object({
     name: z.string(),
     type: z.string(),
     size: z.number()
-  }).optional()
+  }).optional(),
+  replyToId: z.string().uuid('ID de mensaje inválido').optional()
 });
 
 /**

@@ -4,9 +4,11 @@ interface PageHeaderProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  other?: ReactNode;
 }
 
-export default function PageHeader({ title, description, action }: PageHeaderProps) {
+export default function PageHeader({ title, description, action, other }: PageHeaderProps) {
+  console.log('PageHeader', { title, description, action, other })
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -18,6 +20,7 @@ export default function PageHeader({ title, description, action }: PageHeaderPro
             {description}
           </p>
         )}
+        {other && <div className='pt-2'> {other}</div>}
       </div>
       {action && <div>{action}</div>}
     </div>

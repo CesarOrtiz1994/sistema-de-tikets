@@ -1,7 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { rateLimitOptions, authRateLimitOptions } from '../config/security';
+import { 
+  rateLimitOptions, 
+  authRateLimitOptions,
+  chatMessageRateLimitOptions,
+  chatAttachmentRateLimitOptions
+} from '../config/security';
 
 // Helmet middleware para seguridad de headers HTTP
 export const helmetMiddleware = helmet({
@@ -22,6 +27,12 @@ export const generalRateLimiter = rateLimit(rateLimitOptions);
 
 // Rate limiter para rutas de autenticación
 export const authRateLimiter = rateLimit(authRateLimitOptions);
+
+// Rate limiter para mensajes de chat
+export const chatMessageRateLimiter = rateLimit(chatMessageRateLimitOptions);
+
+// Rate limiter para archivos adjuntos de chat
+export const chatAttachmentRateLimiter = rateLimit(chatAttachmentRateLimitOptions);
 
 // Middleware para validar tamaño de body
 export const bodySizeLimiter = (req: Request, res: Response, next: NextFunction) => {

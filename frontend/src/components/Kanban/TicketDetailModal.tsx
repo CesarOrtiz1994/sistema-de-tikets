@@ -6,9 +6,12 @@ import { ticketsService } from '../../services/tickets.service';
 import { formsService } from '../../services/forms.service';
 import { departmentsService } from '../../services/departments.service';
 import Badge from '../common/Badge';
+import UnreadBadge from '../common/UnreadBadge';
 import { BadgeVariant } from '../common/Badge';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ChatWindow from '../Chat/ChatWindow';
+import FileHistory from '../Chat/FileHistory';
+import { useUnreadMessages } from '../../contexts/UnreadMessagesContext';
 
 interface TicketDetailModalProps {
   ticket: KanbanTicket;
@@ -35,6 +38,7 @@ const STATUS_CONFIG = {
 type TabType = 'details' | 'chat' | 'files';
 
 export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }: TicketDetailModalProps) {
+  const { unreadCounts } = useUnreadMessages();
   const [loading, setLoading] = useState(false);
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<string>(ticket.assignedTo?.id || '');
@@ -42,6 +46,8 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
   const [fullTicket, setFullTicket] = useState<any>(null);
   const [loadingTicket, setLoadingTicket] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('details');
+  
+  const unreadCount = unreadCounts[ticket.id] || 0;
 
   useEffect(() => {
     if (canEdit) {
@@ -222,6 +228,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
               >
                 <FiMessageSquare className="w-4 h-4" />
                 Chat
+                {unreadCount > 0 && <UnreadBadge count={unreadCount} />}
               </button>
               <button
                 onClick={() => setActiveTab('files')}
@@ -601,13 +608,8 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
 
                 {/* Tab: Archivos */}
                 {activeTab === 'files' && (
-                  <div className="space-y-4">
-                    <div className="text-center py-12">
-                      <FiPaperclip className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Gestión de archivos disponible próximamente
-                      </p>
-                    </div>
+                  <div className="h-[500px]">
+                    <FileHistory ticketId={ticket.id} />
                   </div>
                 )}
               </>

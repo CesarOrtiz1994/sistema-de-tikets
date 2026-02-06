@@ -1,18 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDate } from '../../utils/dateUtils';
-import { FiFile, FiImage, FiDownload, FiMaximize2 } from 'react-icons/fi';
+import { FiFile, FiImage, FiDownload, FiMaximize2, FiClock, FiCheck, FiAlertCircle, FiRefreshCw, FiCornerDownLeft } from 'react-icons/fi';
+import { MessageStatus } from '../../types/messageStatus';
 import ImagePreviewModal from './ImagePreviewModal';
+import QuotedMessage from './QuotedMessage';
 import type { MessageReceived } from '../../validators/socket.validator';
 
 interface ChatMessageListProps {
   messages: MessageReceived[];
+  onRetryMessage?: (tempId: string) => void;
+  highlightedMessageId?: string | null;
+  onReply?: (message: MessageReceived) => void;
+  scrollToMessage?: (messageId: string) => void;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  hasMoreMessages?: boolean;
 }
 
-export default function ChatMessageList({ messages }: ChatMessageListProps) {
+export default function ChatMessageList({ messages, onRetryMessage, highlightedMessageId, onReply, scrollToMessage, onLoadMore, isLoadingMore, hasMoreMessages }: ChatMessageListProps) {
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const highlightedMessageRef = useRef<HTMLDivElement>(null);
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
 
   // Helper para construir URL completa de archivos
   const getFullFileUrl = (url: string): string => {
@@ -26,8 +38,48 @@ export default function ChatMessageList({ messages }: ChatMessageListProps) {
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (shouldScrollToBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, shouldScrollToBottom]);
+
+  // Detectar scroll hacia arriba para cargar más mensajes
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container || !onLoadMore) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      
+      // Si el usuario hace scroll hacia arriba cerca del inicio
+      if (scrollTop < 100 && hasMoreMessages && !isLoadingMore) {
+        console.log('[ChatMessageList] Loading more messages...');
+        const previousScrollHeight = scrollHeight;
+        
+        onLoadMore();
+        
+        // Mantener posición de scroll después de cargar
+        setTimeout(() => {
+          const newScrollHeight = container.scrollHeight;
+          container.scrollTop = newScrollHeight - previousScrollHeight + scrollTop;
+        }, 100);
+      }
+      
+      // Detectar si el usuario está cerca del final
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShouldScrollToBottom(isNearBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [onLoadMore, hasMoreMessages, isLoadingMore]);
+
+  // Scroll al mensaje resaltado cuando cambia
+  useEffect(() => {
+    if (highlightedMessageId && highlightedMessageRef.current) {
+      highlightedMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightedMessageId]);
 
   if (messages.length === 0) {
     return (
@@ -50,14 +102,39 @@ export default function ChatMessageList({ messages }: ChatMessageListProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900">
+    <div 
+      ref={messagesContainerRef}
+      className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900"
+    >
+      {/* Indicador de carga de mensajes antiguos */}
+      {isLoadingMore && (
+        <div className="flex justify-center py-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
+        </div>
+      )}
+      
+      {/* Indicador de que hay más mensajes */}
+      {hasMoreMessages && !isLoadingMore && messages.length > 0 && (
+        <div className="flex justify-center py-2">
+          <button
+            onClick={onLoadMore}
+            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            ↑ Cargar mensajes más antiguos
+          </button>
+        </div>
+      )}
+      
       {messages.map((message) => {
         const isOwnMessage = message.userId === user?.id;
 
+        const isHighlighted = highlightedMessageId === message.id;
+        
         return (
           <div
             key={message.id}
-            className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+            ref={isHighlighted ? highlightedMessageRef : null}
+            className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} ${isHighlighted ? 'animate-pulse' : ''}`}
           >
             <div className={`flex gap-2 max-w-[80%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
               {/* Avatar */}
@@ -81,7 +158,7 @@ export default function ChatMessageList({ messages }: ChatMessageListProps) {
 
               {/* Message bubble */}
               <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                <div className={`rounded-2xl px-4 py-2.5 shadow-sm ${
+                <div className={`rounded-2xl px-4 py-2.5 shadow-sm transition-all ${isHighlighted ? 'ring-2 ring-yellow-400 dark:ring-yellow-500' : ''} ${
                   isOwnMessage
                     ? 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white'
                     : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
@@ -91,9 +168,67 @@ export default function ChatMessageList({ messages }: ChatMessageListProps) {
                       {message.user.name}
                     </p>
                   )}
+                  
+                  {/* Mensaje citado */}
+                  {message.replyTo && (
+                    <div className="mb-2">
+                      <QuotedMessage 
+                        message={message.replyTo} 
+                        onClick={() => scrollToMessage?.(message.replyTo!.id)}
+                        compact
+                      />
+                    </div>
+                  )}
+                  {!message.replyTo && message.replyToId && (
+                    <div className="mb-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                      ⚠️ Respondiendo a un mensaje (ID: {message.replyToId.substring(0, 8)}...)
+                    </div>
+                  )}
+                  
                   <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                     {message.message}
                   </p>
+                  
+                  {/* Botón de responder */}
+                  {onReply && (
+                    <button
+                      onClick={() => onReply(message)}
+                      className={`mt-2 flex items-center gap-1 text-xs opacity-70 hover:opacity-100 transition-opacity ${
+                        isOwnMessage ? 'text-white/80 hover:text-white' : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                      }`}
+                      title="Responder a este mensaje"
+                    >
+                      <FiCornerDownLeft className="w-3 h-3" />
+                      Responder
+                    </button>
+                  )}
+
+                  {/* Indicador de estado para mensajes propios */}
+                  {isOwnMessage && (message as any).status && (
+                    <div className="flex items-center gap-1 mt-1">
+                      {(message as any).status === MessageStatus.SENDING && (
+                        <FiClock className="w-3 h-3 animate-pulse" title="Enviando..." />
+                      )}
+                      {(message as any).status === MessageStatus.SENT && (
+                        <FiCheck className="w-3 h-3" title="Enviado" />
+                      )}
+                      {(message as any).status === MessageStatus.ERROR && (
+                        <>
+                          <FiAlertCircle className="w-3 h-3 text-red-300" title="Error al enviar" />
+                          {onRetryMessage && (message as any).tempId && (
+                            <button
+                              onClick={() => onRetryMessage((message as any).tempId)}
+                              className="ml-1 text-xs underline hover:text-white flex items-center gap-1"
+                              title="Reintentar envío"
+                            >
+                              <FiRefreshCw className="w-3 h-3" />
+                              Reintentar
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                   
                   {/* Archivo adjunto */}
                   {message.attachmentUrl && (
@@ -115,7 +250,7 @@ export default function ChatMessageList({ messages }: ChatMessageListProps) {
                             loading="lazy"
                           />
                           {/* Overlay con botón de expandir */}
-                          <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg ${
+                          <div className={`absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg pointer-events-none ${
                             isOwnMessage ? 'bg-black/20' : 'bg-black/30'
                           }`}>
                             <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-full shadow-lg">

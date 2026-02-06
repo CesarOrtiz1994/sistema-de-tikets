@@ -653,9 +653,11 @@
 - [x] Cargar historial de mensajes al abrir chat
 - [x] Validaciones Zod en cliente
 - [x] Alertas con toast para errores
-- [ ] Notificación visual de nuevo mensaje (pendiente)
-- [ ] Badge de mensajes no leídos (pendiente)
-- [ ] Paginación infinita en historial (pendiente)
+- [x] Badge de mensajes no leídos (backend + frontend + UI)
+- [x] Reconexión automática del socket (con banner de estado)
+- [x] Indicador de estado de mensaje (SENDING, SENT, ERROR con reintentar)
+- [x] Notificación visual de nuevo mensaje (toast + navegador + permisos)
+- [x] Paginación infinita en historial
 
 **Entregable:** Chat en tiempo real completamente funcional
 

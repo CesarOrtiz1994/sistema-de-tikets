@@ -7,11 +7,13 @@ import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
 import DataTable from '../components/common/DataTable';
 import Badge from '../components/common/Badge';
+import UnreadBadge from '../components/common/UnreadBadge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Pagination from '../components/common/Pagination';
 import EmptyState from '../components/common/EmptyState';
 import SearchInput from '../components/common/SearchInput';
 import StatCard from '../components/common/StatCard';
+import { useUnreadMessages } from '../contexts/UnreadMessagesContext';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { BadgeVariant } from '../components/common/Badge';
 import { formatDate } from '../utils/dateUtils';
@@ -79,6 +81,7 @@ const getPriorityBadge = (priority: TicketPriority) => {
 export default function TicketsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { unreadCounts } = useUnreadMessages();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,11 +154,17 @@ export default function TicketsPage() {
     {
       key: 'ticketNumber',
       header: 'Número',
-      render: (ticket: Ticket) => (
-        <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">
-          {ticket.ticketNumber}
-        </span>
-      ),
+      render: (ticket: Ticket) => {
+        const unreadCount = unreadCounts[ticket.id] || 0;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">
+              {ticket.ticketNumber}
+            </span>
+            {unreadCount > 0 && <UnreadBadge count={unreadCount} />}
+          </div>
+        );
+      },
     },
     {
       key: 'title',

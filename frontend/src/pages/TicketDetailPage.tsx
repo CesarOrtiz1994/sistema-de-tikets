@@ -12,7 +12,8 @@ import CloseTicketModal from '../components/Tickets/CloseTicketModal';
 import ReopenTicketModal from '../components/Tickets/ReopenTicketModal';
 import StarRating from '../components/common/StarRating';
 import ChatWindow from '../components/Chat/ChatWindow';
-import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw} from 'react-icons/fi';
+import FileHistory from '../components/Chat/FileHistory';
+import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw, FiMessageSquare, FiFolder } from 'react-icons/fi';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { departmentsService } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
@@ -101,6 +102,7 @@ export default function TicketDetailPage() {
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('NEW');
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority>('MEDIUM');
   const [actionLoading, setActionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chat' | 'files'>('chat');
 
   useEffect(() => {
     if (id) {
@@ -725,25 +727,48 @@ export default function TicketDetailPage() {
             </div>
           </Card>
 
-          {/* Chat del Ticket */}
+          {/* Chat y Archivos con Tabs */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            {/* Header del Chat */}
+            {/* Tabs Header */}
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <h3 className="text-sm font-semibold text-white">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                    activeTab === 'chat'
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <FiMessageSquare className="w-4 h-4" />
                   Chat en Tiempo Real
-                </h3>
+                  {activeTab === 'chat' && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
+                </button>
+                <button
+                  onClick={() => setActiveTab('files')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                    activeTab === 'files'
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <FiFolder className="w-4 h-4" />
+                  Archivos Adjuntos
+                </button>
               </div>
             </div>
             
-            {/* Contenido del Chat */}
+            {/* Contenido de los Tabs */}
             <div className="h-[500px]">
-              <ChatWindow 
-                ticketId={ticket.id}
-                ticketStatus={ticket.status}
-                assignedToId={ticket.assignedToId}
-              />
+              {activeTab === 'chat' ? (
+                <ChatWindow 
+                  ticketId={ticket.id}
+                  ticketStatus={ticket.status}
+                  assignedToId={ticket.assignedToId}
+                />
+              ) : (
+                <FileHistory ticketId={ticket.id} />
+              )}
             </div>
           </div>
         </div>

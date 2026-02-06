@@ -21,6 +21,7 @@ import DepartmentRoute from './components/Departments/DepartmentRoute';
 import Layout from './components/Layout';
 import ThemeProvider from './components/ThemeProvider';
 import Toaster from './components/Toaster';
+import { UnreadMessagesProvider } from './contexts/UnreadMessagesContext';
 import { useAuth } from './hooks/useAuth';
 import { usePermissions } from './hooks/usePermissions';
 
@@ -62,9 +63,10 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Router>
-        <Toaster />
-        <Routes>
+      <UnreadMessagesProvider>
+        <Router>
+          <Toaster />
+          <Routes>
             <Route 
             path="/login" 
             element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
@@ -238,7 +240,8 @@ function App() {
         
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-      </Router>
+        </Router>
+      </UnreadMessagesProvider>
     </ThemeProvider>
   );
 }

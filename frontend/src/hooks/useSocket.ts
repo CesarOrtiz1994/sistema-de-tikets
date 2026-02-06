@@ -19,13 +19,19 @@ export const useSocket = () => {
     try {
       const socketInstance = socketService.connect(token);
       setSocket(socketInstance);
+      
+      // Establecer estado inicial basado en si el socket ya está conectado
+      setIsConnected(socketInstance.connected);
+      console.log('[useSocket] Initial connection state:', socketInstance.connected);
 
       const handleConnect = () => {
+        console.log('[useSocket] Socket connected');
         setIsConnected(true);
         setError(null);
       };
 
       const handleDisconnect = () => {
+        console.log('[useSocket] Socket disconnected');
         setIsConnected(false);
       };
 
@@ -73,10 +79,10 @@ export const useSocket = () => {
     }
   }, []);
 
-  const sendMessage = useCallback((ticketId: string, message: string, attachment?: { url: string; name: string; type: string; size: number }) => {
+  const sendMessage = useCallback(async (ticketId: string, message: string, attachment?: { url: string; name: string; type: string; size: number }, replyToId?: string) => {
     try {
-      console.log('[useSocket] sendMessage called', { ticketId, message, hasAttachment: !!attachment });
-      socketService.sendMessage(ticketId, message, attachment);
+      console.log('[useSocket] sendMessage called', { ticketId, message, hasAttachment: !!attachment, replyToId });
+      await socketService.sendMessage(ticketId, message, attachment, replyToId);
       console.log('[useSocket] sendMessage completed');
     } catch (err) {
       console.error('[useSocket] Error in sendMessage:', err);
@@ -95,7 +101,7 @@ export const useSocket = () => {
   }, []);
 
   const onMessageReceived = useCallback((callback: (message: MessageReceived) => void) => {
-    socketService.onMessageReceived(callback);
+    return socketService.onMessageReceived(callback);
   }, []);
 
   const onTyping = useCallback((callback: (data: TypingEvent) => void) => {
@@ -108,6 +114,14 @@ export const useSocket = () => {
     setIsConnected(false);
   }, []);
 
+  const onConnectionChange = useCallback((callback: (connected: boolean) => void) => {
+    return socketService.onConnectionChange(callback);
+  }, []);
+
+  const getReconnectAttempts = useCallback(() => {
+    return socketService.getReconnectAttempts();
+  }, []);
+
   return {
     socket,
     isConnected,
@@ -118,6 +132,8 @@ export const useSocket = () => {
     sendTyping,
     onMessageReceived,
     onTyping,
-    disconnect
+    disconnect,
+    onConnectionChange,
+    getReconnectAttempts
   };
 };

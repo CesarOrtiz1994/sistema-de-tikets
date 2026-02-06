@@ -4,6 +4,12 @@ import { socketAuthMiddleware } from '../middlewares/socketAuth';
 import { canAccessTicket, canSendMessage } from '../middlewares/socketPermissions';
 import logger from '../config/logger';
 import prisma from '../config/database';
+import { unreadMessagesService } from '../services/unreadMessages.service';
+import {
+  messageRateLimiter,
+  typingRateLimiter,
+  joinLeaveRateLimiter
+} from '../middlewares/socketRateLimit.middleware';
 import {
   joinTicketSchema,
   leaveTicketSchema,
@@ -22,13 +28,32 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
   io.on('connection', (socket: AuthenticatedSocket) => {
     const userId = socket.userId;
 
+    if (!userId) {
+      logger.error('Socket connection without userId');
+      socket.disconnect();
+      return;
+    }
+
     logger.info(`User connected: userId=${userId}, socketId=${socket.id}`);
+
+    // Unir al usuario a su room personal para notificaciones directas
+    socket.join(`user:${userId}`);
 
     /**
      * JOIN-TICKET: Usuario se une a un room de ticket
      */
     socket.on('join-ticket', async (data: JoinTicketData) => {
       try {
+        // Rate limiting
+        if (!joinLeaveRateLimiter.checkLimit(userId)) {
+          const retryAfter = joinLeaveRateLimiter.getTimeUntilReset(userId);
+          socket.emit('error', { 
+            message: 'Estás realizando esta acción demasiado rápido. Por favor espera un momento.',
+            retryAfter 
+          });
+          return;
+        }
+
         // Validar datos con Zod
         const validationResult = joinTicketSchema.safeParse(data);
         if (!validationResult.success) {
@@ -101,6 +126,16 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
      */
     socket.on('leave-ticket', async (data: LeaveTicketData) => {
       try {
+        // Rate limiting
+        if (!joinLeaveRateLimiter.checkLimit(userId)) {
+          const retryAfter = joinLeaveRateLimiter.getTimeUntilReset(userId);
+          socket.emit('error', { 
+            message: 'Estás realizando esta acción demasiado rápido. Por favor espera un momento.',
+            retryAfter 
+          });
+          return;
+        }
+
         // Validar datos con Zod
         const validationResult = leaveTicketSchema.safeParse(data);
         if (!validationResult.success) {
@@ -147,12 +182,22 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
     });
 
     /**
-     * SEND-MESSAGE: Usuario envía un mensaje
+     * SEND-MESSAGE: Enviar mensaje en un ticket
      */
     socket.on('send-message', async (data: SendMessageData) => {
       try {
         logger.info('[send-message] Event received', { userId, data });
         
+        // Rate limiting
+        if (!messageRateLimiter.checkLimit(userId)) {
+          const retryAfter = messageRateLimiter.getTimeUntilReset(userId);
+          socket.emit('error', { 
+            message: 'Estás enviando mensajes demasiado rápido. Por favor espera un momento.',
+            retryAfter 
+          });
+          return;
+        }
+
         // Validar datos con Zod
         const validationResult = sendMessageSchema.safeParse(data);
         if (!validationResult.success) {
@@ -167,8 +212,8 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
           return;
         }
 
-        const { ticketId, message, attachment } = validationResult.data;
-        logger.info('[send-message] Validation passed', { userId, ticketId, messageLength: message.length, hasAttachment: !!attachment });
+        const { ticketId, message, attachment, replyToId } = validationResult.data;
+        logger.info('[send-message] Validation passed', { userId, ticketId, messageLength: message.length, hasAttachment: !!attachment, isReply: !!replyToId });
 
         // Verificar permisos
         const canSend = await canSendMessage(socket, ticketId);
@@ -192,16 +237,30 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
           return;
         }
 
+        // Validar que userId existe
+        if (!userId) {
+          socket.emit('error', { message: 'User ID is required' });
+          return;
+        }
+
+        logger.info('[send-message] About to save message to database', { 
+          ticketId, 
+          userId, 
+          messageLength: message.trim().length,
+          hasReplyToId: !!replyToId 
+        });
+
         // Guardar mensaje en la base de datos
         const savedMessage = await prisma.ticketMessage.create({
           data: {
             ticketId,
-            userId,
+            userId: userId,
             message: message.trim(),
-            attachmentUrl: attachment?.url,
-            attachmentName: attachment?.name,
-            attachmentType: attachment?.type,
-            attachmentSize: attachment?.size
+            attachmentUrl: attachment?.url || null,
+            attachmentName: attachment?.name || null,
+            attachmentType: attachment?.type || null,
+            attachmentSize: attachment?.size || null,
+            replyToId: replyToId || null
           },
           include: {
             user: {
@@ -211,8 +270,38 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
                 email: true,
                 profilePicture: true
               }
+            },
+            replyTo: {
+              select: {
+                id: true,
+                message: true,
+                userId: true,
+                createdAt: true,
+                attachmentUrl: true,
+                attachmentName: true,
+                attachmentType: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    profilePicture: true
+                  }
+                }
+              }
             }
           }
+        });
+
+        // Log para verificar si replyTo se obtuvo correctamente
+        logger.info('[send-message] Saved message details:', {
+          id: savedMessage.id,
+          replyToId: savedMessage.replyToId,
+          hasReplyTo: !!savedMessage.replyTo,
+          replyToData: savedMessage.replyTo ? {
+            id: savedMessage.replyTo.id,
+            message: savedMessage.replyTo.message.substring(0, 50)
+          } : null
         });
 
         // Preparar datos del mensaje para emitir
@@ -221,23 +310,76 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
           ticketId: savedMessage.ticketId,
           userId: savedMessage.userId,
           message: savedMessage.message,
+          attachmentUrl: savedMessage.attachmentUrl,
+          attachmentName: savedMessage.attachmentName,
+          attachmentType: savedMessage.attachmentType,
+          attachmentSize: savedMessage.attachmentSize,
+          replyToId: savedMessage.replyToId,
+          replyTo: savedMessage.replyTo ? {
+            id: savedMessage.replyTo.id,
+            message: savedMessage.replyTo.message,
+            userId: savedMessage.replyTo.userId,
+            createdAt: savedMessage.replyTo.createdAt.toISOString(),
+            attachmentUrl: savedMessage.replyTo.attachmentUrl,
+            attachmentName: savedMessage.replyTo.attachmentName,
+            attachmentType: savedMessage.replyTo.attachmentType,
+            user: {
+              id: savedMessage.replyTo.user.id,
+              name: savedMessage.replyTo.user.name,
+              email: savedMessage.replyTo.user.email,
+              profilePicture: savedMessage.replyTo.user.profilePicture
+            }
+          } : null,
           createdAt: savedMessage.createdAt.toISOString(),
           user: {
-            id: savedMessage.user.id,
-            name: savedMessage.user.name,
-            email: savedMessage.user.email,
-            profilePicture: savedMessage.user.profilePicture
+            id: savedMessage.user!.id,
+            name: savedMessage.user!.name,
+            email: savedMessage.user!.email,
+            profilePicture: savedMessage.user!.profilePicture
           }
         };
 
         logger.info(`[send-message] Message saved and sent in ticket ${ticketId} by user ${userId}`);
 
+        // Marcar como leído para el usuario que envía el mensaje
+        await unreadMessagesService.updateReadOnSend(userId, ticketId, savedMessage.id);
+
         // Emitir mensaje a todos en el room (incluyendo al emisor)
         io.to(`ticket:${ticketId}`).emit('new-message', messageData);
 
+        // Emitir notificación de mensaje no leído a todos los usuarios involucrados
+        // (requester y assignedTo) excepto al que envió el mensaje
+        const ticket = await prisma.ticket.findUnique({
+          where: { id: ticketId },
+          select: { requesterId: true, assignedToId: true }
+        });
+
+        if (ticket) {
+          const usersToNotify = [ticket.requesterId, ticket.assignedToId].filter(
+            id => id && id !== userId
+          );
+
+          usersToNotify.forEach(notifyUserId => {
+            io.to(`user:${notifyUserId}`).emit('unread-message-notification', {
+              ticketId,
+              messageId: savedMessage.id,
+              senderId: userId,
+              senderName: savedMessage.user!.name
+            });
+          });
+        }
+
       } catch (error) {
-        logger.error('[send-message] Error:', error);
-        socket.emit('error', { message: 'Failed to send message' });
+        logger.error('[send-message] Error:', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          userId,
+          ticketId: data.ticketId
+        });
+        socket.emit('error', { 
+          message: 'Failed to send message',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     });
 
@@ -246,6 +388,12 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
      */
     socket.on('typing', async (data: TypingData) => {
       try {
+        // Rate limiting
+        if (!typingRateLimiter.checkLimit(userId)) {
+          // No emitir error para typing, simplemente ignorar
+          return;
+        }
+
         // Validar datos con Zod
         const validationResult = typingSchema.safeParse(data);
         if (!validationResult.success) {

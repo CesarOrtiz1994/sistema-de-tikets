@@ -1,5 +1,7 @@
 import { FiClock, FiUser, FiAlertCircle, FiPauseCircle } from 'react-icons/fi';
 import Badge from '../common/Badge';
+import UnreadBadge from '../common/UnreadBadge';
+import { useUnreadMessages } from '../../contexts/UnreadMessagesContext';
 import { KanbanTicket } from '../../services/kanban.service';
 import { BadgeVariant } from '../common/Badge';
 
@@ -76,8 +78,12 @@ const getSLAStatus = (ticket: KanbanTicket): 'exceeded' | 'warning' | 'ok' | 'pa
 };
 
 export default function TicketCard({ ticket, isDragging, onClick }: TicketCardProps) {
+  const { unreadCounts } = useUnreadMessages();
   const priorityConfig = PRIORITY_CONFIG[ticket.priority];
   const slaStatus = getSLAStatus(ticket);
+  const unreadCount = unreadCounts[ticket.id] || 0;
+  
+  console.log('[TicketCard] Rendering ticket:', ticket.id, 'unreadCount:', unreadCount);
   
   // Calcular tiempo restante para mostrar
   let timeRemainingText = '';
@@ -117,9 +123,14 @@ export default function TicketCard({ ticket, isDragging, onClick }: TicketCardPr
       <div className="p-4">
       {/* Header: Número y Prioridad */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-          {ticket.ticketNumber}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+            {ticket.ticketNumber}
+          </span>
+          {unreadCount > 0 && (
+            <UnreadBadge count={unreadCount} />
+          )}
+        </div>
         <Badge variant={priorityConfig.variant} size="sm">
           {priorityConfig.label}
         </Badge>

@@ -13,7 +13,8 @@ export const sendMessageSchema = z.object({
   message: z.string()
     .min(1, 'El mensaje no puede estar vacío')
     .max(5000, 'El mensaje es demasiado largo (máximo 5000 caracteres)')
-    .trim()
+    .trim(),
+  replyToId: z.string().uuid('ID de mensaje inválido').optional()
 });
 
 export const typingSchema = z.object({
@@ -30,6 +31,22 @@ export const messageReceivedSchema = z.object({
   attachmentName: z.string().nullable().optional(),
   attachmentType: z.string().nullable().optional(),
   attachmentSize: z.number().nullable().optional(),
+  replyToId: z.string().uuid().nullable().optional(),
+  replyTo: z.object({
+    id: z.string().uuid(),
+    message: z.string(),
+    userId: z.string().uuid(),
+    createdAt: z.string().datetime(),
+    attachmentUrl: z.string().nullable().optional(),
+    attachmentName: z.string().nullable().optional(),
+    attachmentType: z.string().nullable().optional(),
+    user: z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      email: z.string().email(),
+      profilePicture: z.string().nullable().optional()
+    })
+  }).nullable().optional(),
   createdAt: z.string().datetime(),
   user: z.object({
     id: z.string().uuid(),

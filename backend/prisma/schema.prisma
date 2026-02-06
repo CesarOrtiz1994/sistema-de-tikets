@@ -35,6 +35,7 @@ model User {
   assignedTickets    Ticket[]                 @relation("TicketAssignedTo")
   ticketRatings      TicketRating[]
   ticketMessages     TicketMessage[]
+  ticketReads        TicketUserRead[]
 
   @@map("users")
 }
@@ -415,6 +416,7 @@ model Ticket {
 
   rating   TicketRating?
   messages TicketMessage[]
+  userReads TicketUserRead[]
 
   @@index([departmentId])
   @@index([formId])
@@ -457,14 +459,34 @@ model TicketMessage {
   attachmentName String? @map("attachment_name")
   attachmentType String? @map("attachment_type")
   attachmentSize Int?    @map("attachment_size")
+  replyToId    String?  @map("reply_to_id")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id])
+  ticket  Ticket          @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id])
+  replyTo TicketMessage?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies TicketMessage[] @relation("MessageReplies")
 
   @@index([ticketId])
   @@index([userId])
+  @@index([replyToId])
   @@index([createdAt])
   @@map("ticket_messages")
+}
+
+model TicketUserRead {
+  id            String   @id @default(uuid())
+  ticketId      String   @map("ticket_id")
+  userId        String   @map("user_id")
+  lastReadAt    DateTime @default(now()) @map("last_read_at")
+  lastMessageId String?  @map("last_message_id")
+
+  ticket  Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, userId])
+  @@index([userId])
+  @@index([ticketId])
+  @@map("ticket_user_reads")
 }

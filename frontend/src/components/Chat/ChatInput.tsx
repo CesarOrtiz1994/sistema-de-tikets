@@ -3,19 +3,24 @@ import { FiSend, FiPaperclip, FiX } from 'react-icons/fi';
 import { toast } from 'sonner';
 import axios from 'axios';
 import LoadingSpinner from '../common/LoadingSpinner';
+import QuotedMessage from './QuotedMessage';
+import { compressImage, isCompressibleImage, formatFileSize } from '../../utils/imageCompression';
+import type { MessageReceived } from '../../validators/socket.validator';
 
 interface ChatInputProps {
   ticketId: string;
-  onSendMessage: (message: string, attachment?: { url: string; name: string; type: string; size: number }) => void;
+  onSendMessage: (message: string, attachment?: { url: string; name: string; type: string; size: number }, replyToId?: string) => void;
   onTyping: (isTyping: boolean) => void;
   disabled?: boolean;
+  replyingTo?: MessageReceived | null;
+  onCancelReply?: () => void;
 }
 
 const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'application/pdf'];
 const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.svg', '.pdf'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled = false }: ChatInputProps) {
+export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled = false, replyingTo, onCancelReply }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -23,6 +28,13 @@ export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Focus textarea cuando se activa reply
+  useEffect(() => {
+    if (replyingTo && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [replyingTo]);
 
   useEffect(() => {
     return () => {
@@ -36,27 +48,42 @@ export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled 
     const value = e.target.value;
     setMessage(value);
 
+    // Si el usuario empieza a escribir, enviar evento de typing
     if (!isTyping && value.length > 0) {
       setIsTyping(true);
       onTyping(true);
     }
 
+    // Si el usuario borra todo el texto, detener typing inmediatamente
+    if (value.length === 0 && isTyping) {
+      setIsTyping(false);
+      onTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    // Resetear el timeout cada vez que el usuario escribe
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
+    // Después de 2 segundos sin escribir, detener el indicador
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
       onTyping(false);
-    }, 1000);
+    }, 2000);
 
+    // Auto-resize del textarea
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -73,8 +100,36 @@ export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled 
       return;
     }
 
-    setSelectedFile(file);
-    toast.success(`Archivo seleccionado: ${file.name}`);
+    // Comprimir imagen si es posible
+    let finalFile = file;
+    if (isCompressibleImage(file)) {
+      try {
+        toast.info('Comprimiendo imagen...');
+        const compressed = await compressImage(file, {
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 0.85
+        });
+        
+        const originalSize = formatFileSize(file.size);
+        const compressedSize = formatFileSize(compressed.size);
+        const reduction = (((file.size - compressed.size) / file.size) * 100).toFixed(0);
+        
+        if (compressed.size < file.size) {
+          finalFile = compressed;
+          toast.success(`Imagen comprimida: ${originalSize} → ${compressedSize} (${reduction}% reducción)`);
+        } else {
+          toast.success(`Archivo seleccionado: ${file.name}`);
+        }
+      } catch (error) {
+        console.error('[ChatInput] Error compressing image:', error);
+        toast.warning('No se pudo comprimir la imagen, se usará el archivo original');
+      }
+    } else {
+      toast.success(`Archivo seleccionado: ${file.name}`);
+    }
+
+    setSelectedFile(finalFile);
   };
 
   const handleRemoveFile = () => {
@@ -129,8 +184,11 @@ export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled 
         console.log('[ChatInput] File uploaded:', attachmentData);
       }
 
-      console.log('[ChatInput] Calling onSendMessage');
-      onSendMessage(message.trim() || '📎 Archivo adjunto', attachmentData);
+      console.log('[ChatInput] Calling onSendMessage', { 
+        hasReplyingTo: !!replyingTo, 
+        replyToId: replyingTo?.id 
+      });
+      onSendMessage(message.trim() || '📎 Archivo adjunto', attachmentData, replyingTo?.id);
       console.log('[ChatInput] onSendMessage called successfully');
       
       setMessage('');
@@ -163,6 +221,32 @@ export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled 
 
   return (
     <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
+      {/* Mensaje citado */}
+      {replyingTo && (
+        <div className="mb-2 relative">
+          <QuotedMessage 
+            message={{
+              id: replyingTo.id,
+              message: replyingTo.message,
+              userId: replyingTo.userId,
+              createdAt: replyingTo.createdAt,
+              attachmentUrl: replyingTo.attachmentUrl,
+              attachmentName: replyingTo.attachmentName,
+              attachmentType: replyingTo.attachmentType,
+              user: replyingTo.user
+            }} 
+            compact 
+          />
+          <button
+            onClick={onCancelReply}
+            className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors rounded"
+            title="Cancelar respuesta"
+          >
+            <FiX className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      
       <div className="flex items-end gap-2">
         <input
           ref={fileInputRef}

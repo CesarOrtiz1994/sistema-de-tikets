@@ -29,6 +29,8 @@ import kanbanRoutes from './routes/kanban.routes';
 import ticketRatingRoutes from './routes/ticketRating.routes';
 import ticketMessagesRoutes from './routes/ticketMessages.routes';
 import chatAttachmentRoutes from './routes/chatAttachment.routes';
+import unreadMessagesRoutes from './routes/unreadMessages.routes';
+import ticketAttachmentsRoutes from './routes/ticketAttachments.routes';
 
 const app: Application = express();
 
@@ -101,6 +103,12 @@ app.use('/api', ticketMessagesRoutes);
 
 // Rutas de archivos adjuntos en chat (SEMANA 17)
 app.use('/api', chatAttachmentRoutes);
+
+// Rutas de mensajes no leídos (SEMANA 17)
+app.use('/api/unread-messages', unreadMessagesRoutes);
+
+// Rutas de archivos adjuntos de tickets (SEMANA 17)
+app.use('/api/tickets', ticketAttachmentsRoutes);
 
 // Servir archivos estáticos desde /uploads
 app.use('/uploads', express.static('uploads'));

@@ -28,7 +28,7 @@ export const corsOptions: CorsOptions = {
 // Configuración de Rate Limiting
 export const rateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: env.NODE_ENV === 'development' ? 1000 : 100, // Más permisivo en desarrollo
+  max: env.NODE_ENV === 'development' ? 1000 : 50, // Más permisivo en desarrollo
   message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -55,5 +55,45 @@ export const authRateLimitOptions: Partial<RateLimitOptions> = {
       return true;
     }
     return false;
+  },
+};
+
+// Rate limit para mensajes de chat
+export const chatMessageRateLimitOptions: Partial<RateLimitOptions> = {
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: env.NODE_ENV === 'development' ? 100 : 15, // 10 mensajes por minuto en producción
+  message: 'Estás enviando mensajes demasiado rápido. Por favor espera un momento.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip en desarrollo para localhost
+    if (env.NODE_ENV === 'development' && (req.ip === '::1' || req.ip === '127.0.0.1' || req.ip === '::ffff:127.0.0.1')) {
+      return true;
+    }
+    return false;
+  },
+  // Usar userId como key en lugar de IP para usuarios autenticados
+  keyGenerator: (req) => {
+    const user = (req as any).user;
+    return user?.id || req.ip || 'unknown';
+  },
+};
+
+// Rate limit para archivos adjuntos
+export const chatAttachmentRateLimitOptions: Partial<RateLimitOptions> = {
+  windowMs: 5 * 60 * 1000, // 5 minutos
+  max: env.NODE_ENV === 'development' ? 50 : 5, // 5 archivos cada 5 minutos
+  message: 'Estás subiendo archivos demasiado rápido. Por favor espera un momento.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    if (env.NODE_ENV === 'development' && (req.ip === '::1' || req.ip === '127.0.0.1' || req.ip === '::ffff:127.0.0.1')) {
+      return true;
+    }
+    return false;
+  },
+  keyGenerator: (req) => {
+    const user = (req as any).user;
+    return user?.id || req.ip || 'unknown';
   },
 };
