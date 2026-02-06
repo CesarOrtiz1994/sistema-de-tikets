@@ -52,6 +52,14 @@ export class KanbanService {
     'RESOLVED'
   ];
 
+  // Columnas para subordinados (sin NEW)
+  private readonly SUBORDINATE_COLUMN_ORDER: TicketStatus[] = [
+    'ASSIGNED',
+    'IN_PROGRESS',
+    'WAITING',
+    'RESOLVED'
+  ];
+
   private readonly STATUS_LABELS: Record<TicketStatus, string> = {
     NEW: 'Nuevo',
     ASSIGNED: 'Asignado',
@@ -100,12 +108,16 @@ export class KanbanService {
         throw new Error('No tienes permisos para ver el tablero de este departamento');
       }
 
+      // Determinar qué columnas mostrar según el rol
+      const isSubordinate = user.roleType === 'SUBORDINATE';
+      const columnsToShow = isSubordinate ? this.SUBORDINATE_COLUMN_ORDER : this.COLUMN_ORDER;
+
       // Construir filtros para la consulta
       const where: Prisma.TicketWhereInput = {
         departmentId,
         deletedAt: null,
         status: {
-          in: this.COLUMN_ORDER
+          in: columnsToShow
         }
       };
 
@@ -172,7 +184,7 @@ export class KanbanService {
       // Agrupar tickets por estado
       const ticketsByStatus = new Map<TicketStatus, typeof tickets>();
       
-      this.COLUMN_ORDER.forEach(status => {
+      columnsToShow.forEach(status => {
         ticketsByStatus.set(status, []);
       });
 
@@ -184,7 +196,7 @@ export class KanbanService {
       });
 
       // Construir columnas del Kanban
-      const columns: KanbanColumn[] = this.COLUMN_ORDER.map(status => {
+      const columns: KanbanColumn[] = columnsToShow.map(status => {
         const statusTickets = ticketsByStatus.get(status) || [];
         
         return {

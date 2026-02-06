@@ -516,6 +516,16 @@ export class TicketsService {
     // Verificar permisos
     const ticket = await this.getTicketById(ticketId, userId);
 
+    // Obtener información del usuario para validaciones
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { roleType: true }
+    });
+
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
     const updates: Prisma.TicketUpdateInput = {};
     const historyEntries: Array<{
       action: string;
@@ -535,6 +545,45 @@ export class TicketsService {
     }
 
     if (data.status && data.status !== ticket.status) {
+      // Validaciones de transiciones para SUBORDINADOS
+      if (user.roleType === 'SUBORDINATE') {
+        const currentStatus = ticket.status;
+        const newStatus = data.status;
+
+        // Validación: NO pueden cambiar a NEW
+        if (newStatus === TicketStatus.NEW) {
+          throw new Error('No tienes permisos para cambiar el ticket a estado Nuevo');
+        }
+
+        // Validación: ASSIGNED solo puede ir a IN_PROGRESS
+        if (currentStatus === TicketStatus.ASSIGNED) {
+          if (newStatus !== TicketStatus.IN_PROGRESS) {
+            throw new Error('Desde Asignado solo puedes cambiar a En Progreso. Primero debes empezar a trabajar en el ticket.');
+          }
+        }
+
+        // Validación: IN_PROGRESS no puede regresar a ASSIGNED
+        if (currentStatus === TicketStatus.IN_PROGRESS) {
+          if (newStatus === TicketStatus.ASSIGNED) {
+            throw new Error('No puedes regresar un ticket de En Progreso a Asignado. Si necesitas pausarlo, usa el estado Esperando.');
+          }
+        }
+
+        // Validación: WAITING solo puede ir a IN_PROGRESS
+        if (currentStatus === TicketStatus.WAITING) {
+          if (newStatus !== TicketStatus.IN_PROGRESS) {
+            throw new Error('Desde Esperando solo puedes cambiar a En Progreso para continuar trabajando en el ticket.');
+          }
+        }
+
+        // Validación: RESOLVED solo puede regresar a IN_PROGRESS
+        if (currentStatus === TicketStatus.RESOLVED) {
+          if (newStatus !== TicketStatus.IN_PROGRESS) {
+            throw new Error('Desde Resuelto solo puedes cambiar a En Progreso si necesitas trabajar nuevamente en el ticket.');
+          }
+        }
+      }
+
       updates.status = data.status;
       historyEntries.push({
         action: 'STATUS_CHANGED',

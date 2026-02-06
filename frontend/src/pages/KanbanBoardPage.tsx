@@ -181,7 +181,9 @@ export default function KanbanBoardPage() {
       await loadKanbanBoard();
     } catch (error: any) {
       console.error('Error updating ticket status:', error);
-      toast.error('Error al actualizar el ticket');
+      // Mostrar el mensaje de error específico del backend
+      const errorMessage = error.response?.data?.error || error.message || 'Error al actualizar el ticket';
+      toast.error(errorMessage);
     }
   };
 
@@ -389,13 +391,14 @@ export default function KanbanBoardPage() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="flex gap-4 w-full">
             {columns.map((column) => (
-              <KanbanColumn 
-                key={column.status} 
-                column={column}
-                onTicketClick={handleTicketClick}
-              />
+              <div key={column.status} className="flex-1 min-w-0">
+                <KanbanColumn 
+                  column={column}
+                  onTicketClick={handleTicketClick}
+                />
+              </div>
             ))}
           </div>
 

@@ -98,7 +98,7 @@ class TicketsController {
    * PUT /api/tickets/:id
    * Actualizar un ticket
    */
-  async updateTicket(req: Request, res: Response, next: NextFunction) {
+  async updateTicket(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
       const { id } = req.params;
@@ -106,14 +106,17 @@ class TicketsController {
 
       const ticket = await ticketsService.updateTicket(id, userId, updateData);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Ticket actualizado exitosamente',
         data: ticket
       });
     } catch (error: any) {
       logger.error('Error en updateTicket:', error);
-      next(error);
+      return res.status(400).json({
+        success: false,
+        error: error.message || 'Error al actualizar el ticket'
+      });
     }
   }
 
