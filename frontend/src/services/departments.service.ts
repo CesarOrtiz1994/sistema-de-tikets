@@ -7,6 +7,8 @@ export interface Department {
   description?: string;
   isDefaultForRequesters: boolean;
   requireRating?: boolean;
+  requireDeliverable?: boolean;
+  maxDeliverableRejections?: number;
   isActive: boolean;
   createdById?: string;
   deletedAt?: string;
@@ -29,6 +31,8 @@ export interface CreateDepartmentData {
   description?: string;
   isDefaultForRequesters?: boolean;
   requireRating?: boolean;
+  requireDeliverable?: boolean;
+  maxDeliverableRejections?: number;
 }
 
 export interface UpdateDepartmentData {
@@ -37,6 +41,8 @@ export interface UpdateDepartmentData {
   description?: string;
   isDefaultForRequesters?: boolean;
   requireRating?: boolean;
+  requireDeliverable?: boolean;
+  maxDeliverableRejections?: number;
 }
 
 export interface DepartmentFilters {

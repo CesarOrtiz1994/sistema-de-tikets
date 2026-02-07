@@ -1,3 +1,12 @@
+import { createElement } from 'react';
+import {
+  FiFileText, FiUserCheck, FiUserX, FiRefreshCw, FiAlertTriangle,
+  FiEdit, FiCheckCircle, FiLock, FiUnlock, FiStar, FiMessageSquare,
+  FiPaperclip, FiTrash2, FiPauseCircle, FiPlayCircle, FiAlertOctagon,
+  FiClock, FiCpu, FiBriefcase, FiClipboard, FiPackage, FiXCircle,
+  FiBell, FiMail, FiActivity
+} from 'react-icons/fi';
+
 /**
  * Traduce las acciones técnicas del historial a mensajes amigables para usuarios finales
  * TODOS los mensajes en español claro y conciso
@@ -118,10 +127,10 @@ export const getHistoryMessage = (action: string, details?: any): string => {
 
       case 'SLA_BREACHED':
       case 'SLA_EXCEEDED':
-        return '⚠️ Tiempo de respuesta excedido';
+        return 'Tiempo de respuesta excedido';
 
       case 'SLA_WARNING':
-        return '⏰ Tiempo de respuesta próximo a vencer';
+        return 'Tiempo de respuesta próximo a vencer';
 
       case 'AUTO_CLOSE_TICKET':
         if (detailsObj?.reason) {
@@ -137,6 +146,18 @@ export const getHistoryMessage = (action: string, details?: any): string => {
 
       case 'FORM_UPDATED':
         return 'Formulario actualizado';
+
+      case 'UPLOAD_DELIVERABLE':
+        return 'Entregable subido';
+
+      case 'APPROVE_DELIVERABLE':
+        return 'Entregable aprobado';
+
+      case 'REJECT_DELIVERABLE':
+        if (detailsObj?.body?.rejectionReason) {
+          return `Entregable rechazado: ${detailsObj.body.rejectionReason}`;
+        }
+        return 'Entregable rechazado';
 
       case 'NOTIFICATION_SENT':
         return 'Notificación enviada';
@@ -178,88 +199,99 @@ export const getHistoryMessage = (action: string, details?: any): string => {
 /**
  * Obtiene un ícono apropiado para cada tipo de acción
  */
-export const getHistoryIcon = (action: string): string => {
+export const getHistoryIcon = (action: string): React.ReactNode => {
+  const icon = (component: any, color: string) => createElement(component, { className: `w-4 h-4 ${color}` });
+
   switch (action) {
     case 'CREATE_TICKET':
-      return '🎫';
+      return icon(FiFileText, 'text-blue-500');
     
     case 'ASSIGN_TICKET':
     case 'ASSIGNED':
-      return '👤';
+      return icon(FiUserCheck, 'text-purple-500');
     
     case 'UNASSIGN_TICKET':
     case 'UNASSIGNED':
-      return '❌';
+      return icon(FiUserX, 'text-gray-500');
     
     case 'UPDATE_STATUS':
     case 'STATUS_CHANGED':
-      return '🔄';
+      return icon(FiRefreshCw, 'text-cyan-500');
     
     case 'UPDATE_PRIORITY':
     case 'PRIORITY_CHANGED':
-      return '⚠️';
+      return icon(FiAlertTriangle, 'text-orange-500');
     
     case 'UPDATE_TICKET':
     case 'TICKET_UPDATED':
-      return '✏️';
+      return icon(FiEdit, 'text-indigo-500');
     
     case 'RESOLVE_TICKET':
     case 'RESOLVED':
-      return '✅';
+      return icon(FiCheckCircle, 'text-green-500');
     
     case 'CLOSE_TICKET':
     case 'CLOSED':
-      return '🔒';
+      return icon(FiLock, 'text-gray-600');
     
     case 'REOPEN_TICKET':
     case 'REOPENED':
-      return '🔓';
+      return icon(FiUnlock, 'text-amber-500');
     
     case 'RATE_TICKET':
     case 'RATED':
-      return '⭐';
+      return icon(FiStar, 'text-yellow-500');
     
     case 'ADD_COMMENT':
     case 'COMMENT_ADDED':
-      return '💬';
+      return icon(FiMessageSquare, 'text-blue-400');
     
     case 'UPLOAD_FILE':
     case 'FILE_UPLOADED':
-      return '📎';
+      return icon(FiPaperclip, 'text-teal-500');
     
     case 'DELETE_FILE':
     case 'FILE_DELETED':
-      return '🗑️';
+      return icon(FiTrash2, 'text-red-400');
     
     case 'SLA_PAUSED':
-      return '⏸️';
+      return icon(FiPauseCircle, 'text-orange-400');
     
     case 'SLA_RESUMED':
-      return '▶️';
+      return icon(FiPlayCircle, 'text-green-400');
     
     case 'SLA_BREACHED':
     case 'SLA_EXCEEDED':
-      return '🚨';
+      return icon(FiAlertOctagon, 'text-red-600');
     
     case 'SLA_WARNING':
-      return '⏰';
+      return icon(FiClock, 'text-orange-500');
     
     case 'AUTO_CLOSE_TICKET':
-      return '🤖';
+      return icon(FiCpu, 'text-gray-500');
     
     case 'DEPARTMENT_CHANGED':
-      return '🏢';
+      return icon(FiBriefcase, 'text-violet-500');
     
     case 'FORM_UPDATED':
-      return '📋';
+      return icon(FiClipboard, 'text-sky-500');
+    
+    case 'UPLOAD_DELIVERABLE':
+      return icon(FiPackage, 'text-purple-500');
+    
+    case 'APPROVE_DELIVERABLE':
+      return icon(FiCheckCircle, 'text-emerald-500');
+    
+    case 'REJECT_DELIVERABLE':
+      return icon(FiXCircle, 'text-red-500');
     
     case 'NOTIFICATION_SENT':
-      return '🔔';
+      return icon(FiBell, 'text-amber-400');
     
     case 'EMAIL_SENT':
-      return '📧';
+      return icon(FiMail, 'text-blue-500');
     
     default:
-      return '📝';
+      return icon(FiActivity, 'text-gray-400');
   }
 };

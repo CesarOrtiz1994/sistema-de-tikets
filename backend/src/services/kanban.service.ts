@@ -171,7 +171,8 @@ export class KanbanService {
             select: {
               id: true,
               name: true,
-              prefix: true
+              prefix: true,
+              requireDeliverable: true
             }
           }
         },
@@ -220,6 +221,132 @@ export class KanbanService {
       return columns;
     } catch (error) {
       logger.error('Error loading kanban board:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene los tickets de todos los departamentos del usuario agrupados por estado
+   */
+  async getAllDepartmentsKanban(
+    userId: string,
+    filters: KanbanFilters = {}
+  ): Promise<KanbanColumn[]> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          roleType: true,
+          departmentUsers: {
+            select: {
+              departmentId: true
+            }
+          }
+        }
+      });
+
+      if (!user) {
+        throw new Error('Usuario no encontrado');
+      }
+
+      const isSubordinate = user.roleType === 'SUBORDINATE';
+      const columnsToShow = isSubordinate ? this.SUBORDINATE_COLUMN_ORDER : this.COLUMN_ORDER;
+
+      // Determinar departamentos accesibles
+      let departmentFilter: Prisma.TicketWhereInput = {};
+      if (user.roleType === 'SUPER_ADMIN') {
+        // Super admin ve todos los departamentos
+        departmentFilter = { deletedAt: null };
+      } else {
+        const deptIds = user.departmentUsers.map(du => du.departmentId);
+        if (deptIds.length === 0) {
+          return columnsToShow.map(status => ({
+            status,
+            label: this.STATUS_LABELS[status],
+            count: 0,
+            tickets: []
+          }));
+        }
+        departmentFilter = { departmentId: { in: deptIds }, deletedAt: null };
+      }
+
+      const where: Prisma.TicketWhereInput = {
+        ...departmentFilter,
+        status: { in: columnsToShow }
+      };
+
+      if (filters.priority) {
+        where.priority = filters.priority as any;
+      }
+      if (filters.assignedToId) {
+        where.assignedToId = filters.assignedToId;
+      }
+      if (filters.onlyMine) {
+        where.OR = [
+          { requesterId: userId },
+          { assignedToId: userId }
+        ];
+      }
+
+      const tickets = await prisma.ticket.findMany({
+        where,
+        select: {
+          id: true,
+          ticketNumber: true,
+          title: true,
+          priority: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          slaDeadline: true,
+          slaExceeded: true,
+          slaPausedAt: true,
+          requester: {
+            select: { id: true, name: true, email: true, profilePicture: true }
+          },
+          assignedTo: {
+            select: { id: true, name: true, email: true, profilePicture: true }
+          },
+          department: {
+            select: { id: true, name: true, prefix: true, requireDeliverable: true }
+          }
+        },
+        orderBy: [
+          { priority: 'desc' },
+          { createdAt: 'asc' }
+        ]
+      });
+
+      const ticketsByStatus = new Map<TicketStatus, typeof tickets>();
+      columnsToShow.forEach(status => ticketsByStatus.set(status, []));
+      tickets.forEach(ticket => {
+        const statusTickets = ticketsByStatus.get(ticket.status);
+        if (statusTickets) statusTickets.push(ticket);
+      });
+
+      const columns: KanbanColumn[] = columnsToShow.map(status => {
+        const statusTickets = ticketsByStatus.get(status) || [];
+        return {
+          status,
+          label: this.STATUS_LABELS[status],
+          count: statusTickets.length,
+          tickets: statusTickets.map(ticket => ({
+            ...ticket,
+            timeInStatus: this.calculateTimeInStatus(ticket.updatedAt)
+          }))
+        };
+      });
+
+      logger.info('Kanban board loaded (all departments)', {
+        userId,
+        totalTickets: tickets.length,
+        filters
+      });
+
+      return columns;
+    } catch (error) {
+      logger.error('Error loading all departments kanban:', error);
       throw error;
     }
   }

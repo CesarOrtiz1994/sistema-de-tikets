@@ -28,6 +28,7 @@ export interface KanbanTicket {
     id: string;
     name: string;
     prefix: string;
+    requireDeliverable?: boolean;
   };
 }
 
@@ -68,6 +69,31 @@ class KanbanService {
 
     const queryString = params.toString();
     const url = `/api/departments/${departmentId}/kanban${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data.data;
+  }
+
+  /**
+   * Obtiene el tablero Kanban de todos los departamentos del usuario
+   */
+  async getAllDepartmentsKanban(
+    filters?: KanbanFilters
+  ): Promise<KanbanColumn[]> {
+    const params = new URLSearchParams();
+    
+    if (filters?.priority) {
+      params.append('priority', filters.priority);
+    }
+    if (filters?.assignedToId) {
+      params.append('assignedToId', filters.assignedToId);
+    }
+    if (filters?.onlyMine) {
+      params.append('onlyMine', 'true');
+    }
+
+    const queryString = params.toString();
+    const url = `/api/kanban/all${queryString ? `?${queryString}` : ''}`;
     
     const response = await api.get(url);
     return response.data.data;

@@ -18,7 +18,9 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
     description: '',
     isDefaultForRequesters: false,
     requireRating: true,
-    autoCloseAfterDays: 8
+    autoCloseAfterDays: 8,
+    requireDeliverable: false,
+    maxDeliverableRejections: 3
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -31,7 +33,9 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
         description: department.description || '',
         isDefaultForRequesters: department.isDefaultForRequesters,
         requireRating: department.requireRating ?? true,
-        autoCloseAfterDays: (department as any).autoCloseAfterDays ?? 8
+        autoCloseAfterDays: (department as any).autoCloseAfterDays ?? 8,
+        requireDeliverable: (department as any).requireDeliverable ?? false,
+        maxDeliverableRejections: (department as any).maxDeliverableRejections ?? 3
       });
     } else {
       setFormData({
@@ -40,7 +44,9 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
         description: '',
         isDefaultForRequesters: false,
         requireRating: true,
-        autoCloseAfterDays: 8
+        autoCloseAfterDays: 8,
+        requireDeliverable: false,
+        maxDeliverableRejections: 3
       });
     }
     setErrors({});
@@ -200,6 +206,45 @@ export default function DepartmentModal({ isOpen, onClose, onSave, department }:
               Los tickets en estado "Resuelto" se cerrarán automáticamente después de este número de días hábiles (tomando en cuenta el horario laboral del departamento)
             </p>
           </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="requireDeliverable"
+              checked={formData.requireDeliverable}
+              onChange={(e) => setFormData({ ...formData, requireDeliverable: e.target.checked })}
+              className="w-4 h-4 text-purple-600 border-gray-300 dark:border-gray-600 rounded focus:ring-purple-500"
+            />
+            <label htmlFor="requireDeliverable" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              Requerir entregable al resolver tickets
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">
+            Los técnicos deberán subir un archivo entregable al resolver tickets. El solicitante podrá aprobar o rechazar el entregable.
+          </p>
+
+          {formData.requireDeliverable && (
+            <div className="ml-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <label htmlFor="maxDeliverableRejections" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Límite de rechazos de entregables
+              </label>
+              <input
+                type="number"
+                id="maxDeliverableRejections"
+                value={formData.maxDeliverableRejections}
+                onChange={(e) => setFormData({ ...formData, maxDeliverableRejections: parseInt(e.target.value) || 3 })}
+                min="1"
+                max="10"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+              />
+              {errors.maxDeliverableRejections && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.maxDeliverableRejections}</p>
+              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Si el solicitante rechaza el entregable este número de veces, el ticket se cerrará automáticamente y se creará un nuevo ticket de seguimiento.
+              </p>
+            </div>
+          )}
 
       </form>
     </Modal>

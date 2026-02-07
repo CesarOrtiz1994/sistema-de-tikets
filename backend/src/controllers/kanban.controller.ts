@@ -68,6 +68,43 @@ export const getDepartmentKanban = async (req: Request, res: Response) => {
 };
 
 /**
+ * Obtiene el tablero Kanban de todos los departamentos del usuario
+ * GET /api/kanban/all
+ */
+export const getAllDepartmentsKanban = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const filters = kanbanFiltersSchema.parse(req.query);
+
+    const kanbanData = await kanbanService.getAllDepartmentsKanban(
+      userId,
+      filters
+    );
+
+    return res.json({
+      success: true,
+      data: kanbanData
+    });
+  } catch (error: any) {
+    logger.error('Error getting all departments kanban:', error);
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Datos de entrada inválidos',
+        errors: error.issues
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener el tablero Kanban',
+      error: error.message
+    });
+  }
+};
+
+/**
  * Asignación rápida de ticket desde el Kanban
  * PUT /api/tickets/:id/quick-assign
  */

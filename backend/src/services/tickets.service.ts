@@ -225,7 +225,8 @@ export class TicketsService {
             id: true,
             name: true,
             prefix: true,
-            requireRating: true
+            requireRating: true,
+            requireDeliverable: true
           }
         },
         form: {
@@ -580,6 +581,30 @@ export class TicketsService {
         if (currentStatus === TicketStatus.RESOLVED) {
           if (newStatus !== TicketStatus.IN_PROGRESS) {
             throw new Error('Desde Resuelto solo puedes cambiar a En Progreso si necesitas trabajar nuevamente en el ticket.');
+          }
+        }
+      }
+
+      // Validación: Si el departamento requiere entregable, verificar antes de marcar como RESOLVED
+      if (data.status === TicketStatus.RESOLVED && (ticket.department as any)?.requireDeliverable) {
+        const approvedDeliverable = await prisma.ticketDeliverable.findFirst({
+          where: {
+            ticketId,
+            status: 'APPROVED'
+          }
+        });
+
+        if (!approvedDeliverable) {
+          // Verificar si hay al menos un entregable pendiente
+          const pendingDeliverable = await prisma.ticketDeliverable.findFirst({
+            where: {
+              ticketId,
+              status: 'PENDING'
+            }
+          });
+
+          if (!pendingDeliverable) {
+            throw new Error('Este departamento requiere que subas un entregable antes de resolver el ticket. Ve a la pestaña de Entregables para subir tu archivo.');
           }
         }
       }

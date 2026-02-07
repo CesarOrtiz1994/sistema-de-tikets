@@ -31,6 +31,7 @@ import ticketMessagesRoutes from './routes/ticketMessages.routes';
 import chatAttachmentRoutes from './routes/chatAttachment.routes';
 import unreadMessagesRoutes from './routes/unreadMessages.routes';
 import ticketAttachmentsRoutes from './routes/ticketAttachments.routes';
+import deliverablesRoutes from './routes/deliverables.routes';
 
 const app: Application = express();
 
@@ -109,6 +110,9 @@ app.use('/api/unread-messages', unreadMessagesRoutes);
 
 // Rutas de archivos adjuntos de tickets (SEMANA 17)
 app.use('/api/tickets', ticketAttachmentsRoutes);
+
+// Rutas de entregables (deliverables)
+app.use('/api/tickets', deliverablesRoutes);
 
 // Servir archivos estáticos desde /uploads
 app.use('/uploads', express.static('uploads'));

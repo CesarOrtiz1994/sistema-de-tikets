@@ -73,6 +73,10 @@ export class SanitizationService {
             return this.sanitizeHtml(item);
           }
           if (typeof item === 'object') {
+            // No sanitizar objetos de archivos (contienen mimetype, path, url con / que se rompen con escape)
+            if (item && (item.mimetype || item.filename || item.path)) {
+              return item;
+            }
             return this.sanitizeObject(item);
           }
           return item;

@@ -11,7 +11,9 @@ const createDepartmentSchema = z.object({
   prefix: z.string().min(2, 'El prefijo debe tener al menos 2 caracteres').max(10, 'El prefijo no puede tener más de 10 caracteres'),
   description: z.string().optional(),
   isDefaultForRequesters: z.boolean().optional(),
-  requireRating: z.boolean().optional()
+  requireRating: z.boolean().optional(),
+  requireDeliverable: z.boolean().optional(),
+  maxDeliverableRejections: z.number().int().min(1).max(10).optional()
 });
 
 const updateDepartmentSchema = z.object({
@@ -20,7 +22,9 @@ const updateDepartmentSchema = z.object({
   description: z.string().optional(),
   isDefaultForRequesters: z.boolean().optional(),
   requireRating: z.boolean().optional(),
-  autoCloseAfterDays: z.number().int().min(1).max(90).optional()
+  autoCloseAfterDays: z.number().int().min(1).max(90).optional(),
+  requireDeliverable: z.boolean().optional(),
+  maxDeliverableRejections: z.number().int().min(1).max(10).optional()
 });
 
 const assignUserSchema = z.object({

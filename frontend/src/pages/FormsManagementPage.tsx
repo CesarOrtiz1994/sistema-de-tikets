@@ -22,7 +22,6 @@ export default function FormsManagementPage() {
   const [forms, setForms] = useState<TicketForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [departmentId, setDepartmentId] = useState<string>('');
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState<string>('all');
   const [newFormDepartmentId, setNewFormDepartmentId] = useState<string>('');
@@ -53,25 +52,21 @@ export default function FormsManagementPage() {
         setDepartments(depts);
         
         if (depts.length > 0) {
-          const firstDept = depts[0];
-          setDepartmentId(firstDept.id);
-          setNewFormDepartmentId(firstDept.id);
-          // Pasar los departamentos cargados directamente
+          setNewFormDepartmentId(depts[0].id);
           await loadAllForms(depts);
         } else {
           toast.error('No hay departamentos disponibles');
           setLoading(false);
         }
       } else {
-        // Admin de Departamento: cargar solo su departamento
-        const response = await departmentsService.getAllDepartments({ page: 1, limit: 1 });
+        // Admin de Departamento: cargar todos sus departamentos
+        const response = await departmentsService.getMyAdminDepartments();
+        const depts = response.data || [];
+        setDepartments(depts);
         
-        if (response.data.length > 0) {
-          const myDept = response.data[0];
-          setDepartmentId(myDept.id);
-          setNewFormDepartmentId(myDept.id);
-          setDepartments([myDept]);
-          await loadForms(myDept.id);
+        if (depts.length > 0) {
+          setNewFormDepartmentId(depts[0].id);
+          await loadAllForms(depts);
         } else {
           toast.error('No tienes un departamento asignado');
           setLoading(false);
@@ -84,18 +79,6 @@ export default function FormsManagementPage() {
     }
   };
 
-  const loadForms = async (deptId: string) => {
-    try {
-      setLoading(true);
-      const data = await formsService.getDepartmentForms(deptId);
-      setForms(data);
-    } catch (error) {
-      console.error('Error loading forms:', error);
-      toast.error('Error al cargar los formularios');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadAllForms = async (depts: Department[]) => {
     try {
@@ -124,8 +107,10 @@ export default function FormsManagementPage() {
   const handleOpenCreateModal = () => {
     setNewFormName('');
     setNewFormDescription('');
-    if (!isSuperAdmin) {
-      setNewFormDepartmentId(departmentId);
+    if (!isSuperAdmin && departments.length === 1) {
+      setNewFormDepartmentId(departments[0].id);
+    } else if (!isSuperAdmin && departments.length > 1) {
+      setNewFormDepartmentId('');
     }
     setIsCreateModalOpen(true);
   };
@@ -406,7 +391,7 @@ export default function FormsManagementPage() {
         }
       >
         <div className="space-y-4">
-          {isSuperAdmin && (
+          {(isSuperAdmin || departments.length > 1) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Departamento *

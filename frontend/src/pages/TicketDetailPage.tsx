@@ -10,10 +10,14 @@ import Modal from '../components/common/Modal';
 import ModalButtons from '../components/common/ModalButtons';
 import CloseTicketModal from '../components/Tickets/CloseTicketModal';
 import ReopenTicketModal from '../components/Tickets/ReopenTicketModal';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import StarRating from '../components/common/StarRating';
 import ChatWindow from '../components/Chat/ChatWindow';
 import FileHistory from '../components/Chat/FileHistory';
-import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw, FiMessageSquare, FiFolder } from 'react-icons/fi';
+import TicketRelationship from '../components/Tickets/TicketRelationship';
+import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle } from 'react-icons/fi';
+import { deliverablesService } from '../services/deliverables.service';
+import { Deliverable, DeliverableStatus } from '../types/deliverable';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { departmentsService } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
@@ -102,7 +106,15 @@ export default function TicketDetailPage() {
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('NEW');
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority>('MEDIUM');
   const [actionLoading, setActionLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'files'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'files' | 'deliverables'>('chat');
+
+  // Entregables
+  const [pendingDeliverable, setPendingDeliverable] = useState<Deliverable | null>(null);
+  const [showRejectDeliverableModal, setShowRejectDeliverableModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [deliverableProcessing, setDeliverableProcessing] = useState(false);
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [deliverableApproved, setDeliverableApproved] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -116,6 +128,12 @@ export default function TicketDetailPage() {
     }
   }, [ticket?.departmentId]);
 
+  useEffect(() => {
+    if (ticket?.department?.requireDeliverable && id) {
+      loadPendingDeliverable();
+    }
+  }, [ticket?.id, ticket?.department?.requireDeliverable]);
+
   const loadTicket = async () => {
     try {
       setLoading(true);
@@ -127,6 +145,71 @@ export default function TicketDetailPage() {
       navigate('/tickets');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPendingDeliverable = async () => {
+    try {
+      const deliverables = await deliverablesService.getTicketDeliverables(id!);
+      const pending = deliverables.find(d => d.status === DeliverableStatus.PENDING);
+      setPendingDeliverable(pending || null);
+      const approved = deliverables.some(d => d.status === DeliverableStatus.APPROVED);
+      setDeliverableApproved(approved);
+    } catch (error) {
+      console.error('Error loading deliverables:', error);
+    }
+  };
+
+  const handleApproveDeliverable = async () => {
+    if (!pendingDeliverable) return;
+
+    setDeliverableProcessing(true);
+    try {
+      await deliverablesService.approveDeliverable(pendingDeliverable.id);
+      toast.success('Entregable aprobado exitosamente');
+      setPendingDeliverable(null);
+      setDeliverableApproved(true);
+      loadTicket();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Error al aprobar el entregable');
+    } finally {
+      setDeliverableProcessing(false);
+    }
+  };
+
+  const handleRejectDeliverable = async () => {
+    if (!pendingDeliverable || !rejectionReason.trim()) {
+      toast.error('Debes proporcionar una razón para el rechazo');
+      return;
+    }
+
+    setDeliverableProcessing(true);
+    try {
+      const result = await deliverablesService.rejectDeliverable(
+        pendingDeliverable.id,
+        rejectionReason
+      );
+
+      if (result.exceededLimit) {
+        toast.success(
+          `Entregable rechazado. Se excedió el límite de rechazos. Ticket cerrado y nuevo creado: ${result.followUpTicket?.ticketNumber}`,
+          { duration: 8000 }
+        );
+      } else {
+        toast.success(
+          `Entregable rechazado. Rechazos: ${result.rejectionCount}/${result.maxRejections}`,
+          { duration: 5000 }
+        );
+      }
+
+      setShowRejectDeliverableModal(false);
+      setRejectionReason('');
+      setPendingDeliverable(null);
+      loadTicket();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Error al rechazar el entregable');
+    } finally {
+      setDeliverableProcessing(false);
     }
   };
 
@@ -276,23 +359,8 @@ export default function TicketDetailPage() {
       <PageHeader
         title={ticket.title}
         description={`Ticket #${ticket.ticketNumber}`}
-      />
-
-      {/* Header con badges y acciones */}
-      <Card>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            {getStatusBadge(ticket.status)}
-            {getPriorityBadge(ticket.priority)}
-            {ticket.slaExceeded && (
-              <Badge variant="danger" size="md">
-                <FiAlertCircle className="inline mr-1" />
-                SLA Excedido
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
+        action={
+         <div className="flex flex-wrap gap-2">
             {canAssign && (
               <button
                 onClick={() => {
@@ -342,7 +410,9 @@ export default function TicketDetailPage() {
             {canCloseTicket && (
               <button
                 onClick={() => setShowCloseModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
+                disabled={ticket?.department?.requireDeliverable && !deliverableApproved}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={ticket?.department?.requireDeliverable && !deliverableApproved ? 'Debes aprobar el entregable antes de cerrar el ticket' : undefined}
               >
                 <FiCheckCircle />
                 <span>{ticket?.department?.requireRating ? 'Cerrar y Calificar' : 'Cerrar Ticket'}</span>
@@ -357,9 +427,124 @@ export default function TicketDetailPage() {
                 <span>Reabrir Ticket</span>
               </button>
             )}
+          </div> 
+        }
+        other={
+          <>
+          {getStatusBadge(ticket.status)}
+          {getPriorityBadge(ticket.priority)}
+            {ticket.slaExceeded && (
+              <Badge variant="danger" size="md">
+                <FiAlertCircle className="inline mr-1" />
+                SLA Excedido
+              </Badge>
+            )}
+          </>
+        }
+      />
+
+      {/* Entregable */}
+      {ticket.department?.requireDeliverable && !['CLOSED', 'CANCELLED'].includes(ticket.status) && (
+        <Card>
+          <div className="flex items-start justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <FiPackage />
+              Entregable
+            </h3>
+            {deliverableApproved ? (
+              <Badge variant="success" size="sm">Aprobado</Badge>
+            ) : pendingDeliverable ? (
+              <Badge variant="warning" size="sm">Pendiente de Revisión</Badge>
+            ) : (
+              <Badge variant="gray" size="sm">Sin entregable</Badge>
+            )}
           </div>
-        </div>
-      </Card>
+
+          {deliverableApproved ? (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+              <p className="text-sm text-green-700 dark:text-green-300">
+                {ticket.department?.requireRating
+                  ? 'El entregable fue aprobado. Por favor cierra y califica el ticket.'
+                  : 'El entregable fue aprobado. Por favor cierra el ticket.'}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Info de rechazos */}
+              {ticket.deliverableRejections > 0 && (
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Rechazos realizados</div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                      {ticket.deliverableRejections} <span className="text-sm font-normal text-gray-500">/ {ticket.department?.maxDeliverableRejections ?? 3}</span>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Intentos restantes</div>
+                    <div className={`text-lg font-bold ${((ticket.department?.maxDeliverableRejections ?? 3) - ticket.deliverableRejections) <= 1 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                      {(ticket.department?.maxDeliverableRejections ?? 3) - ticket.deliverableRejections}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {pendingDeliverable && (user?.id === ticket.requesterId || userRole === RoleType.SUPER_ADMIN) ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    El agente ha subido un archivo entregable. Revísalo y decide si lo apruebas o rechazas.
+                  </p>
+
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="p-2 rounded-lg bg-white dark:bg-gray-800">
+                      <FiFolder className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {pendingDeliverable.fileName}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Subido por {pendingDeliverable.uploadedBy.name} • {new Date(pendingDeliverable.createdAt).toLocaleDateString('es-MX')}
+                      </p>
+                    </div>
+                    <a
+                      href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${pendingDeliverable.fileUrl}`}
+                      download
+                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      title="Descargar"
+                    >
+                      <FiDownload className="w-4 h-4" />
+                    </a>
+                  </div>
+
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={() => setShowRejectDeliverableModal(true)}
+                      disabled={deliverableProcessing}
+                      className="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <FiXCircle className="w-4 h-4" />
+                      Rechazar
+                    </button>
+                    <button
+                      onClick={() => setShowApproveConfirm(true)}
+                      disabled={deliverableProcessing}
+                      className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <FiCheckCircle className="w-4 h-4" />
+                      Aprobar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Este departamento requiere que el agente suba un archivo entregable antes de resolver el ticket.
+                  {!pendingDeliverable && ' Aún no se ha subido ningún entregable.'}
+                </p>
+              )}
+            </>
+          )}
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna principal */}
@@ -681,6 +866,12 @@ export default function TicketDetailPage() {
 
         {/* Columna lateral - Historial */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Vinculación de Tickets */}
+          <TicketRelationship
+            parentTicket={ticket.parentTicket}
+            childTickets={ticket.childTickets}
+          />
+
           {/* Historial de Cambios */}
           <Card>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -727,7 +918,7 @@ export default function TicketDetailPage() {
             </div>
           </Card>
 
-          {/* Chat y Archivos con Tabs */}
+          {/* Chat, Archivos y Entregables con Tabs */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             {/* Tabs Header */}
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-3">
@@ -893,6 +1084,70 @@ export default function TicketDetailPage() {
         onClose={() => setShowReopenModal(false)}
         onConfirm={handleReopenTicket}
         ticketNumber={ticket?.ticketNumber || ''}
+      />
+
+      {/* Modal Rechazar Entregable */}
+      <Modal
+        isOpen={showRejectDeliverableModal}
+        onClose={() => {
+          setShowRejectDeliverableModal(false);
+          setRejectionReason('');
+        }}
+        title="Rechazar Entregable"
+        subtitle="Proporciona una razón para que el agente pueda corregir el problema"
+        size="md"
+        footer={
+          <ModalButtons
+            onCancel={() => {
+              setShowRejectDeliverableModal(false);
+              setRejectionReason('');
+            }}
+            onConfirm={handleRejectDeliverable}
+            cancelText="Cancelar"
+            confirmText="Confirmar Rechazo"
+            confirmIcon={<FiXCircle />}
+            loading={deliverableProcessing}
+            confirmDisabled={!rejectionReason.trim()}
+            variant="danger"
+          />
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <FiAlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-800 dark:text-red-200">
+              Al rechazar el entregable, el ticket regresará a En Progreso para que el agente pueda corregirlo.
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Razón del rechazo *
+            </label>
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Describe qué debe corregirse..."
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none"
+              rows={4}
+              disabled={deliverableProcessing}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Confirmar Aprobación de Entregable */}
+      <ConfirmDialog
+        isOpen={showApproveConfirm}
+        title="Aprobar Entregable"
+        message="¿Estás seguro de que deseas aprobar este entregable? Una vez aprobado, el ticket podrá ser cerrado."
+        confirmText="Aprobar"
+        cancelText="Cancelar"
+        type="info"
+        onConfirm={() => {
+          setShowApproveConfirm(false);
+          handleApproveDeliverable();
+        }}
+        onCancel={() => setShowApproveConfirm(false)}
       />
     </div>
   );

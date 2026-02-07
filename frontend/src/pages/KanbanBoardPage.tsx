@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -20,10 +20,13 @@ import permissionsService from '../services/permissions.service';
 import KanbanColumn from '../components/Kanban/KanbanColumn';
 import TicketCard from '../components/Kanban/TicketCard';
 import TicketDetailModal from '../components/Kanban/TicketDetailModal';
+import DeliverableUpload, { DeliverableUploadHandle } from '../components/Deliverables/DeliverableUpload';
 import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
+import Modal from '../components/common/Modal';
+import ModalButtons from '../components/common/ModalButtons';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FiFilter, FiRefreshCw } from 'react-icons/fi';
+import { FiFilter, FiRefreshCw, FiUpload } from 'react-icons/fi';
 
 export default function KanbanBoardPage() {
   const { user } = useAuth();
@@ -42,6 +45,13 @@ export default function KanbanBoardPage() {
   // Filtros
   const [filters, setFilters] = useState<KanbanFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+
+  // Modal de entregable
+  const [showDeliverableModal, setShowDeliverableModal] = useState(false);
+  const [pendingResolveTicketId, setPendingResolveTicketId] = useState<string>('');
+  const [hasDeliverableFile, setHasDeliverableFile] = useState(false);
+  const [isUploadingDeliverable, setIsUploadingDeliverable] = useState(false);
+  const deliverableUploadRef = useRef<DeliverableUploadHandle>(null);
 
   const isDeptAdmin = hasRole(RoleType.DEPT_ADMIN);
   const isSubordinate = hasRole(RoleType.SUBORDINATE);
@@ -64,7 +74,7 @@ export default function KanbanBoardPage() {
   useEffect(() => {
     if (selectedDepartmentId) {
       loadKanbanBoard();
-      if (isDeptAdmin) {
+      if (isDeptAdmin && selectedDepartmentId !== 'all') {
         loadDepartmentUsers();
       }
     }
@@ -79,7 +89,7 @@ export default function KanbanBoardPage() {
       setMyAdminDepartments(depts || []);
 
       if (depts && depts.length > 0 && !selectedDepartmentId) {
-        setSelectedDepartmentId(depts[0].id);
+        setSelectedDepartmentId('all');
       }
 
       if (!depts || depts.length === 0) {
@@ -119,10 +129,12 @@ export default function KanbanBoardPage() {
         ? { ...filters, onlyMine: true }
         : filters;
 
-      const data = await kanbanService.getDepartmentKanban(
-        selectedDepartmentId,
-        appliedFilters
-      );
+      const data = selectedDepartmentId === 'all'
+        ? await kanbanService.getAllDepartmentsKanban(appliedFilters)
+        : await kanbanService.getDepartmentKanban(
+            selectedDepartmentId,
+            appliedFilters
+          );
       
       setColumns(data);
     } catch (error: any) {
@@ -169,6 +181,13 @@ export default function KanbanBoardPage() {
 
     if (!ticket || currentStatus === newStatus) return;
 
+    // Si se arrastra a RESOLVED, verificar si el departamento requiere entregable
+    if (newStatus === 'RESOLVED' && ticket.department?.requireDeliverable) {
+      setPendingResolveTicketId(ticketId);
+      setShowDeliverableModal(true);
+      return;
+    }
+
     try {
       // Actualizar el estado del ticket en el backend
       await ticketsService.updateTicket(ticketId, {
@@ -185,6 +204,23 @@ export default function KanbanBoardPage() {
       const errorMessage = error.response?.data?.error || error.message || 'Error al actualizar el ticket';
       toast.error(errorMessage);
     }
+  };
+
+  const handleDeliverableUploaded = async () => {
+    setShowDeliverableModal(false);
+    if (pendingResolveTicketId) {
+      try {
+        await ticketsService.updateTicket(pendingResolveTicketId, {
+          status: 'RESOLVED' as any
+        });
+        toast.success('Entregable subido y ticket marcado como resuelto');
+        await loadKanbanBoard();
+      } catch (error: any) {
+        const errorMessage = error.response?.data?.error || error.message || 'Error al resolver el ticket';
+        toast.error(errorMessage);
+      }
+    }
+    setPendingResolveTicketId('');
   };
 
   const handleTicketClick = (ticketId: string) => {
@@ -274,24 +310,23 @@ export default function KanbanBoardPage() {
       <Card>
         <div className="space-y-4">
           {/* Selector de Departamento */}
-          {myAdminDepartments.length > 1 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Departamento
-              </label>
-              <select
-                value={selectedDepartmentId}
-                onChange={(e) => setSelectedDepartmentId(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {myAdminDepartments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Departamento
+            </label>
+            <select
+              value={selectedDepartmentId}
+              onChange={(e) => setSelectedDepartmentId(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">Todos los departamentos</option>
+              {myAdminDepartments.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Botón de Filtros */}
           <div className="flex items-center justify-between">
@@ -429,6 +464,45 @@ export default function KanbanBoardPage() {
           canEdit={isDeptAdmin}
         />
       )}
+
+      {/* Modal de subir entregable */}
+      <Modal
+        isOpen={showDeliverableModal}
+        onClose={() => {
+          setShowDeliverableModal(false);
+          setPendingResolveTicketId('');
+        }}
+        title="Subir Entregable"
+        subtitle="Este departamento requiere que subas un entregable antes de resolver el ticket"
+        size="md"
+        footer={
+          <ModalButtons
+            onCancel={() => {
+              setShowDeliverableModal(false);
+              setPendingResolveTicketId('');
+              setHasDeliverableFile(false);
+            }}
+            onConfirm={() => deliverableUploadRef.current?.upload()}
+            cancelText="Cancelar"
+            confirmText="Subir Entregable"
+            confirmIcon={<FiUpload className="w-4 h-4" />}
+            loading={isUploadingDeliverable}
+            confirmDisabled={!hasDeliverableFile}
+            variant="primary"
+          />
+        }
+      >
+        {pendingResolveTicketId && (
+          <DeliverableUpload
+            ref={deliverableUploadRef}
+            ticketId={pendingResolveTicketId}
+            onUploadSuccess={handleDeliverableUploaded}
+            onFileChange={setHasDeliverableFile}
+            onUploadingChange={setIsUploadingDeliverable}
+            hideButtons
+          />
+        )}
+      </Modal>
     </div>
   );
 }

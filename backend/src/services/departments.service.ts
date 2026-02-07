@@ -7,6 +7,8 @@ export interface CreateDepartmentData {
   isDefaultForRequesters?: boolean;
   requireRating?: boolean;
   autoCloseAfterDays?: number;
+  requireDeliverable?: boolean;
+  maxDeliverableRejections?: number;
   createdById?: string;
 }
 
@@ -17,6 +19,8 @@ export interface UpdateDepartmentData {
   isDefaultForRequesters?: boolean;
   requireRating?: boolean;
   autoCloseAfterDays?: number;
+  requireDeliverable?: boolean;
+  maxDeliverableRejections?: number;
 }
 
 export interface DepartmentFilters {
@@ -222,6 +226,8 @@ export class DepartmentsService {
         description: data.description,
         isDefaultForRequesters: data.isDefaultForRequesters || false,
         requireRating: data.requireRating ?? true,
+        requireDeliverable: data.requireDeliverable ?? false,
+        maxDeliverableRejections: data.maxDeliverableRejections ?? 3,
         createdBy: {
           connect: { id: data.createdById }
         }
@@ -290,6 +296,8 @@ export class DepartmentsService {
     if (data.isDefaultForRequesters !== undefined) updateData.isDefaultForRequesters = data.isDefaultForRequesters;
     if (data.requireRating !== undefined) updateData.requireRating = data.requireRating;
     if (data.autoCloseAfterDays !== undefined) updateData.autoCloseAfterDays = data.autoCloseAfterDays;
+    if (data.requireDeliverable !== undefined) updateData.requireDeliverable = data.requireDeliverable;
+    if (data.maxDeliverableRejections !== undefined) updateData.maxDeliverableRejections = data.maxDeliverableRejections;
 
     console.log('UPDATE DEPARTMENT SERVICE - Datos a guardar:', {
       id,

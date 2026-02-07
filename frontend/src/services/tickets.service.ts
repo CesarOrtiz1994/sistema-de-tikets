@@ -10,6 +10,7 @@ export interface Ticket {
   formId: string;
   requesterId: string;
   assignedToId?: string;
+  parentTicketId?: string;
   title: string;
   status: TicketStatus;
   priority: TicketPriority;
@@ -20,6 +21,7 @@ export interface Ticket {
   slaTotalPausedMinutes: number;
   slaStartTime?: string;
   createdOutsideBusinessHours?: boolean;
+  deliverableRejections: number;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
@@ -29,6 +31,8 @@ export interface Ticket {
     name: string;
     prefix: string;
     requireRating?: boolean;
+    requireDeliverable?: boolean;
+    maxDeliverableRejections?: number;
   };
   form?: {
     id: string;
@@ -46,6 +50,16 @@ export interface Ticket {
     email: string;
     profilePicture?: string;
   };
+  parentTicket?: {
+    id: string;
+    ticketNumber: string;
+    title: string;
+  };
+  childTickets?: Array<{
+    id: string;
+    ticketNumber: string;
+    title: string;
+  }>;
   history?: any[];
 }
 

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { FiX, FiUser, FiClock, FiAlertCircle, FiCalendar, FiFileText, FiMessageSquare, FiPaperclip } from 'react-icons/fi';
+import { FiX, FiUser, FiClock, FiAlertCircle, FiCalendar, FiFileText, FiMessageSquare, FiPaperclip, FiPackage, FiDownload } from 'react-icons/fi';
 import { KanbanTicket } from '../../services/kanban.service';
 import { ticketsService } from '../../services/tickets.service';
 import { formsService } from '../../services/forms.service';
 import { departmentsService } from '../../services/departments.service';
+import { deliverablesService } from '../../services/deliverables.service';
+import { Deliverable, DeliverableStatus } from '../../types/deliverable';
 import Badge from '../common/Badge';
 import UnreadBadge from '../common/UnreadBadge';
 import { BadgeVariant } from '../common/Badge';
@@ -46,6 +48,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
   const [fullTicket, setFullTicket] = useState<any>(null);
   const [loadingTicket, setLoadingTicket] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('details');
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   
   const unreadCount = unreadCounts[ticket.id] || 0;
 
@@ -54,6 +57,9 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
       loadDepartmentUsers();
     }
     loadFullTicket();
+    if (ticket.department?.requireDeliverable) {
+      loadDeliverables();
+    }
   }, []);
 
   const loadFullTicket = async () => {
@@ -103,6 +109,15 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
       toast.error('Error al cargar detalles del ticket');
     } finally {
       setLoadingTicket(false);
+    }
+  };
+
+  const loadDeliverables = async () => {
+    try {
+      const data = await deliverablesService.getTicketDeliverables(ticket.id);
+      setDeliverables(data);
+    } catch (error) {
+      console.error('Error loading deliverables:', error);
     }
   };
 
@@ -410,6 +425,106 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                     </div>
                   </div>
                 )}
+
+                {/* Estado del Entregable */}
+                {ticket.department?.requireDeliverable && fullTicket && (() => {
+                  const pending = deliverables.find(d => d.status === DeliverableStatus.PENDING);
+                  const lastRejected = deliverables.find(d => d.status === DeliverableStatus.REJECTED);
+                  const approved = deliverables.some(d => d.status === DeliverableStatus.APPROVED);
+                  const rejections = fullTicket.deliverableRejections || 0;
+                  const maxRejections = fullTicket.department?.maxDeliverableRejections ?? 3;
+                  const remaining = maxRejections - rejections;
+
+                  return (
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h5 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          <FiPackage className="w-4 h-4" />
+                          Entregable
+                        </h5>
+                        {approved ? (
+                          <Badge variant="success" size="sm">Aprobado</Badge>
+                        ) : pending ? (
+                          <Badge variant="warning" size="sm">Pendiente de Revisión</Badge>
+                        ) : lastRejected ? (
+                          <Badge variant="danger" size="sm">Rechazado</Badge>
+                        ) : (
+                          <Badge variant="gray" size="sm">Sin entregable</Badge>
+                        )}
+                      </div>
+
+                      {approved ? (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                          <p className="text-sm text-green-700 dark:text-green-300">
+                            {fullTicket.department?.requireRating
+                              ? 'El entregable fue aprobado. En espera de que el solicitante cierre y califique el ticket.'
+                              : 'El entregable fue aprobado. En espera de que el solicitante cierre el ticket.'}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Rechazos */}
+                          {rejections > 0 && (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Rechazos realizados</div>
+                                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                  {rejections} <span className="text-sm font-normal text-gray-500">/ {maxRejections}</span>
+                                </div>
+                              </div>
+                              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Intentos restantes</div>
+                                <div className={`text-lg font-bold ${remaining <= 1 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                                  {remaining}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Motivo del último rechazo */}
+                          {lastRejected && lastRejected.rejectionReason && (
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                              <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">Motivo del último rechazo:</p>
+                              <p className="text-sm text-red-600 dark:text-red-400">{lastRejected.rejectionReason}</p>
+                              {lastRejected.reviewedBy && (
+                                <p className="text-xs text-red-500 dark:text-red-500 mt-1">
+                                  Por {lastRejected.reviewedBy.name} • {new Date(lastRejected.reviewedAt!).toLocaleDateString('es-MX')}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Archivo pendiente */}
+                          {pending && (
+                            <div className="flex items-center gap-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                              <FiPackage className="w-4 h-4 text-purple-600" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{pending.fileName}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  Subido el {new Date(pending.createdAt).toLocaleDateString('es-MX')}
+                                </p>
+                              </div>
+                              <a
+                                href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${pending.fileUrl}`}
+                                download
+                                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                title="Descargar"
+                              >
+                                <FiDownload className="w-4 h-4" />
+                              </a>
+                            </div>
+                          )}
+
+                          {!pending && !lastRejected && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Aún no se ha subido ningún entregable.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Datos del formulario */}
                 <div className="space-y-3">

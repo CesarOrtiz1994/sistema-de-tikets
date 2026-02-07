@@ -9,6 +9,15 @@ const router = Router();
 router.use(authenticate);
 
 /**
+ * GET /api/kanban/all
+ * Obtiene el tablero Kanban de todos los departamentos del usuario
+ */
+router.get(
+  '/kanban/all',
+  kanbanController.getAllDepartmentsKanban as any
+);
+
+/**
  * GET /api/departments/:id/kanban
  * Obtiene el tablero Kanban de un departamento
  * Query params:
