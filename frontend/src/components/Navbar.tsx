@@ -1,9 +1,10 @@
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { getRoleLabel } from '../utils/permissions';
-import { FiLogOut, FiBell, FiSearch, FiFileText, FiSun, FiMoon } from 'react-icons/fi';
+import { FiLogOut, FiSearch, FiFileText, FiSun, FiMoon } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
+import NotificationCenter from './Notifications/NotificationCenter';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -45,10 +46,7 @@ export default function Navbar() {
             </div>
 
             {/* Notifications */}
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition text-gray-600">
-              <FiBell className="text-xl" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <NotificationCenter />
 
             {/* Theme Toggle */}
             <button

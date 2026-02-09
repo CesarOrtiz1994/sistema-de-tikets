@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { ticketsService } from '../services/tickets.service';
+import {
+  notifyTicketCreated,
+  notifyTicketAssigned,
+  notifyTicketStatusChanged,
+  notifyTicketPriorityChanged
+} from '../services/notificationTriggers.service';
 import logger from '../config/logger';
 
 class TicketsController {
@@ -20,6 +26,12 @@ class TicketsController {
         priority,
         formData
       });
+
+      // Notificar a admins del departamento
+      logger.info(`[createTicket] Calling notifyTicketCreated for ticket ${ticket.ticketNumber}, departmentId: ${ticket.departmentId}`);
+      notifyTicketCreated(ticket).catch(err =>
+        logger.error('Error sending ticket created notification:', err)
+      );
 
       res.status(201).json({
         success: true,
@@ -104,7 +116,32 @@ class TicketsController {
       const { id } = req.params;
       const updateData = req.body;
 
+      // Obtener ticket antes de actualizar para detectar cambios
+      const previousTicket = await ticketsService.getTicketById(id, userId);
+
       const ticket = await ticketsService.updateTicket(id, userId, updateData);
+
+      // Disparar notificaciones según lo que cambió
+      if (updateData.assignedToId && updateData.assignedToId !== previousTicket.assignedToId) {
+        logger.info(`[updateTicket] Assignment changed, notifying assignee ${updateData.assignedToId}`);
+        notifyTicketAssigned(ticket).catch(err =>
+          logger.error('Error sending ticket assigned notification:', err)
+        );
+      }
+
+      if (updateData.status && updateData.status !== previousTicket.status) {
+        logger.info(`[updateTicket] Status changed to ${updateData.status}, notifying`);
+        notifyTicketStatusChanged(ticket, updateData.status, userId).catch(err =>
+          logger.error('Error sending status change notification:', err)
+        );
+      }
+
+      if (updateData.priority && updateData.priority !== previousTicket.priority) {
+        logger.info(`[updateTicket] Priority changed to ${updateData.priority}, notifying`);
+        notifyTicketPriorityChanged(ticket, updateData.priority, userId).catch(err =>
+          logger.error('Error sending priority change notification:', err)
+        );
+      }
 
       return res.json({
         success: true,
@@ -134,6 +171,14 @@ class TicketsController {
         assignedToId
       });
 
+      // Notificar al subordinado asignado
+      logger.info(`[assignTicket] ticket.assignedToId=${ticket.assignedToId}, body.assignedToId=${assignedToId}`);
+      if (assignedToId) {
+        notifyTicketAssigned(ticket).catch(err =>
+          logger.error('Error sending ticket assigned notification:', err)
+        );
+      }
+
       res.json({
         success: true,
         message: 'Ticket asignado exitosamente',
@@ -159,6 +204,12 @@ class TicketsController {
         status
       });
 
+      // Notificar cambio de estado
+      logger.info(`[changeStatus] ticket.requesterId=${ticket.requesterId}, ticket.assignedToId=${ticket.assignedToId}, newStatus=${status}, changedBy=${userId}`);
+      notifyTicketStatusChanged(ticket, status, userId).catch(err =>
+        logger.error('Error sending status change notification:', err)
+      );
+
       res.json({
         success: true,
         message: 'Estado del ticket actualizado',
@@ -183,6 +234,11 @@ class TicketsController {
       const ticket = await ticketsService.updateTicket(id, userId, {
         priority
       });
+
+      // Notificar cambio de prioridad
+      notifyTicketPriorityChanged(ticket, priority, userId).catch(err =>
+        logger.error('Error sending priority change notification:', err)
+      );
 
       res.json({
         success: true,

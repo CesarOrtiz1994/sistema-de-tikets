@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { TicketStatus } from '@prisma/client';
 import logger from '../config/logger';
+import { notifyTicketAutoClosed } from '../services/notificationTriggers.service';
 
 /**
  * Worker que auto-cierra tickets en estado RESOLVED después de X días hábiles
@@ -146,13 +147,11 @@ class AutoCloseTicketsWorker {
             `Días configurados: ${autoCloseAfterDays}`
           );
 
-          // TODO: Enviar email de notificación cuando se implemente EmailService
-          // await emailService.sendEmail({
-          //   to: ticket.requester.email,
-          //   subject: `Ticket ${ticket.ticketNumber} cerrado automáticamente`,
-          //   context: { ticketNumber, departmentName, etc... }
-          // });
-          logger.info(`TODO: Enviar email de auto-cierre a ${ticket.requester.email}`);
+          // Notificar al solicitante del auto-cierre
+          notifyTicketAutoClosed(
+            { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, requesterId: ticket.requester.id },
+            autoCloseAfterDays
+          ).catch(err => logger.error(`Error sending auto-close notification for ${ticket.ticketNumber}:`, err));
         }
       }
 

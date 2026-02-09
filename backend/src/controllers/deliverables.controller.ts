@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
 import { deliverablesService } from '../services/deliverables.service';
+import prisma from '../config/database';
+import {
+  notifyDeliverableUploaded,
+  notifyDeliverableApproved,
+  notifyDeliverableRejected
+} from '../services/notificationTriggers.service';
 import logger from '../config/logger';
 
 export class DeliverablesController {
@@ -26,6 +32,19 @@ export class DeliverablesController {
         file
       );
 
+      // Notificar al solicitante
+      const ticket = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+        select: { id: true, ticketNumber: true, title: true, requesterId: true }
+      });
+      if (ticket) {
+        notifyDeliverableUploaded(
+          ticket,
+          deliverable.fileName,
+          deliverable.uploadedBy.name
+        ).catch(err => logger.error('Error sending deliverable uploaded notification:', err));
+      }
+
       return res.json({
         success: true,
         message: 'Entregable subido exitosamente',
@@ -50,6 +69,17 @@ export class DeliverablesController {
       const { id } = req.params;
 
       const deliverable = await deliverablesService.approveDeliverable(id, userId);
+
+      // Notificar al subordinado asignado
+      const approvedTicket = await prisma.ticket.findFirst({
+        where: { deliverables: { some: { id } } },
+        select: { id: true, ticketNumber: true, assignedToId: true }
+      });
+      if (approvedTicket) {
+        notifyDeliverableApproved(approvedTicket).catch(err =>
+          logger.error('Error sending deliverable approved notification:', err)
+        );
+      }
 
       return res.json({
         success: true,
@@ -87,6 +117,19 @@ export class DeliverablesController {
         userId,
         rejectionReason
       );
+
+      // Notificar al subordinado asignado
+      const rejectedTicket = await prisma.ticket.findFirst({
+        where: { deliverables: { some: { id } } },
+        select: { id: true, ticketNumber: true, title: true, assignedToId: true }
+      });
+      if (rejectedTicket) {
+        notifyDeliverableRejected(
+          rejectedTicket,
+          rejectionReason,
+          result.maxRejections - result.rejectionCount
+        ).catch(err => logger.error('Error sending deliverable rejected notification:', err));
+      }
 
       return res.json({
         success: true,

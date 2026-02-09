@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import { fieldTypesSeed } from './seeds/fieldTypes.seed';
 import { validationRulesSeed } from './seeds/validationRules.seed';
 import { slaConfigurationsSeed } from './seeds/slaConfigurations.seed';
+import { emailTemplatesSeed } from './seeds/emailTemplates.seed';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -25,6 +26,9 @@ async function main() {
     await fieldTypesSeed(prisma);
     await validationRulesSeed(prisma);
     await slaConfigurationsSeed(prisma);
+
+    // FASE 4: Email Templates para Notificaciones
+    await emailTemplatesSeed(prisma);
     
     console.log('✅ Database seeding completed successfully!');
   } catch (error) {

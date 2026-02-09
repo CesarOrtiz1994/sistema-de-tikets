@@ -10,6 +10,7 @@ import {
   typingRateLimiter,
   joinLeaveRateLimiter
 } from '../middlewares/socketRateLimit.middleware';
+import { notifyNewMessage } from '../services/notificationTriggers.service';
 import {
   joinTicketSchema,
   leaveTicketSchema,
@@ -351,7 +352,7 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
         // (requester y assignedTo) excepto al que envió el mensaje
         const ticket = await prisma.ticket.findUnique({
           where: { id: ticketId },
-          select: { requesterId: true, assignedToId: true }
+          select: { requesterId: true, assignedToId: true, ticketNumber: true }
         });
 
         if (ticket) {
@@ -367,6 +368,13 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
               senderName: savedMessage.user!.name
             });
           });
+
+          // Enviar push notification + notificación in-app para usuarios offline
+          notifyNewMessage(
+            { id: ticketId, ticketNumber: ticket.ticketNumber, requesterId: ticket.requesterId, assignedToId: ticket.assignedToId },
+            userId,
+            savedMessage.user!.name
+          ).catch(err => logger.error('Error sending new message notification:', err));
         }
 
       } catch (error) {

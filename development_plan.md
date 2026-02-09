@@ -668,13 +668,13 @@
 **Objetivo:** Notificaciones in-app, emails y webhooks
 
 #### Backend
-- [ ] Tabla notifications
-- [ ] Tabla email_templates
+- [x] Tabla notifications
+- [x] Tabla email_templates
 - [ ] Tabla webhooks
-- [ ] Servicio de notificaciones:
+- [x] Servicio de notificaciones:
   - Función para crear notificación
   - Lógica de a quién notificar según evento
-- [ ] Endpoints:
+- [x] Endpoints:
   - `GET /api/notifications` - Listar notificaciones
   - `PUT /api/notifications/:id/read` - Marcar leída
   - `PUT /api/notifications/read-all` - Marcar todas
@@ -689,31 +689,31 @@
   - `DELETE /api/webhooks/:id` - Eliminar webhook
   - `POST /api/webhooks/:id/test` - Probar webhook
 - [ ] Setup de Bull + Redis para colas
-- [ ] Setup de Nodemailer
-- [ ] Seed de templates de emails:
+- [x] Setup de Nodemailer
+- [x] Seed de templates de emails:
   - TICKET_CREATED, TICKET_ASSIGNED, TICKET_RESOLVED
   - TICKET_CLOSED, SLA_WARNING, SLA_EXCEEDED
-- [ ] Sistema de variables en templates ({{ticket_number}}, {{user_name}})
-- [ ] Jobs para enviar emails:
+- [x] Sistema de variables en templates ({{ticket_number}}, {{user_name}})
+- [x] Jobs para enviar emails:
   - Ticket creado
   - Ticket asignado
   - Ticket resuelto
   - SLA cerca de vencer
 - [ ] Servicio para disparar webhooks
-- [ ] Emitir notificaciones via Socket.io
+- [x] Emitir notificaciones via Socket.io
 
 #### Frontend
-- [ ] Componente NotificationCenter (dropdown en navbar)
-- [ ] Badge con contador de no leídas
-- [ ] Lista de notificaciones con:
+- [x] Componente NotificationCenter (dropdown en navbar)
+- [x] Badge con contador de no leídas
+- [x] Lista de notificaciones con:
   - Icono según tipo
   - Título y mensaje
   - Tiempo relativo (hace 5 min)
   - Click lleva al ticket
-- [ ] Marcar como leída al hacer click
-- [ ] Botón "Marcar todas como leídas"
-- [ ] Toast notifications con react-hot-toast
-- [ ] Notificaciones en tiempo real via Socket.io
+- [x] Marcar como leída al hacer click
+- [x] Botón "Marcar todas como leídas"
+- [x] Toast notifications con sonner
+- [x] Notificaciones en tiempo real via Socket.io
 
 **Entregable:** Sistema completo de notificaciones
 
@@ -752,27 +752,27 @@
 **Objetivo:** Notificaciones push funcionando
 
 #### Backend
-- [ ] Configurar Firebase Cloud Messaging
-- [ ] Tabla fcm_tokens
-- [ ] Endpoints:
+- [x] Configurar Firebase Cloud Messaging
+- [x] Tabla fcm_tokens
+- [x] Endpoints:
   - `POST /api/notifications/register-token` - Guardar token FCM
   - `DELETE /api/notifications/unregister-token` - Eliminar token
-- [ ] Servicio para enviar push:
+- [x] Servicio para enviar push:
   - Usar Firebase Admin SDK
   - Enviar a tokens del usuario
-- [ ] Eventos que envían push:
+- [x] Eventos que envían push:
   - Ticket asignado
   - Nuevo mensaje (si offline)
   - SLA warning
 
 #### Frontend
-- [ ] Solicitar permisos de notificaciones
-- [ ] Obtener token FCM
-- [ ] Registrar token en backend
-- [ ] Escuchar mensajes push:
+- [x] Solicitar permisos de notificaciones
+- [x] Obtener token FCM
+- [x] Registrar token en backend
+- [x] Escuchar mensajes push:
   - En foreground: mostrar toast
   - En background: manejado por service worker
-- [ ] Actions en push notifications:
+- [x] Actions en push notifications:
   - "Ver ticket" - abre el ticket
   - "Marcar leída"
 

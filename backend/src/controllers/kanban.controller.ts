@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import kanbanService from '../services/kanban.service';
+import prisma from '../config/database';
+import { notifyTicketAssigned } from '../services/notificationTriggers.service';
 import logger from '../config/logger';
 
 // Validación Zod para filtros del Kanban
@@ -125,6 +127,24 @@ export const quickAssignTicket = async (req: Request, res: Response) => {
       assignedToId,
       userId
     );
+
+    // Notificar al subordinado asignado
+    if (assignedToId) {
+      const ticket = await prisma.ticket.findUnique({
+        where: { id: validatedTicketId },
+        select: {
+          id: true, ticketNumber: true, title: true, priority: true,
+          assignedToId: true, departmentId: true,
+          department: { select: { name: true } },
+          requester: { select: { name: true } }
+        }
+      });
+      if (ticket) {
+        notifyTicketAssigned(ticket).catch(err =>
+          logger.error('Error sending quick-assign notification:', err)
+        );
+      }
+    }
 
     return res.json({
       success: true,

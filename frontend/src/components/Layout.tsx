@@ -1,6 +1,8 @@
 import { ReactNode, useState } from 'react';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import { useNotifications } from '../hooks/useNotifications';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 interface LayoutProps {
   children: ReactNode;
@@ -8,6 +10,12 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Escuchar notificaciones en tiempo real via Socket.io
+  useNotifications();
+
+  // Push notifications (Firebase Cloud Messaging)
+  usePushNotifications();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">

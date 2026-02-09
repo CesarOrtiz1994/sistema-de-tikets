@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { TicketStatus } from '@prisma/client';
 import logger from '../config/logger';
+import { notifySLAExceeded, notifySLAWarning } from '../services/notificationTriggers.service';
 
 /**
  * Worker que verifica el estado de los SLA de los tickets
@@ -32,6 +33,9 @@ class SLACheckerWorker {
         select: {
           id: true,
           ticketNumber: true,
+          title: true,
+          assignedToId: true,
+          departmentId: true,
           slaDeadline: true,
           department: {
             select: { name: true }
@@ -74,10 +78,12 @@ class SLACheckerWorker {
           });
 
           logger.warn(`Ticket ${ticket.ticketNumber} excedió SLA - Deadline: ${ticket.slaDeadline}`);
-        }
 
-        // TODO: Enviar notificaciones por email/webhook
-        // await this.sendSLABreachNotifications(breachedTickets);
+          // Enviar notificaciones de SLA excedido
+          notifySLAExceeded(ticket).catch(err =>
+            logger.error(`Error sending SLA breach notification for ${ticket.ticketNumber}:`, err)
+          );
+        }
       } else {
         logger.info('No hay tickets con SLA excedido');
       }
@@ -113,6 +119,9 @@ class SLACheckerWorker {
       select: {
         id: true,
         ticketNumber: true,
+        title: true,
+        assignedToId: true,
+        departmentId: true,
         slaDeadline: true,
         priority: true,
         department: {
@@ -137,8 +146,10 @@ class SLACheckerWorker {
           `Asignado a: ${ticket.assignedTo?.name || 'Sin asignar'}`
         );
 
-        // TODO: Enviar notificación preventiva
-        // await this.sendSLAWarningNotification(ticket, minutesRemaining);
+        // Enviar notificación preventiva de SLA
+        notifySLAWarning(ticket).catch(err =>
+          logger.error(`Error sending SLA warning notification for ${ticket.ticketNumber}:`, err)
+        );
       }
     }
   }

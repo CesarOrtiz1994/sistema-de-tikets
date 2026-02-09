@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/database';
 import logger from '../config/logger';
 import { TicketStatus } from '@prisma/client';
+import {
+  notifyTicketResolved,
+  notifyTicketClosed,
+  notifyTicketReopened,
+  notifyTicketRated
+} from '../services/notificationTriggers.service';
 
 class TicketRatingController {
   /**
@@ -62,6 +68,13 @@ class TicketRatingController {
           userAgent: req.get('user-agent') || 'unknown'
         }
       });
+
+      // Notificar al solicitante
+      const resolver = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+      notifyTicketResolved(
+        { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, requesterId: ticket.requesterId },
+        resolver?.name || 'Agente'
+      ).catch(err => logger.error('Error sending resolve notification:', err));
 
       return res.json({
         success: true,
@@ -165,6 +178,12 @@ class TicketRatingController {
           userAgent: req.get('user-agent') || 'unknown'
         }
       });
+
+      // Notificar al asignado
+      notifyTicketRated(
+        { id: ticket.id, ticketNumber: ticket.ticketNumber, assignedToId: ticket.assignedToId },
+        rating
+      ).catch(err => logger.error('Error sending rate notification:', err));
 
       return res.json({
         success: true,
@@ -292,6 +311,13 @@ class TicketRatingController {
         }
       });
 
+      // Notificar al asignado
+      const closer = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+      notifyTicketClosed(
+        { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, assignedToId: ticket.assignedToId },
+        closer?.name || 'Solicitante'
+      ).catch(err => logger.error('Error sending close notification:', err));
+
       return res.json({
         success: true,
         data: updatedTicket,
@@ -383,6 +409,14 @@ class TicketRatingController {
           userAgent: req.get('user-agent') || 'unknown'
         }
       });
+
+      // Notificar al asignado + admins dept
+      const reopener = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+      notifyTicketReopened(
+        { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, assignedToId: ticket.assignedToId, departmentId: ticket.departmentId },
+        reason,
+        reopener?.name || 'Solicitante'
+      ).catch(err => logger.error('Error sending reopen notification:', err));
 
       return res.json({
         success: true,
