@@ -5,7 +5,6 @@ import {
   FiHome, 
   FiFileText, 
   FiUsers, 
-  FiSettings, 
   FiShield,
   FiMenu,
   FiX,
@@ -14,7 +13,8 @@ import {
   FiType,
   FiClock,
   FiEdit3,
-  FiColumns
+  FiColumns,
+  FiMail
 } from 'react-icons/fi';
 
 interface MenuItem {
@@ -91,17 +91,17 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN]
     },
     {
+      icon: FiMail,
+      label: 'Email Templates',
+      path: '/email-templates',
+      roles: [RoleType.SUPER_ADMIN]
+    },
+    {
       icon: FiClock,
       label: 'Configuración SLA',
       path: '/sla-configurations',
       roles: [RoleType.SUPER_ADMIN]
     },
-    {
-      icon: FiSettings,
-      label: 'Configuración',
-      path: '/settings',
-      roles: [RoleType.SUPER_ADMIN, RoleType.DEPT_ADMIN, RoleType.SUBORDINATE, RoleType.REQUESTER]
-    }
   ];
 
   const visibleMenuItems = menuItems

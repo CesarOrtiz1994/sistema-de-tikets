@@ -29,7 +29,7 @@ export default function Navbar() {
               <FiFileText className="text-white text-xl" />
             </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-blue-400">
-              Sistema de Tickets
+              SCOT
             </h1>
           </div>
 

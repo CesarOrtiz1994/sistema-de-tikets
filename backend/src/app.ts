@@ -33,6 +33,7 @@ import unreadMessagesRoutes from './routes/unreadMessages.routes';
 import ticketAttachmentsRoutes from './routes/ticketAttachments.routes';
 import deliverablesRoutes from './routes/deliverables.routes';
 import notificationsRoutes from './routes/notifications.routes';
+import emailTemplateRoutes from './routes/emailTemplate.routes';
 
 const app: Application = express();
 
@@ -70,55 +71,48 @@ app.use('/api/audit', auditRoutes);
 // Rutas de usuarios
 app.use('/api/users', usersRoutes);
 
-// Rutas de departamentos (FASE 2)
+// Rutas de departamentos
 app.use('/api/departments', departmentAccessRoutes);
 app.use('/api/departments', departmentsRoutes);
 app.use('/api/departments', departmentSLARoutes);
 app.use('/api/departments', departmentWorkScheduleRoutes);
 
-// Rutas de tipos de campo (FASE 2)
+// Rutas de tipos de campo
 app.use('/api/field-types', fieldTypeRoutes);
 
-// Rutas de configuraciones SLA (FASE 2)
+// Rutas de configuraciones SLA
 app.use('/api/sla-configurations', slaConfigurationRoutes);
 
-// Rutas de formularios de tickets (FASE 3 - SEMANA 7)
+// Rutas de formularios
 app.use('/api/forms', ticketFormRoutes);
 
-// Rutas de upload de archivos (SEMANA 11)
+// Rutas de subida de archivos
 app.use('/api/upload', uploadRoutes);
 
-// Rutas de limpieza de archivos (SEMANA 11)
+// Rutas de limpieza de archivos
 app.use('/api/file-cleanup', fileCleanupRoutes);
 
-// Rutas de tickets (FASE 3 - SEMANA 12)
+// Rutas de tickets
 app.use('/api/tickets', ticketsRoutes);
-
-// Rutas de calificación y cierre de tickets (SEMANA 23)
 app.use('/api/tickets', ticketRatingRoutes);
 
-// Rutas de Kanban (SEMANA 15)
+// Rutas de kanban
 app.use('/api', kanbanRoutes);
 
-// Rutas de mensajes de tickets (SEMANA 17)
+// Rutas de mensajes de tickets
 app.use('/api', ticketMessagesRoutes);
 
-// Rutas de archivos adjuntos en chat (SEMANA 17)
+// Rutas de adjuntos de chat
 app.use('/api', chatAttachmentRoutes);
 
-// Rutas de mensajes no leídos (SEMANA 17)
+// Rutas de mensajes no leídos
 app.use('/api/unread-messages', unreadMessagesRoutes);
 
-// Rutas de archivos adjuntos de tickets (SEMANA 17)
+// Rutas de adjuntos de tickets
 app.use('/api/tickets', ticketAttachmentsRoutes);
-
-// Rutas de entregables (deliverables)
 app.use('/api/tickets', deliverablesRoutes);
-
-// Rutas de notificaciones (SEMANA 18)
 app.use('/api/notifications', notificationsRoutes);
-
-// Servir archivos estáticos desde /uploads
+app.use('/api/email-templates', emailTemplateRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // Ruta de prueba

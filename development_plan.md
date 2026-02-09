@@ -678,10 +678,11 @@
   - `GET /api/notifications` - Listar notificaciones
   - `PUT /api/notifications/:id/read` - Marcar leída
   - `PUT /api/notifications/read-all` - Marcar todas
-- [ ] Endpoints de email templates:
+- [x] Endpoints de email templates:
   - `GET /api/email-templates` - Listar templates
+  - `GET /api/email-templates/:id` - Obtener template por ID
   - `PUT /api/email-templates/:id` - Actualizar template (Super Admin)
-  - `POST /api/email-templates/preview` - Preview de template
+  - `POST /api/email-templates/:id/preview` - Preview de template
 - [ ] Endpoints de webhooks:
   - `GET /api/departments/:id/webhooks` - Listar webhooks
   - `POST /api/departments/:id/webhooks` - Crear webhook

@@ -13,6 +13,7 @@ import UsersPage from './pages/UsersPage';
 import AuditPage from './pages/AuditPage';
 import FieldTypesPage from './pages/FieldTypesPage';
 import SLAConfigurationsPage from './pages/SLAConfigurationsPage';
+import EmailTemplatesPage from './pages/EmailTemplatesPage';
 import FormBuilderPage from './pages/FormBuilderPage';
 import FormsManagementPage from './pages/FormsManagementPage';
 import KanbanBoardPage from './pages/KanbanBoardPage';
@@ -211,6 +212,17 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <SLAConfigurationsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/email-templates"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <EmailTemplatesPage />
               </Layout>
             </ProtectedRoute>
           }
