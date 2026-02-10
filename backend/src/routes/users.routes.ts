@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as usersController from '../controllers/users.controller';
 import { authenticate } from '../middlewares/auth';
-import { isSuperAdmin } from '../middlewares/permissions.middleware';
+import { isSuperAdmin, isDeptAdmin } from '../middlewares/permissions.middleware';
 import { auditAction } from '../middlewares/audit.middleware';
 
 const router = Router();
@@ -9,7 +9,7 @@ const router = Router();
 router.get(
   '/',
   authenticate,
-  isSuperAdmin(),
+  isDeptAdmin(),
   usersController.listUsers as any
 );
 
