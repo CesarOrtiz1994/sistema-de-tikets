@@ -141,17 +141,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
     const userId = (req.user as any)?.id;
     const userRole = (req.user as any)?.roleType;
     
-    console.log('UPDATE DEPARTMENT - Datos recibidos:', {
-      id,
-      userId,
-      userRole,
-      body: req.body
-    });
-    
     let validatedData = updateDepartmentSchema.parse(req.body);
-    
-    console.log('Datos validados:', validatedData);
-    console.log('autoCloseAfterDays en validatedData:', (validatedData as any).autoCloseAfterDays);
 
     // Si es DEPT_ADMIN, verificar que sea su departamento y limitar campos editables
     if (userRole === 'DEPT_ADMIN') {

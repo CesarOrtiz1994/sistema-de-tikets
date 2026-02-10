@@ -78,11 +78,11 @@ export default function MyDepartmentPage() {
 
   const loadAvailableUsers = async () => {
     try {
-      const response = await usersService.listUsers({ page: 1, limit: 100 });
+      const response = await usersService.listUsers({ page: 1, limit: 100});
       const assignedUserIds = users.map(u => u.userId);
-      // Filtrar usuarios ya asignados Y excluir SUPER_ADMIN
+      // Filtrar usuarios ya asignados y solo mostrar SUBORDINATE y DEPT_ADMIN
       const available = response.users.filter(
-        (user: any) => !assignedUserIds.includes(user.id) && user.roleType !== 'SUPER_ADMIN'
+        (user: any) => !assignedUserIds.includes(user.id) && ['SUBORDINATE', 'DEPT_ADMIN'].includes(user.roleType)
       );
       setAvailableUsers(available);
     } catch (error) {

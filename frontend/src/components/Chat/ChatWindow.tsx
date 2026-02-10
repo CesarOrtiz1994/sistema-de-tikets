@@ -47,12 +47,13 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
   const [replyingTo, setReplyingTo] = useState<MessageReceived | null>(null);
 
   // Verificar si el chat debe estar habilitado
-  const isChatEnabled = assignedToId && ticketStatus !== 'CLOSED' && ticketStatus !== 'CANCELLED';
+  const isChatVisible = !!assignedToId; // Mostrar chat si hay agente asignado (incluso cerrado/cancelado)
+  const isChatEnabled = isChatVisible && ticketStatus !== 'CLOSED' && ticketStatus !== 'CANCELLED'; // Permitir enviar solo si no está cerrado/cancelado
 
-  // Cargar historial de mensajes al montar (solo si el chat está habilitado)
+  // Cargar historial de mensajes al montar (si el chat es visible)
   useEffect(() => {
     const loadHistory = async () => {
-      if (!isChatEnabled) {
+      if (!isChatVisible) {
         setIsLoadingHistory(false);
         return;
       }
@@ -78,7 +79,7 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
 
     loadHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticketId, isChatEnabled]);
+  }, [ticketId, isChatVisible]);
 
   useEffect(() => {
     if (!isConnected || !isChatEnabled) {
@@ -246,51 +247,50 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
     }
   };
 
-  // Mostrar mensaje si el chat está deshabilitado
-  if (!isChatEnabled) {
-    let message = '';
-    let icon = '';
-
-    if (!assignedToId) {
-      message = 'El chat estará disponible una vez que el ticket sea asignado a un agente.';
-      icon = '👤';
-    } else if (ticketStatus === 'CLOSED') {
-      message = 'El chat no está disponible porque el ticket ha sido cerrado.';
-      icon = '🔒';
-    } else if (ticketStatus === 'CANCELLED') {
-      message = 'El chat no está disponible porque el ticket ha sido cancelado.';
-      icon = '❌';
-    }
-
+  // Mostrar mensaje si el chat no es visible (ticket sin asignar)
+  if (!isChatVisible) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-900">
         <div className="text-center px-6 py-8 max-w-md">
-          <div className="text-5xl mb-4">{icon}</div>
+          <div className="text-5xl mb-4">👤</div>
           <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Chat no disponible
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {message}
+            El chat estará disponible una vez que el ticket sea asignado a un agente.
           </p>
         </div>
       </div>
     );
   }
 
-  if (!isConnected || isLoadingHistory) {
+  if (isLoadingHistory) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <LoadingSpinner />
           <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            {!isConnected ? 'Conectando al chat...' : 'Cargando mensajes...'}
+            Cargando mensajes...
           </p>
         </div>
       </div>
     );
   }
 
-  if (!isJoined) {
+  if (isChatEnabled && !isConnected) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <LoadingSpinner />
+          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            Conectando al chat...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isChatEnabled && !isJoined) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -326,17 +326,25 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
         isLoadingMore={isLoadingMore}
         hasMoreMessages={hasMoreMessages}
       />
-      {typingUsers.size > 0 && (
+      {isChatEnabled && typingUsers.size > 0 && (
         <ChatTypingIndicator users={Array.from(typingUsers)} />
       )}
-      <ChatInput 
-        ticketId={ticketId} 
-        onSendMessage={handleSendMessage}
-        onTyping={handleTyping}
-        disabled={!isConnected}
-        replyingTo={replyingTo}
-        onCancelReply={handleCancelReply}
-      />
+      {isChatEnabled ? (
+        <ChatInput 
+          ticketId={ticketId} 
+          onSendMessage={handleSendMessage}
+          onTyping={handleTyping}
+          disabled={!isConnected}
+          replyingTo={replyingTo}
+          onCancelReply={handleCancelReply}
+        />
+      ) : (
+        <div className="px-4 py-3 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+            {ticketStatus === 'CLOSED' ? '🔒 El ticket está cerrado. No se pueden enviar más mensajes.' : '❌ El ticket está cancelado. No se pueden enviar más mensajes.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

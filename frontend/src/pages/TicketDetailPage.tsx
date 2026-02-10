@@ -15,7 +15,7 @@ import StarRating from '../components/common/StarRating';
 import ChatWindow from '../components/Chat/ChatWindow';
 import FileHistory from '../components/Chat/FileHistory';
 import TicketRelationship from '../components/Tickets/TicketRelationship';
-import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle } from 'react-icons/fi';
+import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw, FiRefreshCw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle } from 'react-icons/fi';
 import { deliverablesService } from '../services/deliverables.service';
 import { Deliverable, DeliverableStatus } from '../types/deliverable';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
@@ -369,6 +369,13 @@ export default function TicketDetailPage() {
         description={`Ticket #${ticket.ticketNumber}`}
         action={
          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={loadTicket}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:shadow-lg transition-all duration-200"
+            >
+              <FiRefreshCw />
+              <span>Actualizar</span>
+            </button>
             {canAssign && (
               <button
                 onClick={() => {
