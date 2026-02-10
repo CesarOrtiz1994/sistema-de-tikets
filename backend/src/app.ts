@@ -34,6 +34,7 @@ import ticketAttachmentsRoutes from './routes/ticketAttachments.routes';
 import deliverablesRoutes from './routes/deliverables.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import emailTemplateRoutes from './routes/emailTemplate.routes';
+import metricsRoutes from './routes/metrics.routes';
 
 const app: Application = express();
 
@@ -113,6 +114,9 @@ app.use('/api/tickets', ticketAttachmentsRoutes);
 app.use('/api/tickets', deliverablesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/email-templates', emailTemplateRoutes);
+
+// Rutas de métricas (SEMANA 22)
+app.use('/api/metrics', metricsRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // Ruta de prueba

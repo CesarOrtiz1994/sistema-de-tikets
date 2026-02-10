@@ -809,26 +809,33 @@
 **Objetivo:** Dashboards con métricas en tiempo real
 
 #### Backend
-- [ ] Endpoints de métricas:
+- [x] Endpoints de métricas:
   - `GET /api/metrics/dashboard` - Según rol
   - `GET /api/metrics/tickets-by-status`
   - `GET /api/metrics/tickets-by-department`
   - `GET /api/metrics/avg-resolution-time`
   - `GET /api/metrics/satisfaction`
   - `GET /api/metrics/sla-compliance`
-- [ ] Queries optimizadas con agregaciones
+  - `GET /api/metrics/tickets-trend`
+  - `GET /api/metrics/departments` - Departamentos accesibles (filtro)
+- [x] Queries optimizadas con agregaciones
+- [x] Validadores Zod para filtros (departmentId, dateFrom, dateTo, period)
+- [x] Filtros por rol (SUPER_ADMIN ve todo, DEPT_ADMIN/SUBORDINATE sus deptos, REQUESTER sus tickets)
 - [ ] Cache de métricas con Redis (5 min)
 
 #### Frontend
-- [ ] Página Dashboard para cada rol
-- [ ] Componentes de métricas:
-  - Cards con números grandes
+- [x] Página Dashboard rehecha con datos reales para cada rol
+- [x] Componentes de métricas:
+  - StatCards con números reales (Total, Pendientes, Resueltos, SLA Excedido, etc.)
   - Gráfica de dona (tickets por estado)
-  - Gráfica de barras (tickets por dept)
-  - Gráfica de línea (tendencia)
-  - Lista de top performers
-- [ ] Usar Recharts para visualizaciones
-- [ ] Filtros de período (hoy, semana, mes, año)
+  - Gráfica de dona (tickets por prioridad)
+  - Gráfica de barras (tickets por departamento)
+  - Gráfica de área (tendencia creados vs resueltos)
+  - Cards de Tiempo Prom. Resolución, Satisfacción, Cumplimiento SLA
+  - Tickets recientes con navegación
+  - Acciones rápidas por rol
+- [x] Usar Recharts para visualizaciones
+- [x] Filtros de departamento y período (semana, mes, trimestre, año)
 - [ ] Auto-refresh cada 5 minutos
 - [ ] Exportar a PDF/Excel
 
