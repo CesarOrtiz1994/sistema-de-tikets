@@ -53,6 +53,12 @@ export default function KanbanBoardPage() {
   const [isUploadingDeliverable, setIsUploadingDeliverable] = useState(false);
   const deliverableUploadRef = useRef<DeliverableUploadHandle>(null);
 
+  // Modal de motivo de espera
+  const [showWaitingReasonModal, setShowWaitingReasonModal] = useState(false);
+  const [pendingWaitingTicketId, setPendingWaitingTicketId] = useState<string>('');
+  const [waitingReason, setWaitingReason] = useState('');
+  const [waitingReasonLoading, setWaitingReasonLoading] = useState(false);
+
   const isDeptAdmin = hasRole(RoleType.DEPT_ADMIN);
   const isSubordinate = hasRole(RoleType.SUBORDINATE);
 
@@ -188,6 +194,14 @@ export default function KanbanBoardPage() {
       return;
     }
 
+    // Si se arrastra a WAITING, pedir motivo
+    if (newStatus === 'WAITING') {
+      setPendingWaitingTicketId(ticketId);
+      setWaitingReason('');
+      setShowWaitingReasonModal(true);
+      return;
+    }
+
     try {
       // Actualizar el estado del ticket en el backend
       await ticketsService.updateTicket(ticketId, {
@@ -221,6 +235,25 @@ export default function KanbanBoardPage() {
       }
     }
     setPendingResolveTicketId('');
+  };
+
+  const handleWaitingReasonConfirm = async () => {
+    if (!pendingWaitingTicketId || !waitingReason.trim()) return;
+
+    try {
+      setWaitingReasonLoading(true);
+      await ticketsService.changeStatus(pendingWaitingTicketId, 'WAITING' as any, waitingReason.trim());
+      toast.success('Ticket puesto en espera');
+      setShowWaitingReasonModal(false);
+      setWaitingReason('');
+      setPendingWaitingTicketId('');
+      await loadKanbanBoard();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || error.message || 'Error al cambiar el estado';
+      toast.error(errorMessage);
+    } finally {
+      setWaitingReasonLoading(false);
+    }
   };
 
   const handleTicketClick = (ticketId: string) => {
@@ -502,6 +535,50 @@ export default function KanbanBoardPage() {
             hideButtons
           />
         )}
+      </Modal>
+
+      {/* Modal de motivo de espera */}
+      <Modal
+        isOpen={showWaitingReasonModal}
+        onClose={() => {
+          setShowWaitingReasonModal(false);
+          setPendingWaitingTicketId('');
+          setWaitingReason('');
+        }}
+        title="Motivo de Espera"
+        subtitle="Indica el motivo por el cual el ticket pasa a espera"
+        size="md"
+        footer={
+          <ModalButtons
+            onCancel={() => {
+              setShowWaitingReasonModal(false);
+              setPendingWaitingTicketId('');
+              setWaitingReason('');
+            }}
+            onConfirm={handleWaitingReasonConfirm}
+            cancelText="Cancelar"
+            confirmText="Confirmar"
+            loading={waitingReasonLoading}
+            confirmDisabled={!waitingReason.trim()}
+          />
+        }
+      >
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Motivo de espera <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            value={waitingReason}
+            onChange={(e) => setWaitingReason(e.target.value)}
+            placeholder="Indica el motivo por el cual el ticket pasa a espera..."
+            rows={3}
+            maxLength={500}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
+          />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+            {waitingReason.length}/500
+          </p>
+        </div>
       </Modal>
     </div>
   );

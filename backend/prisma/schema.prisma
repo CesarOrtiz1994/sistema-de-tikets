@@ -410,6 +410,8 @@ model Ticket {
   slaStartTime DateTime? @map("sla_start_time")
   createdOutsideBusinessHours Boolean @default(false) @map("created_outside_business_hours")
 
+  waitingReason String? @map("waiting_reason") @db.Text
+
   deliverableRejections Int @default(0) @map("deliverable_rejections")
 
   createdAt  DateTime  @default(now()) @map("created_at")

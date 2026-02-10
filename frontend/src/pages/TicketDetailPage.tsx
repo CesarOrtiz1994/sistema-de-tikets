@@ -105,6 +105,7 @@ export default function TicketDetailPage() {
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('NEW');
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority>('MEDIUM');
+  const [waitingReason, setWaitingReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'files' | 'deliverables'>('chat');
 
@@ -245,11 +246,18 @@ export default function TicketDetailPage() {
   const handleChangeStatus = async () => {
     if (!ticket) return;
 
+    if (selectedStatus === 'WAITING' && !waitingReason.trim()) {
+      toast.error('Debes indicar el motivo de espera');
+      return;
+    }
+
     try {
       setActionLoading(true);
-      await ticketsService.changeStatus(ticket.id, selectedStatus);
+      const reason = selectedStatus === 'WAITING' ? waitingReason.trim() : undefined;
+      await ticketsService.changeStatus(ticket.id, selectedStatus, reason);
       toast.success('Estado actualizado exitosamente');
       setShowStatusModal(false);
+      setWaitingReason('');
       loadTicket();
     } catch (error) {
       console.error('Error changing status:', error);
@@ -442,6 +450,23 @@ export default function TicketDetailPage() {
           </>
         }
       />
+
+      {/* Banner Motivo de Espera */}
+      {ticket.status === 'WAITING' && ticket.waitingReason && (
+        <Card padding="md" className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+          <div className="flex items-start gap-3">
+            <FiClock className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
+                Ticket en espera
+              </p>
+              <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                {ticket.waitingReason}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Entregable */}
       {ticket.department?.requireDeliverable && !['CLOSED', 'CANCELLED'].includes(ticket.status) && (
@@ -1004,34 +1029,56 @@ export default function TicketDetailPage() {
       {/* Modal Cambiar Estado */}
       <Modal
         isOpen={showStatusModal}
-        onClose={() => setShowStatusModal(false)}
+        onClose={() => { setShowStatusModal(false); setWaitingReason(''); }}
         title="Cambiar Estado"
         subtitle="Selecciona el nuevo estado del ticket"
         footer={
           <ModalButtons
-            onCancel={() => setShowStatusModal(false)}
+            onCancel={() => { setShowStatusModal(false); setWaitingReason(''); }}
             onConfirm={handleChangeStatus}
             confirmText="Cambiar"
             confirmIcon={<FiEdit />}
             loading={actionLoading}
+            confirmDisabled={selectedStatus === 'WAITING' && !waitingReason.trim()}
           />
         }
       >
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Estado
-          </label>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value as TicketStatus)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Estado
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value as TicketStatus)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedStatus === 'WAITING' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Motivo de espera <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={waitingReason}
+                onChange={(e) => setWaitingReason(e.target.value)}
+                placeholder="Indica el motivo por el cual el ticket pasa a espera..."
+                rows={3}
+                maxLength={500}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                {waitingReason.length}/500
+              </p>
+            </div>
+          )}
         </div>
       </Modal>
 

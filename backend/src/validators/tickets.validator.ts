@@ -52,8 +52,12 @@ export const assignTicketSchema = z.object({
 // Schema para cambiar estado
 export const changeStatusSchema = z.object({
   status: ticketStatusEnum,
-  comment: z.string().max(500, 'El comentario no puede exceder 500 caracteres').optional()
-});
+  comment: z.string().max(500, 'El comentario no puede exceder 500 caracteres').optional(),
+  waitingReason: z.string().max(500, 'El motivo no puede exceder 500 caracteres').optional()
+}).refine(
+  (data) => data.status !== 'WAITING' || (data.waitingReason && data.waitingReason.trim().length > 0),
+  { message: 'Debes indicar el motivo de espera', path: ['waitingReason'] }
+);
 
 // Schema para cambiar prioridad
 export const changePrioritySchema = z.object({

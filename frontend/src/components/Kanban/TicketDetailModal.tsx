@@ -275,6 +275,21 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                   </h4>
                 </div>
 
+                {/* Banner Motivo de Espera */}
+                {fullTicket?.status === 'WAITING' && fullTicket?.waitingReason && (
+                  <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <FiClock className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-orange-800 dark:text-orange-200">
+                        Ticket en espera
+                      </p>
+                      <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                        {fullTicket.waitingReason}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Información del solicitante */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">

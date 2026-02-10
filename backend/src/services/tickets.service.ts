@@ -21,6 +21,7 @@ interface UpdateTicketData {
   priority?: TicketPriority;
   assignedToId?: string | null;
   formData?: Record<string, any>;
+  waitingReason?: string;
 }
 
 export class TicketsService {
@@ -629,8 +630,11 @@ export class TicketsService {
 
       // === LÓGICA DE PAUSA/REANUDACIÓN DE SLA ===
       
-      // Si cambia A WAITING: pausar el SLA
+      // Si cambia A WAITING: pausar el SLA y guardar motivo
       if (data.status === TicketStatus.WAITING && ticket.status !== TicketStatus.WAITING) {
+        if (data.waitingReason) {
+          updates.waitingReason = data.waitingReason;
+        }
         updates.slaPausedAt = new Date();
         historyEntries.push({
           action: 'SLA_PAUSED',
@@ -639,8 +643,9 @@ export class TicketsService {
         });
       }
 
-      // Si cambia DESDE WAITING a otro estado: reanudar el SLA
+      // Si cambia DESDE WAITING a otro estado: reanudar el SLA y limpiar motivo
       if (ticket.status === TicketStatus.WAITING && data.status !== TicketStatus.WAITING) {
+        updates.waitingReason = null;
         if (ticket.slaPausedAt) {
           // Calcular cuántos minutos estuvo pausado
           const pausedDuration = Math.floor(

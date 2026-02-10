@@ -21,6 +21,7 @@ export interface Ticket {
   slaTotalPausedMinutes: number;
   slaStartTime?: string;
   createdOutsideBusinessHours?: boolean;
+  waitingReason?: string | null;
   deliverableRejections: number;
   createdAt: string;
   updatedAt: string;
@@ -143,8 +144,10 @@ class TicketsService {
     return response.data.data;
   }
 
-  async changeStatus(ticketId: string, status: TicketStatus) {
-    const response = await api.put(`/api/tickets/${ticketId}/status`, { status });
+  async changeStatus(ticketId: string, status: TicketStatus, waitingReason?: string) {
+    const body: any = { status };
+    if (waitingReason) body.waitingReason = waitingReason;
+    const response = await api.put(`/api/tickets/${ticketId}/status`, body);
     return response.data;
   }
 

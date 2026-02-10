@@ -198,11 +198,14 @@ class TicketsController {
     try {
       const userId = (req as any).user.id;
       const { id } = req.params;
-      const { status } = req.body;
+      const { status, waitingReason } = req.body;
 
-      const ticket = await ticketsService.updateTicket(id, userId, {
-        status
-      });
+      const updateData: any = { status };
+      if (status === 'WAITING' && waitingReason) {
+        updateData.waitingReason = waitingReason.trim();
+      }
+
+      const ticket = await ticketsService.updateTicket(id, userId, updateData);
 
       // Notificar cambio de estado
       logger.info(`[changeStatus] ticket.requesterId=${ticket.requesterId}, ticket.assignedToId=${ticket.assignedToId}, newStatus=${status}, changedBy=${userId}`);
