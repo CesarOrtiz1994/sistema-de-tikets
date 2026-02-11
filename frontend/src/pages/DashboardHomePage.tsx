@@ -135,6 +135,14 @@ export default function DashboardHomePage() {
     loadData();
   }, [loadData]);
 
+  // Auto-refresh cada 5 minutos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadData();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
   if (!user) return null;
 
   if (loading && !dashboard) {
