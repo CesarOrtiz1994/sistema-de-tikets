@@ -2,6 +2,7 @@ import { useState, useRef, DragEvent } from 'react';
 import { FiUpload, FiX, FiFile, FiImage, FiCheckCircle } from 'react-icons/fi';
 import { FileFieldProps } from '../../types/fieldTypes';
 import uploadService, { UploadedFile, UploadProgress } from '../../services/upload.service';
+import { compressImage, isCompressibleImage } from '../../utils/imageCompression';
 import ProgressBar from '../common/ProgressBar';
 import ValidationError from '../common/ValidationError';
 
@@ -106,8 +107,16 @@ export default function FileField({
     setUploading(true);
     const uploaded: UploadedFile[] = [];
 
-    for (const file of filesToUpload) {
+    for (let file of filesToUpload) {
       try {
+        // Comprimir imágenes antes de subir
+        if (isCompressibleImage(file)) {
+          try {
+            file = await compressImage(file);
+          } catch {
+            // Si falla la compresión, subir el original
+          }
+        }
         const isImage = uploadService.isImage(file);
         const uploadedFile = await uploadService.uploadSingle(file, {
           processImage: isImage,

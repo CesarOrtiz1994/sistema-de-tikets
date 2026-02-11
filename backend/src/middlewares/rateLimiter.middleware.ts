@@ -79,3 +79,36 @@ export const deletionLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/**
+ * Rate limiter para métricas (queries pesadas)
+ */
+export const metricsLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 30, // 30 requests por minuto
+  message: 'Demasiadas solicitudes de métricas, por favor espera un momento',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate limiter para creación de tickets
+ */
+export const ticketCreationLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 10, // 10 tickets por minuto
+  message: 'Demasiados tickets creados, por favor espera un momento',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate limiter para notificaciones (polling)
+ */
+export const notificationsLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 60, // 60 requests por minuto (polling frecuente)
+  message: 'Demasiadas solicitudes de notificaciones',
+  standardHeaders: true,
+  legacyHeaders: false,
+});

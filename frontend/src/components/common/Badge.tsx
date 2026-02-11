@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { memo, ReactNode } from 'react';
 
 export type BadgeVariant = 
   | 'primary' 
@@ -44,7 +44,7 @@ const sizeClasses: Record<BadgeSize, string> = {
   lg: 'px-4 py-1.5 text-sm'
 };
 
-export default function Badge({ 
+export default memo(function Badge({ 
   children, 
   variant = 'gray', 
   size = 'md',
@@ -57,4 +57,4 @@ export default function Badge({
       {children}
     </span>
   );
-}
+});

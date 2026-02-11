@@ -3,6 +3,7 @@ import ticketsController from '../controllers/tickets.controller';
 import { authenticate } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validateZod';
 import { auditAction } from '../middlewares/audit.middleware';
+import { ticketCreationLimiter } from '../middlewares/rateLimiter.middleware';
 import {
   createTicketSchema,
   updateTicketSchema,
@@ -23,6 +24,7 @@ router.use(authenticate);
  */
 router.post(
   '/',
+  ticketCreationLimiter,
   validateBody(createTicketSchema),
   auditAction('CREATE_TICKET', 'ticket') as any,
   ticketsController.createTicket

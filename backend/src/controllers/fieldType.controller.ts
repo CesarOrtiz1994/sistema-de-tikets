@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import fieldTypeService from '../services/fieldType.service';
+import { cacheService } from '../services/cache.service';
 import logger from '../config/logger';
 import { FieldCategory } from '@prisma/client';
 
@@ -8,6 +9,10 @@ export class FieldTypeController {
     try {
       const { category } = req.query;
 
+      const cacheKey = category ? `by-cat:${category}` : 'all';
+      const cached = await cacheService.getFieldTypes(cacheKey);
+      if (cached) return res.json(cached);
+
       let fieldTypes;
       if (category && typeof category === 'string') {
         fieldTypes = await fieldTypeService.getFieldTypesByCategory(category as FieldCategory);
@@ -15,10 +20,11 @@ export class FieldTypeController {
         fieldTypes = await fieldTypeService.getAllFieldTypes();
       }
 
-      res.json(fieldTypes);
+      await cacheService.setFieldTypes(cacheKey, fieldTypes);
+      return res.json(fieldTypes);
     } catch (error) {
       logger.error('Error getting field types:', error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         message: 'Error al obtener tipos de campos',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -47,6 +53,7 @@ export class FieldTypeController {
   async createFieldType(req: Request, res: Response) {
     try {
       const fieldType = await fieldTypeService.createFieldType(req.body);
+      await cacheService.invalidateFieldTypes();
       res.status(201).json(fieldType);
     } catch (error) {
       logger.error('Error creating field type:', error);
@@ -61,6 +68,7 @@ export class FieldTypeController {
     try {
       const { id } = req.params;
       const fieldType = await fieldTypeService.updateFieldType(id, req.body);
+      await cacheService.invalidateFieldTypes();
       res.json(fieldType);
     } catch (error) {
       logger.error('Error updating field type:', error);
@@ -75,6 +83,7 @@ export class FieldTypeController {
     try {
       const { id } = req.params;
       await fieldTypeService.deleteFieldType(id);
+      await cacheService.invalidateFieldTypes();
       
       res.json({
         success: true,

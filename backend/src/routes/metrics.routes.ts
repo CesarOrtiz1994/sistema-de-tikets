@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { authenticate } from '../middlewares/auth';
+import { metricsLimiter } from '../middlewares/rateLimiter.middleware';
 import { metricsController } from '../controllers/metrics.controller';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación
+// Todas las rutas requieren autenticación + rate limiting
 router.use(authenticate);
+router.use(metricsLimiter);
 
 // GET /api/metrics/dashboard - Métricas generales según rol
 router.get('/dashboard', metricsController.getDashboard as any);

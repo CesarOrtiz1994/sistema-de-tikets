@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import ticketFormService from '../services/ticketForm.service';
+import { cacheService } from '../services/cache.service';
 import logger from '../config/logger';
 
 export class TicketFormController {
@@ -29,7 +30,12 @@ export class TicketFormController {
   async getActiveDepartmentForm(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const cacheKey = `active:${id}`;
+      const cached = await cacheService.getForm(cacheKey);
+      if (cached) return res.json({ success: true, data: cached });
+
       const form = await ticketFormService.getActiveDepartmentForm(id);
+      await cacheService.setForm(cacheKey, form);
       
       return res.json({
         success: true,
@@ -83,6 +89,7 @@ export class TicketFormController {
     try {
       const userId = (req as any).user.id;
       const form = await ticketFormService.createForm(req.body, userId);
+      await cacheService.invalidateForms(req.body.departmentId);
       
       return res.status(201).json({
         success: true,
@@ -104,6 +111,7 @@ export class TicketFormController {
       const { id } = req.params;
       const userId = (req as any).user.id;
       const form = await ticketFormService.updateForm(id, req.body, userId);
+      await cacheService.invalidateForms();
       
       return res.json({
         success: true,
@@ -125,6 +133,7 @@ export class TicketFormController {
       const { id } = req.params;
       const userId = (req as any).user.id;
       await ticketFormService.deleteForm(id, userId);
+      await cacheService.invalidateForms();
       
       return res.json({
         success: true,
@@ -144,6 +153,7 @@ export class TicketFormController {
     try {
       const { departmentId, formId } = req.params;
       const form = await ticketFormService.setDefaultForm(departmentId, formId);
+      await cacheService.invalidateForms(departmentId);
       
       return res.json({
         success: true,
@@ -189,6 +199,7 @@ export class TicketFormController {
       const userId = (req as any).user.id;
       
       const form = await ticketFormService.activateForm(id, userId, incrementVersion);
+      await cacheService.invalidateForms();
       
       return res.json({
         success: true,
@@ -220,6 +231,7 @@ export class TicketFormController {
   async addFieldToForm(req: Request, res: Response) {
     try {
       const field = await ticketFormService.addFieldToForm(req.body);
+      await cacheService.invalidateForms();
       
       return res.status(201).json({
         success: true,
@@ -240,6 +252,7 @@ export class TicketFormController {
     try {
       const { id } = req.params;
       const field = await ticketFormService.updateFormField(id, req.body);
+      await cacheService.invalidateForms();
       
       return res.json({
         success: true,
@@ -260,6 +273,7 @@ export class TicketFormController {
     try {
       const { id } = req.params;
       await ticketFormService.deleteFormField(id);
+      await cacheService.invalidateForms();
       
       return res.json({
         success: true,
@@ -281,6 +295,7 @@ export class TicketFormController {
       const { fieldOrders } = req.body;
       
       await ticketFormService.reorderFormFields(formId, fieldOrders);
+      await cacheService.invalidateForms();
       
       return res.json({
         success: true,
@@ -303,6 +318,7 @@ export class TicketFormController {
   async addFieldOption(req: Request, res: Response) {
     try {
       const option = await ticketFormService.addFieldOption(req.body);
+      await cacheService.invalidateForms();
       
       return res.status(201).json({
         success: true,
@@ -323,6 +339,7 @@ export class TicketFormController {
     try {
       const { id } = req.params;
       const option = await ticketFormService.updateFieldOption(id, req.body);
+      await cacheService.invalidateForms();
       
       return res.json({
         success: true,
@@ -343,6 +360,7 @@ export class TicketFormController {
     try {
       const { id } = req.params;
       await ticketFormService.deleteFieldOption(id);
+      await cacheService.invalidateForms();
       
       return res.json({
         success: true,
@@ -364,6 +382,7 @@ export class TicketFormController {
       const { options } = req.body;
       
       await ticketFormService.bulkCreateFieldOptions(fieldId, options);
+      await cacheService.invalidateForms();
       
       return res.status(201).json({
         success: true,

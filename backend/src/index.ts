@@ -2,6 +2,7 @@ import app from './app';
 import { env } from './config/env';
 import logger from './config/logger';
 import { connectDatabase, disconnectDatabase } from './config/database';
+import { getRedisClient, disconnectRedis } from './config/redis';
 import { initializeSocket } from './config/socket';
 import { setupTicketChatHandlers } from './sockets/ticketChat.handler';
 import fileCleanupJob from './jobs/fileCleanup.job';
@@ -12,6 +13,9 @@ const startServer = async () => {
   try {
     // Conectar a la base de datos
     await connectDatabase();
+
+    // Inicializar Redis (graceful — no bloquea si no está disponible)
+    getRedisClient();
 
     const server = app.listen(env.PORT, () => {
       logger.info(`Server running on port ${env.PORT}`);
@@ -53,6 +57,7 @@ const startServer = async () => {
       logger.info('SIGTERM signal received: closing HTTP server');
       fileCleanupJob.stop();
       server.close(async () => {
+        await disconnectRedis();
         await disconnectDatabase();
         logger.info('HTTP server closed');
       });
@@ -62,6 +67,7 @@ const startServer = async () => {
       logger.info('SIGINT signal received: closing HTTP server');
       fileCleanupJob.stop();
       server.close(async () => {
+        await disconnectRedis();
         await disconnectDatabase();
         logger.info('HTTP server closed');
       });

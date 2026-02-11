@@ -1,30 +1,38 @@
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
-import DashboardPage from './pages/DashboardPage';
-import DashboardHomePage from './pages/DashboardHomePage';
-import TicketsPage from './pages/TicketsPage';
-import AssignedTicketsPage from './pages/AssignedTicketsPage';
-import DepartmentTicketsPage from './pages/DepartmentTicketsPage';
-import CreateTicketPage from './pages/CreateTicketPage';
-import TicketDetailPage from './pages/TicketDetailPage';
-import UsersPage from './pages/UsersPage';
-import AuditPage from './pages/AuditPage';
-import FieldTypesPage from './pages/FieldTypesPage';
-import SLAConfigurationsPage from './pages/SLAConfigurationsPage';
-import EmailTemplatesPage from './pages/EmailTemplatesPage';
-import FormBuilderPage from './pages/FormBuilderPage';
-import FormsManagementPage from './pages/FormsManagementPage';
-import KanbanBoardPage from './pages/KanbanBoardPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import DepartmentRoute from './components/Departments/DepartmentRoute';
 import Layout from './components/Layout';
 import ThemeProvider from './components/ThemeProvider';
 import Toaster from './components/Toaster';
 import { UnreadMessagesProvider } from './contexts/UnreadMessagesContext';
 import { useAuth } from './hooks/useAuth';
 import { usePermissions } from './hooks/usePermissions';
+
+// Lazy-loaded pages (code splitting por ruta)
+const DashboardHomePage = lazy(() => import('./pages/DashboardHomePage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const TicketsPage = lazy(() => import('./pages/TicketsPage'));
+const AssignedTicketsPage = lazy(() => import('./pages/AssignedTicketsPage'));
+const DepartmentTicketsPage = lazy(() => import('./pages/DepartmentTicketsPage'));
+const CreateTicketPage = lazy(() => import('./pages/CreateTicketPage'));
+const TicketDetailPage = lazy(() => import('./pages/TicketDetailPage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const AuditPage = lazy(() => import('./pages/AuditPage'));
+const FieldTypesPage = lazy(() => import('./pages/FieldTypesPage'));
+const SLAConfigurationsPage = lazy(() => import('./pages/SLAConfigurationsPage'));
+const EmailTemplatesPage = lazy(() => import('./pages/EmailTemplatesPage'));
+const FormBuilderPage = lazy(() => import('./pages/FormBuilderPage'));
+const FormsManagementPage = lazy(() => import('./pages/FormsManagementPage'));
+const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
+const DepartmentRoute = lazy(() => import('./components/Departments/DepartmentRoute'));
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+  </div>
+);
 
 function App() {
   const { isAuthenticated, isLoading, loadUser } = useAuth();
@@ -67,6 +75,7 @@ function App() {
       <UnreadMessagesProvider>
         <Router>
           <Toaster />
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route 
             path="/login" 
@@ -252,6 +261,7 @@ function App() {
         
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </Router>
       </UnreadMessagesProvider>
     </ThemeProvider>

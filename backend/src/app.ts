@@ -1,9 +1,11 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
 import passport from './config/passport';
 import { env } from './config/env';
 import { corsOptions } from './config/security';
+import { swaggerSpec } from './config/swagger';
 import {
   helmetMiddleware,
   generalRateLimiter,
@@ -118,6 +120,18 @@ app.use('/api/email-templates', emailTemplateRoutes);
 // Rutas de métricas (SEMANA 22)
 app.use('/api/metrics', metricsRoutes);
 app.use('/uploads', express.static('uploads'));
+
+// Documentación API con Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Sistema de Tickets - API Docs',
+}));
+
+// Exportar OpenAPI spec en JSON
+app.get('/api-docs.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // Ruta de prueba
 app.get('/api/health', (_req, res) => {

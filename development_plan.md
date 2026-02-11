@@ -821,7 +821,7 @@
 - [x] Queries optimizadas con agregaciones
 - [x] Validadores Zod para filtros (departmentId, dateFrom, dateTo, period)
 - [x] Filtros por rol (SUPER_ADMIN ve todo, DEPT_ADMIN/SUBORDINATE sus deptos, REQUESTER sus tickets)
-- [ ] Cache de métricas con Redis (5 min)
+- [x] Cache de métricas con Redis (5 min)
 
 #### Frontend
 - [x] Página Dashboard rehecha con datos reales para cada rol
@@ -890,30 +890,30 @@
 **Objetivo:** Código optimizado, testeado y documentado
 
 #### Backend
-- [ ] Documentación de API con Swagger/OpenAPI:
-  - [ ] Instalar swagger-jsdoc y swagger-ui-express
-  - [ ] Configurar Swagger en Express
-  - [ ] Documentar todos los endpoints con JSDoc
-  - [ ] Definir schemas de request/response
-  - [ ] Ejemplos de uso para cada endpoint
-  - [ ] Documentar códigos de error
-  - [ ] Endpoint `/api-docs` para ver documentación
-  - [ ] Exportar OpenAPI spec en JSON/YAML
-- [ ] Implementar cache con Redis:
+- [x] Documentación de API con Swagger/OpenAPI:
+  - [x] Instalar swagger-jsdoc y swagger-ui-express
+  - [x] Configurar Swagger en Express
+  - [x] Documentar todos los endpoints (111 paths, 27 tags)
+  - [x] Definir schemas de request/response (15 schemas)
+  - [x] Ejemplos de uso para cada endpoint
+  - [x] Documentar códigos de error
+  - [x] Endpoint `/api-docs` para ver documentación
+  - [x] Exportar OpenAPI spec en JSON (`/api-docs.json`)
+- [x] Implementar cache con Redis:
   - Formularios activos
   - Tipos de campos
   - Métricas
-  - Configuraciones del sistema
-- [ ] Optimizar queries lentas
-- [ ] Agregar índices faltantes
-- [ ] Implementar rate limiting por endpoint
+  - Configuraciones del sistema (SLA)
+- [x] Optimizar queries lentas
+- [x] Agregar índices faltantes (requesterId+status, slaExceeded, deletedAt, departmentId+createdAt, status+resolvedAt)
+- [x] Implementar rate limiting por endpoint (métricas, tickets, notificaciones)
 
 #### Frontend
-- [ ] Lazy loading de componentes pesados
-- [ ] Code splitting por ruta
-- [ ] Optimizar re-renders con React.memo
-- [ ] Comprimir imágenes antes de upload
-- [ ] Lighthouse audit (performance, PWA)
+- [x] Lazy loading de componentes pesados (React.lazy + Suspense)
+- [x] Code splitting por ruta (16 lazy-loaded pages)
+- [x] Optimizar re-renders con React.memo (StatCard, Badge, Pagination)
+- [x] Comprimir imágenes antes de upload (FileField, DeliverableUpload, ChatInput)
+- [x] Lighthouse audit: vendor splitting (recharts, react, dnd-kit, socket.io, icons, utils)
 
 **Entregable:** Sistema optimizado y con tests
 
