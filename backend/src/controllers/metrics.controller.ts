@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { metricsService } from '../services/metrics.service';
 import { metricsValidators } from '../validators/metrics.validator';
+import { cacheService } from '../services/cache.service';
 import logger from '../config/logger';
 
 class MetricsController {
@@ -12,7 +13,12 @@ class MetricsController {
       const user = req.user as any;
       const parsed = metricsValidators.dashboardFilters.parse(req.query);
 
+      const cacheKey = `dashboard:${user.id}:${JSON.stringify(parsed)}`;
+      const cached = await cacheService.getMetrics(cacheKey);
+      if (cached) return res.json({ success: true, data: cached });
+
       const data = await metricsService.getDashboard(user.id, user.roleType, parsed);
+      await cacheService.setMetrics(cacheKey, data);
 
       return res.json({ success: true, data });
     } catch (error: any) {
@@ -29,7 +35,12 @@ class MetricsController {
       const user = req.user as any;
       const parsed = metricsValidators.ticketsByStatus.parse(req.query);
 
+      const cacheKey = `by-status:${user.id}:${JSON.stringify(parsed)}`;
+      const cached = await cacheService.getMetrics(cacheKey);
+      if (cached) return res.json({ success: true, data: cached });
+
       const data = await metricsService.getTicketsByStatus(user.id, user.roleType, parsed);
+      await cacheService.setMetrics(cacheKey, data);
 
       return res.json({ success: true, data });
     } catch (error: any) {
@@ -46,7 +57,12 @@ class MetricsController {
       const user = req.user as any;
       const parsed = metricsValidators.ticketsByDepartment.parse(req.query);
 
+      const cacheKey = `by-dept:${user.id}:${JSON.stringify(parsed)}`;
+      const cached = await cacheService.getMetrics(cacheKey);
+      if (cached) return res.json({ success: true, data: cached });
+
       const data = await metricsService.getTicketsByDepartment(user.id, user.roleType, parsed);
+      await cacheService.setMetrics(cacheKey, data);
 
       return res.json({ success: true, data });
     } catch (error: any) {
@@ -63,7 +79,12 @@ class MetricsController {
       const user = req.user as any;
       const parsed = metricsValidators.avgResolutionTime.parse(req.query);
 
+      const cacheKey = `avg-res:${user.id}:${JSON.stringify(parsed)}`;
+      const cached = await cacheService.getMetrics(cacheKey);
+      if (cached) return res.json({ success: true, data: cached });
+
       const data = await metricsService.getAvgResolutionTime(user.id, user.roleType, parsed);
+      await cacheService.setMetrics(cacheKey, data);
 
       return res.json({ success: true, data });
     } catch (error: any) {
@@ -80,7 +101,12 @@ class MetricsController {
       const user = req.user as any;
       const parsed = metricsValidators.satisfaction.parse(req.query);
 
+      const cacheKey = `satisfaction:${user.id}:${JSON.stringify(parsed)}`;
+      const cached = await cacheService.getMetrics(cacheKey);
+      if (cached) return res.json({ success: true, data: cached });
+
       const data = await metricsService.getSatisfaction(user.id, user.roleType, parsed);
+      await cacheService.setMetrics(cacheKey, data);
 
       return res.json({ success: true, data });
     } catch (error: any) {
@@ -97,7 +123,12 @@ class MetricsController {
       const user = req.user as any;
       const parsed = metricsValidators.slaCompliance.parse(req.query);
 
+      const cacheKey = `sla-comp:${user.id}:${JSON.stringify(parsed)}`;
+      const cached = await cacheService.getMetrics(cacheKey);
+      if (cached) return res.json({ success: true, data: cached });
+
       const data = await metricsService.getSlaCompliance(user.id, user.roleType, parsed);
+      await cacheService.setMetrics(cacheKey, data);
 
       return res.json({ success: true, data });
     } catch (error: any) {
@@ -114,7 +145,12 @@ class MetricsController {
       const user = req.user as any;
       const parsed = metricsValidators.ticketsTrend.parse(req.query);
 
+      const cacheKey = `trend:${user.id}:${JSON.stringify(parsed)}`;
+      const cached = await cacheService.getMetrics(cacheKey);
+      if (cached) return res.json({ success: true, data: cached });
+
       const data = await metricsService.getTicketsTrend(user.id, user.roleType, parsed);
+      await cacheService.setMetrics(cacheKey, data);
 
       return res.json({ success: true, data });
     } catch (error: any) {

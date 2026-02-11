@@ -2,6 +2,7 @@ import { useState, useImperativeHandle, forwardRef } from 'react';
 import { FiUpload, FiFile, FiX, FiAlertCircle } from 'react-icons/fi';
 import { toast } from 'sonner';
 import { deliverablesService } from '../../services/deliverables.service';
+import { compressImage, isCompressibleImage } from '../../utils/imageCompression';
 import Card from '../common/Card';
 import ModalButtons from '../common/ModalButtons';
 
@@ -75,7 +76,12 @@ const DeliverableUpload = forwardRef<DeliverableUploadHandle, DeliverableUploadP
     setUploading(true);
     onUploadingChange?.(true);
     try {
-      await deliverablesService.uploadDeliverable(ticketId, selectedFile);
+      let fileToUpload = selectedFile;
+      if (isCompressibleImage(selectedFile)) {
+        toast.info('Comprimiendo imagen...');
+        fileToUpload = await compressImage(selectedFile);
+      }
+      await deliverablesService.uploadDeliverable(ticketId, fileToUpload);
       toast.success('Entregable subido exitosamente');
       onUploadSuccess();
     } catch (error: any) {

@@ -14,6 +14,20 @@ export default defineConfig({
       'shadcn': path.resolve(__dirname, './src/shadcn'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-recharts': ['recharts'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+          'vendor-icons': ['react-icons'],
+          'vendor-utils': ['axios', 'zod', 'sonner', 'zustand'],
+          'vendor-socket': ['socket.io-client'],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

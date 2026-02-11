@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import slaConfigurationService from '../services/slaConfiguration.service';
+import { cacheService } from '../services/cache.service';
 import logger from '../config/logger';
 import { SLAPriority } from '@prisma/client';
 import prisma from '../config/database';
@@ -9,6 +10,10 @@ export class SLAConfigurationController {
     try {
       const { priority } = req.query;
 
+      const cacheKey = priority ? `by-priority:${priority}` : 'all';
+      const cached = await cacheService.getSLAConfig(cacheKey);
+      if (cached) return res.json(cached);
+
       let slaConfigurations;
       if (priority && typeof priority === 'string') {
         slaConfigurations = await slaConfigurationService.getSLAConfigurationsByPriority(priority as SLAPriority);
@@ -16,10 +21,11 @@ export class SLAConfigurationController {
         slaConfigurations = await slaConfigurationService.getAllSLAConfigurations();
       }
 
-      res.json(slaConfigurations);
+      await cacheService.setSLAConfig(cacheKey, slaConfigurations);
+      return res.json(slaConfigurations);
     } catch (error) {
       logger.error('Error getting SLA configurations:', error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         message: 'Error al obtener configuraciones SLA',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -47,12 +53,16 @@ export class SLAConfigurationController {
 
   async getDefaultSLAConfiguration(_req: Request, res: Response) {
     try {
+      const cached = await cacheService.getSLAConfig('default');
+      if (cached) return res.json(cached);
+
       const slaConfiguration = await slaConfigurationService.getDefaultSLAConfiguration();
 
       if (!slaConfiguration) {
         return res.status(404).json({ message: 'No hay configuración SLA por defecto' });
       }
 
+      await cacheService.setSLAConfig('default', slaConfiguration);
       return res.json(slaConfiguration);
     } catch (error) {
       logger.error('Error getting default SLA configuration:', error);
@@ -67,6 +77,7 @@ export class SLAConfigurationController {
     try {
       const userId = (req as any).user?.id;
       const slaConfiguration = await slaConfigurationService.createSLAConfiguration(req.body);
+      await cacheService.invalidateSLAConfig();
       
       // Auditoría
       await prisma.auditLog.create({
@@ -121,6 +132,7 @@ export class SLAConfigurationController {
       const { id } = req.params;
       const userId = (req as any).user?.id;
       const slaConfiguration = await slaConfigurationService.updateSLAConfiguration(id, req.body);
+      await cacheService.invalidateSLAConfig();
       
       // Auditoría
       await prisma.auditLog.create({
@@ -172,6 +184,7 @@ export class SLAConfigurationController {
       const userId = (req as any).user?.id;
       
       await slaConfigurationService.deleteSLAConfiguration(id);
+      await cacheService.invalidateSLAConfig();
       
       // Auditoría
       await prisma.auditLog.create({

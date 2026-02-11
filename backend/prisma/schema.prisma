@@ -443,6 +443,11 @@ model Ticket {
   @@index([createdAt])
   @@index([departmentId, status])
   @@index([assignedToId, status])
+  @@index([requesterId, status])
+  @@index([slaExceeded])
+  @@index([deletedAt])
+  @@index([departmentId, createdAt])
+  @@index([status, resolvedAt])
   @@map("tickets")
 }
 

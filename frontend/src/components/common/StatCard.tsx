@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { IconType } from 'react-icons';
 
 interface StatCardProps {
@@ -12,7 +13,7 @@ interface StatCardProps {
   };
 }
 
-export default function StatCard({ 
+export default memo(function StatCard({ 
   label, 
   value, 
   icon: Icon, 
@@ -40,4 +41,4 @@ export default function StatCard({
       </div>
     </div>
   );
-}
+});

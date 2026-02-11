@@ -1,10 +1,12 @@
+import { memo } from 'react';
+
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
-export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+export default memo(function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   if (totalPages <= 1) return null;
 
   return (
@@ -30,4 +32,4 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
       </div>
     </div>
   );
-}
+});

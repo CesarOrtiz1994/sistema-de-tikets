@@ -6,6 +6,7 @@ import {
   notifyTicketStatusChanged,
   notifyTicketPriorityChanged
 } from '../services/notificationTriggers.service';
+import { cacheService } from '../services/cache.service';
 import logger from '../config/logger';
 
 class TicketsController {
@@ -32,6 +33,8 @@ class TicketsController {
       notifyTicketCreated(ticket).catch(err =>
         logger.error('Error sending ticket created notification:', err)
       );
+
+      cacheService.invalidateMetrics().catch(() => {});
 
       res.status(201).json({
         success: true,
@@ -143,6 +146,8 @@ class TicketsController {
         );
       }
 
+      cacheService.invalidateMetrics().catch(() => {});
+
       return res.json({
         success: true,
         message: 'Ticket actualizado exitosamente',
@@ -179,6 +184,8 @@ class TicketsController {
         );
       }
 
+      cacheService.invalidateMetrics().catch(() => {});
+
       res.json({
         success: true,
         message: 'Ticket asignado exitosamente',
@@ -213,6 +220,8 @@ class TicketsController {
         logger.error('Error sending status change notification:', err)
       );
 
+      cacheService.invalidateMetrics().catch(() => {});
+
       res.json({
         success: true,
         message: 'Estado del ticket actualizado',
@@ -242,6 +251,8 @@ class TicketsController {
       notifyTicketPriorityChanged(ticket, priority, userId).catch(err =>
         logger.error('Error sending priority change notification:', err)
       );
+
+      cacheService.invalidateMetrics().catch(() => {});
 
       res.json({
         success: true,
