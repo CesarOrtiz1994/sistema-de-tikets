@@ -34,11 +34,6 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# Prisma
-!prisma/migrations/
-prisma/migrations/*
-!prisma/migrations/.gitkeep
-
 # Uploads (development)
 uploads/
 
