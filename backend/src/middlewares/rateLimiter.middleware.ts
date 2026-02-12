@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit';
  */
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // 100 requests por ventana
+  max: 200, // 100 requests por ventana
   message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo más tarde',
   standardHeaders: true,
   legacyHeaders: false,
@@ -17,7 +17,7 @@ export const generalLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // 5 intentos de login
+  max: 10, // 5 intentos de login
   message: 'Demasiados intentos de inicio de sesión, por favor intenta de nuevo en 15 minutos',
   skipSuccessfulRequests: true, // No contar requests exitosos
   standardHeaders: true,
@@ -107,7 +107,7 @@ export const ticketCreationLimiter = rateLimit({
  */
 export const notificationsLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 60, // 60 requests por minuto (polling frecuente)
+  max: 80, // 60 requests por minuto (polling frecuente)
   message: 'Demasiadas solicitudes de notificaciones',
   standardHeaders: true,
   legacyHeaders: false,
