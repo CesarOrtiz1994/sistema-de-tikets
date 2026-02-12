@@ -40,6 +40,9 @@ import metricsRoutes from './routes/metrics.routes';
 
 const app: Application = express();
 
+// Trust proxy (Nginx reverse proxy en la misma máquina)
+app.set('trust proxy', 1);
+
 // Logging HTTP requests
 app.use(morgan('combined', { stream }));
 
