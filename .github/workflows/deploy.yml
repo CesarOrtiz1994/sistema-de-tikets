@@ -1,8 +1,9 @@
 name: Deploy to Production
 
 on:
-  push:
+  pull_request:
     branches: [main]
+    types: [closed]
 
 jobs:
   detect-changes:
@@ -23,7 +24,7 @@ jobs:
 
   deploy:
     needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true'
+    if: github.event.pull_request.merged == true && (needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true')
     runs-on: ubuntu-latest
     steps:
       - name: Determinar qué desplegar
@@ -44,8 +45,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          script_stop: true
+          port: ${{ secrets.SERVER_PORT }}
           script: |
             echo "🚀 Iniciando deploy..."
             /home/admon/sistema-de-tikets/deploy/deploy.sh ${{ steps.flags.outputs.deploy_flags }}
