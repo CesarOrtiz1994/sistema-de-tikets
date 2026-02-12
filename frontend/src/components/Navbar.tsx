@@ -35,15 +35,6 @@ export default function Navbar() {
 
           {/* Right Section */}
           <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="hidden md:flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-600">
-              <FiSearch className="text-gray-400 dark:text-gray-300" />
-              <input
-                type="text"
-                placeholder="Buscar tickets..."
-                className="bg-transparent outline-none text-sm text-gray-700 dark:text-white w-48 placeholder:text-gray-400 dark:placeholder:text-gray-400"
-              />
-            </div>
 
             {/* Notifications */}
             <NotificationCenter />
