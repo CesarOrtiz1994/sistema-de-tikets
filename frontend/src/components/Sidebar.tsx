@@ -126,7 +126,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <div className="flex items-center justify-between">
             {isOpen && (
               <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Tickets
+                SCOT
               </h2>
             )}
             <button
