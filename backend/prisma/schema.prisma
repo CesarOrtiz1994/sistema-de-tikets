@@ -40,6 +40,7 @@ model User {
   reviewedDeliverables TicketDeliverable[]    @relation("DeliverableReviews")
   notifications        Notification[]
   fcmTokens            FcmToken[]
+  brandingUpdates      BrandingConfig[]     @relation("BrandingUpdatedBy")
 
   @@map("users")
 }
@@ -616,4 +617,31 @@ model FcmToken {
   @@index([userId])
   @@index([token])
   @@map("fcm_tokens")
+}
+
+model BrandingConfig {
+  id                String   @id @default(uuid())
+  // Logo
+  logoUrl           String?  @map("logo_url")
+  logoSmallUrl      String?  @map("logo_small_url")
+  appName           String   @default("SCOT") @map("app_name")
+  // Colores primarios (hex)
+  primaryColor      String   @default("#9333ea") @map("primary_color")
+  secondaryColor    String   @default("#2563eb") @map("secondary_color")
+  // Sidebar
+  sidebarBgColor    String   @default("#ffffff") @map("sidebar_bg_color")
+  sidebarTextColor  String   @default("#4b5563") @map("sidebar_text_color")
+  // Login
+  loginBgType       String   @default("gradient") @map("login_bg_type") // "gradient" | "image" | "color"
+  loginBgValue      String   @default("from-slate-900 via-purple-900 to-slate-900") @map("login_bg_value")
+  loginBgImageUrl   String?  @map("login_bg_image_url")
+  // Meta
+  isActive          Boolean  @default(true) @map("is_active")
+  updatedBy         String?  @map("updated_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  updatedByUser User? @relation("BrandingUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@map("branding_configs")
 }

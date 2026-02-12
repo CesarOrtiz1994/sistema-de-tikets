@@ -15,7 +15,7 @@ interface ModalButtonsProps {
 }
 
 const variantClasses = {
-  primary: 'bg-gradient-to-r from-purple-600 to-blue-600 hover:shadow-lg',
+  primary: 'bg-brand-gradient bg-brand-gradient-hover hover:shadow-lg',
   danger: 'bg-gradient-to-r from-red-600 to-rose-600 hover:shadow-lg',
   success: 'bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-lg'
 };

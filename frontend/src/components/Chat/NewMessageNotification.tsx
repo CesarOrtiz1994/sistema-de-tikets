@@ -22,7 +22,7 @@ export const showNewMessageToast = (
         }}
       >
         {/* Icono */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center">
           <FiMessageCircle className="w-5 h-5 text-white" />
         </div>
 

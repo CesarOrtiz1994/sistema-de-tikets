@@ -27,6 +27,7 @@ const FormBuilderPage = lazy(() => import('./pages/FormBuilderPage'));
 const FormsManagementPage = lazy(() => import('./pages/FormsManagementPage'));
 const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
 const DepartmentRoute = lazy(() => import('./components/Departments/DepartmentRoute'));
+const BrandingPage = lazy(() => import('./pages/BrandingPage'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -254,6 +255,17 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <FormBuilderPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/branding"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <BrandingPage />
               </Layout>
             </ProtectedRoute>
           }

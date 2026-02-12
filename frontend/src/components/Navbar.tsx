@@ -4,12 +4,14 @@ import { getRoleLabel } from '../utils/permissions';
 import { FiLogOut, FiFileText, FiSun, FiMoon } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
+import { useBranding } from '../contexts/BrandingContext';
 import NotificationCenter from './Notifications/NotificationCenter';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { userRole } = usePermissions();
   const { theme, toggleTheme } = useTheme();
+  const { branding, getLogoUrl } = useBranding();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -25,12 +27,22 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo/Title */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <FiFileText className="text-white text-xl" />
-            </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-blue-400">
-              SCOT
-            </h1>
+            {branding.logoSmallUrl ? (
+              <img
+                src={getLogoUrl(branding.logoSmallUrl) || ''}
+                alt={branding.appName}
+                className="h-10 max-w-[160px] rounded-xl object-contain"
+              />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ background: `linear-gradient(to bottom right, ${branding.primaryColor}, ${branding.secondaryColor})` }}>
+                  <FiFileText className="text-white text-xl" />
+                </div>
+                <h1 className="text-xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor})` }}>
+                  {branding.appName}
+                </h1>
+              </>
+            )}
           </div>
 
           {/* Right Section */}

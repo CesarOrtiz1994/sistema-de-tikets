@@ -71,7 +71,7 @@ export default function AuthCallbackPage() {
               </div>
               
               {/* Center Icon */}
-              <div className="relative w-32 h-32 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center shadow-2xl animate-pulse">
+              <div className="relative w-32 h-32 bg-brand-gradient rounded-full flex items-center justify-center shadow-2xl animate-pulse">
                 <FiClock className="text-5xl text-white animate-bounce-slow" />
               </div>
               

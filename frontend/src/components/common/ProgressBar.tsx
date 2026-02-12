@@ -8,7 +8,7 @@ interface ProgressBarProps {
 
 export default function ProgressBar({
   percentage,
-  color = 'bg-purple-600',
+  color = 'bg-brand-gradient',
   height = 'h-2',
   showLabel = true,
   animated = true

@@ -300,7 +300,7 @@ export default function MyDepartmentPage() {
                 <h3 className="text-xl font-bold text-gray-800 dark:text-white">Miembros del Departamento</h3>
                 <button
                   onClick={handleOpenAssignModal}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-gradient bg-brand-gradient-hover text-white rounded-lg transition-colors font-semibold"
                 >
                   <FiUserPlus />
                   Agregar Miembro

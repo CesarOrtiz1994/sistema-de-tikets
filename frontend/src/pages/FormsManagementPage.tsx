@@ -235,7 +235,7 @@ export default function FormsManagementPage() {
         action={
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-gradient bg-brand-gradient-hover text-white rounded-xl hover:shadow-lg transition-all duration-200"
           >
             <FiPlus />
             <span>Nuevo Formulario</span>
@@ -505,7 +505,7 @@ export default function FormsManagementPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-semibold">
+                  <div className="w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center text-white font-semibold">
                     v{selectedForm.version || 1}
                   </div>
                   <div>

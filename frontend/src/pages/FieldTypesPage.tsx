@@ -93,7 +93,7 @@ export default function FieldTypesPage() {
             onClick={() => setSelectedCategory('all')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               selectedCategory === 'all'
-                ? 'bg-purple-600 text-white'
+                ? 'bg-brand-gradient text-white'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
@@ -107,7 +107,7 @@ export default function FieldTypesPage() {
                 onClick={() => setSelectedCategory(key)}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   selectedCategory === key
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-brand-gradient text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >

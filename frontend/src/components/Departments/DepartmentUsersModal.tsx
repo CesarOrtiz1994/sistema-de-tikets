@@ -119,7 +119,7 @@ export default function DepartmentUsersModal({ isOpen, onClose, onSuccess, depar
               </h3>
               <button
                 onClick={() => setIsAssignModalOpen(true)}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                className="bg-brand-gradient bg-brand-gradient-hover text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
               >
                 <FiUserPlus />
                 Asignar Usuario

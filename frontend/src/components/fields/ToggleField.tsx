@@ -44,7 +44,7 @@ export default function ToggleField({
             disabled:cursor-not-allowed disabled:opacity-50
             dark:focus:ring-offset-gray-800
             ${checked 
-              ? 'bg-purple-600' 
+              ? 'bg-brand-gradient' 
               : 'bg-gray-200 dark:bg-gray-700'
             }
           `}

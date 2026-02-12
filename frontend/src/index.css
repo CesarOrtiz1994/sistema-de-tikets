@@ -15,3 +15,24 @@
     @apply transition-colors duration-200;
   }
 }
+
+@layer utilities {
+  .bg-brand-gradient {
+    background: linear-gradient(to right, var(--brand-primary, #9333ea), var(--brand-secondary, #2563eb));
+  }
+  .bg-brand-gradient-hover:hover {
+    filter: brightness(1.1);
+  }
+  .text-brand-gradient {
+    background: linear-gradient(to right, var(--brand-primary, #9333ea), var(--brand-secondary, #2563eb));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .border-brand-primary {
+    border-color: var(--brand-primary, #9333ea);
+  }
+  .bg-brand-primary-light {
+    background-color: var(--brand-primary-light, #9333ea20);
+  }
+}

@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePermissions } from '../hooks/usePermissions';
 import { RoleType } from '../types/permissions';
+import { useBranding } from '../contexts/BrandingContext';
+import { useTheme } from '../hooks/useTheme';
 import { 
   FiHome, 
   FiFileText, 
@@ -14,7 +17,8 @@ import {
   FiClock,
   FiEdit3,
   FiColumns,
-  FiMail
+  FiMail,
+  FiDroplet
 } from 'react-icons/fi';
 
 interface MenuItem {
@@ -34,6 +38,9 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { userRole } = usePermissions();
+  const { branding, getLogoUrl } = useBranding();
+  const { theme } = useTheme();
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const menuItems: MenuItem[] = [
     {
@@ -102,6 +109,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       path: '/sla-configurations',
       roles: [RoleType.SUPER_ADMIN]
     },
+    {
+      icon: FiDroplet,
+      label: 'Personalización',
+      path: '/branding',
+      roles: [RoleType.SUPER_ADMIN]
+    },
   ];
 
   const visibleMenuItems = menuItems
@@ -119,15 +132,26 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   };
 
   return (
-    <aside className={`fixed top-0 left-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40 shadow-lg ${isOpen ? 'w-64' : 'w-20'}`}>
+    <aside
+      className={`fixed top-0 left-0 h-full border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40 shadow-lg ${isOpen ? 'w-64' : 'w-20'}`}
+      style={{ backgroundColor: theme === 'dark' ? '#1f2937' : branding.sidebarBgColor }}
+    >
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="p-4 mx-4 mb-4">
           <div className="flex items-center justify-between">
             {isOpen && (
-              <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                SCOT
-              </h2>
+              branding.logoUrl ? (
+                <img
+                  src={getLogoUrl(branding.logoUrl) || ''}
+                  alt={branding.appName}
+                  className="h-8 max-w-[140px] object-contain"
+                />
+              ) : (
+                <h2 className="text-xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor})` }}>
+                  {branding.appName}
+                </h2>
+              )
             )}
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -147,11 +171,20 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <button
                 key={index}
                 onClick={() => handleNavigate(item.path)}
+                onMouseEnter={() => !isActive && setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 ${
                   isActive
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'text-white shadow-lg'
+                    : ''
                 }`}
+                style={
+                  isActive
+                    ? { background: `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor})` }
+                    : hoveredIndex === index
+                      ? { backgroundColor: `${branding.primaryColor}15`, color: branding.sidebarTextColor }
+                      : { color: theme === 'dark' ? '#d1d5db' : branding.sidebarTextColor }
+                }
                 title={!isOpen ? item.label : ''}
               >
                 <item.icon className="text-xl flex-shrink-0" />
@@ -191,10 +224,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             {isOpen ? (
               <div className="bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-1">
-                  <FiShield className="text-purple-600 dark:text-purple-400" />
+                  <FiShield style={{ color: branding.primaryColor }} />
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Tu Rol</span>
                 </div>
-                <p className="text-xs font-bold text-purple-700 dark:text-purple-400">
+                <p className="text-xs font-bold" style={{ color: branding.primaryColor }}>
                   {userRole === RoleType.SUPER_ADMIN && 'Super Administrador'}
                   {userRole === RoleType.DEPT_ADMIN && 'Admin de Departamento'}
                   {userRole === RoleType.SUBORDINATE && 'Subordinado'}
@@ -203,8 +236,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               </div>
             ) : (
               <div className="flex justify-center">
-                <div className="p-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg" title="Tu rol">
-                  <FiShield className="text-purple-600 text-xl" />
+                <div className="p-2 rounded-lg" style={{ background: `linear-gradient(to right, ${branding.primaryColor}20, ${branding.secondaryColor}20)` }} title="Tu rol">
+                  <FiShield className="text-xl" style={{ color: branding.primaryColor }} />
                 </div>
               </div>
             )}
