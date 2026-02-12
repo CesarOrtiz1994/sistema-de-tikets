@@ -7,7 +7,6 @@ import {
   FiUsers, 
   FiSettings, 
   FiBell,
-  FiSearch,
   FiMenu,
   FiX,
   FiClock,

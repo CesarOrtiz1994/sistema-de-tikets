@@ -1,7 +1,7 @@
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
 import { getRoleLabel } from '../utils/permissions';
-import { FiLogOut, FiSearch, FiFileText, FiSun, FiMoon } from 'react-icons/fi';
+import { FiLogOut, FiFileText, FiSun, FiMoon } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../hooks/useTheme';
 import NotificationCenter from './Notifications/NotificationCenter';
