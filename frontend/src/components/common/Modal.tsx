@@ -34,7 +34,7 @@ export default function Modal({
   footer,
   size = 'md',
   showCloseButton = true,
-  closeOnOverlayClick = true,
+  closeOnOverlayClick = false,
   className = ''
 }: ModalProps) {
   if (!isOpen) return null;
