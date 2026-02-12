@@ -9,7 +9,7 @@ export default function BrandingPage() {
   const { branding, refreshBranding, getLogoUrl } = useBranding();
   const [form, setForm] = useState<Partial<BrandingConfig>>({});
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [_uploading, setUploading] = useState(false);
 
   const logoRef = useRef<HTMLInputElement>(null);
   const logoSmallRef = useRef<HTMLInputElement>(null);
