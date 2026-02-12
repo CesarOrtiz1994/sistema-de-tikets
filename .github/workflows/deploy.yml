@@ -31,7 +31,7 @@ jobs:
   deploy:
     needs: detect-changes
     if: github.event.pull_request.merged == true && (needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.frontend == 'true')
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Determinar qué desplegar
         id: flags
