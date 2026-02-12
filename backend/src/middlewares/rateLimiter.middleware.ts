@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit';
  * Rate limiter general para la API
  */
 export const generalLimiter = rateLimit({
-  windowMs: 3 * 60 * 1000, // 15 minutos
+  windowMs: 1 * 60 * 1000, // 15 minutos
   max: 1500, // 100 requests por ventana
   message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo más tarde',
   standardHeaders: true,
@@ -17,7 +17,7 @@ export const generalLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 10, // 5 intentos de login
+  max: 15, // 5 intentos de login
   message: 'Demasiados intentos de inicio de sesión, por favor intenta de nuevo en 15 minutos',
   skipSuccessfulRequests: true, // No contar requests exitosos
   standardHeaders: true,
@@ -40,8 +40,8 @@ export const uploadLimiter = rateLimit({
  * Rate limiter para creación de formularios
  */
 export const formCreationLimiter = rateLimit({
-  windowMs: 10 * 1000, // 10  minutos
-  max: 500, // 20 formularios por hora
+  windowMs: 5 * 1000, // 10  minutos
+  max: 1000, // 20 formularios por hora
   message: 'Has alcanzado el límite de creación de formularios por hora',
   standardHeaders: true,
   legacyHeaders: false,
@@ -63,7 +63,7 @@ export const formDuplicationLimiter = rateLimit({
  */
 export const fieldOperationsLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 500, // 30 operaciones por minuto
+  max: 1500, // 30 operaciones por minuto
   message: 'Demasiadas operaciones en formularios, por favor espera un momento',
   standardHeaders: true,
   legacyHeaders: false,
@@ -74,7 +74,7 @@ export const fieldOperationsLimiter = rateLimit({
  */
 export const deletionLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 10, // 10 eliminaciones por minuto
+  max: 50, // 10 eliminaciones por minuto
   message: 'Demasiadas operaciones de eliminación, por favor espera un momento',
   standardHeaders: true,
   legacyHeaders: false,
@@ -85,7 +85,7 @@ export const deletionLimiter = rateLimit({
  */
 export const metricsLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 100, // 30 requests por minuto
+  max: 500, // 30 requests por minuto
   message: 'Demasiadas solicitudes de métricas, por favor espera un momento',
   standardHeaders: true,
   legacyHeaders: false,
@@ -96,7 +96,7 @@ export const metricsLimiter = rateLimit({
  */
 export const ticketCreationLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 50, // 10 tickets por minuto
+  max: 100, // 10 tickets por minuto
   message: 'Demasiados tickets creados, por favor espera un momento',
   standardHeaders: true,
   legacyHeaders: false,
