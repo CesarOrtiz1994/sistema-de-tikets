@@ -64,7 +64,6 @@ export default function ImagePreviewModal({ imageUrl, imageName, onClose }: Imag
   const modalContent = (
     <div 
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
-      onClick={onClose}
     >
       <div className="relative max-w-7xl max-h-[90vh] w-full mx-4">
         {/* Header */}
@@ -97,14 +96,13 @@ export default function ImagePreviewModal({ imageUrl, imageName, onClose }: Imag
             src={imageUrl}
             alt={imageName}
             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
           />
         </div>
 
         {/* Footer hint */}
         <div className="absolute bottom-4 left-0 right-0 text-center">
           <p className="text-white/60 text-sm">
-            Click fuera de la imagen o presiona <kbd className="px-2 py-1 bg-white/10 rounded">Esc</kbd> para cerrar
+            Presiona <kbd className="px-2 py-1 bg-white/10 rounded">Esc</kbd> o el botón <kbd className="px-2 py-1 bg-white/10 rounded">✕</kbd> para cerrar
           </p>
         </div>
       </div>

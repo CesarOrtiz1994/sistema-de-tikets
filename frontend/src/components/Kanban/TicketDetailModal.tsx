@@ -191,7 +191,6 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
         {/* Overlay */}
         <div 
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75"
-          onClick={onClose}
         />
 
         {/* Modal */}
