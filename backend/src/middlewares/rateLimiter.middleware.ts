@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit';
  */
 export const generalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 15 minutos
-  max: 1500, // 100 requests por ventana
+  max: 2000, // 100 requests por ventana
   message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo más tarde',
   standardHeaders: true,
   legacyHeaders: false,
@@ -63,7 +63,7 @@ export const formDuplicationLimiter = rateLimit({
  */
 export const fieldOperationsLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 1500, // 30 operaciones por minuto
+  max: 2000, // 30 operaciones por minuto
   message: 'Demasiadas operaciones en formularios, por favor espera un momento',
   standardHeaders: true,
   legacyHeaders: false,
