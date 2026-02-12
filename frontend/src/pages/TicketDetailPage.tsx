@@ -600,7 +600,7 @@ export default function TicketDetailPage() {
                       className="w-8 h-8 rounded-full"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center text-white font-semibold">
+                    <div className="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white font-semibold">
                       {ticket.requester?.name?.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -953,7 +953,7 @@ export default function TicketDetailPage() {
           {/* Chat, Archivos y Entregables con Tabs */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             {/* Tabs Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-3">
+            <div className="bg-brand-gradient px-4 py-3">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setActiveTab('chat')}

@@ -106,7 +106,7 @@ export default function SecurityTestPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => runTest(testInput)}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-brand-gradient bg-brand-gradient-hover text-white rounded-lg transition-colors"
               >
                 Validar
               </button>

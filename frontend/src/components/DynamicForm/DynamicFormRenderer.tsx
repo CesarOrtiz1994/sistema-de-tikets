@@ -342,7 +342,7 @@ export default function DynamicFormRenderer({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+              className="flex items-center gap-2 px-6 py-3 bg-brand-gradient bg-brand-gradient-hover text-white rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium"
             >
               {isSubmitting ? (
                 <>

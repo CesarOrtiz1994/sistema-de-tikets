@@ -2,10 +2,31 @@ import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { FiFileText, FiCheckCircle, FiClock, FiTrendingUp, FiUser } from 'react-icons/fi';
 import authService from '../services/auth.service';
+import { useBranding } from '../contexts/BrandingContext';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
+  const { branding, getLogoUrl } = useBranding();
+
+  const getLoginBgStyle = (): React.CSSProperties => {
+    if (branding.loginBgType === 'image' && branding.loginBgImageUrl) {
+      return {
+        backgroundImage: `url(${getLogoUrl(branding.loginBgImageUrl)})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
+    if (branding.loginBgType === 'color') {
+      return { backgroundColor: branding.loginBgValue };
+    }
+    // Default: gradient (uses Tailwind classes)
+    return {};
+  };
+
+  const loginBgClass = branding.loginBgType === 'gradient'
+    ? `min-h-screen bg-gradient-to-br ${branding.loginBgValue} relative overflow-hidden flex items-center justify-center p-4`
+    : 'min-h-screen relative overflow-hidden flex items-center justify-center p-4';
 
   const handleGoogleLogin = () => {
     setIsLoading(true);
@@ -26,13 +47,17 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden flex items-center justify-center p-4">
+    <div className={loginBgClass} style={getLoginBgStyle()}>
+      {/* Overlay para imágenes de fondo */}
+      {branding.loginBgType === 'image' && (
+        <div className="absolute inset-0 bg-black/50 z-0"></div>
+      )}
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Floating Tickets */}
         <div className="absolute top-20 left-10 animate-float">
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 shadow-2xl transform rotate-12 hover:rotate-0 transition-transform duration-500">
-            <FiFileText className="text-4xl text-purple-300" />
+            <FiFileText className="text-4xl" style={{ color: `${branding.primaryColor}99` }} />
           </div>
         </div>
         
@@ -44,7 +69,7 @@ export default function LoginPage() {
         
         <div className="absolute bottom-32 left-1/4 animate-float-slow">
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 shadow-2xl transform rotate-6 hover:rotate-0 transition-transform duration-500">
-            <FiClock className="text-4xl text-blue-300" />
+            <FiClock className="text-4xl" style={{ color: `${branding.secondaryColor}99` }} />
           </div>
         </div>
         
@@ -55,8 +80,8 @@ export default function LoginPage() {
         </div>
 
         {/* Gradient Orbs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/30 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse" style={{ backgroundColor: `${branding.primaryColor}4D` }}></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse-slow" style={{ backgroundColor: `${branding.secondaryColor}4D` }}></div>
       </div>
 
       {/* Main Content */}
@@ -73,7 +98,7 @@ export default function LoginPage() {
             
             <h1 className="text-6xl lg:text-7xl font-black text-white mb-4 leading-tight">
               Gestión de
-              <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent animate-gradient">
+              <span className="block bg-clip-text text-transparent animate-gradient" style={{ backgroundImage: `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor}, ${branding.primaryColor})`, backgroundSize: '200% 200%' }}>
                 Tickets
               </span>
             </h1>
@@ -104,7 +129,7 @@ export default function LoginPage() {
         {/* Right Side - Login Card */}
         <div className="relative">
           {/* Glow Effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-3xl blur-2xl opacity-20 animate-pulse-slow"></div>
+          <div className="absolute inset-0 rounded-3xl blur-2xl opacity-20 animate-pulse-slow" style={{ background: `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor})` }}></div>
           
           <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 lg:p-12 border border-white/20">
             {/* Loading Overlay */}
@@ -116,17 +141,17 @@ export default function LoginPage() {
                     <div className="relative">
                       {/* Rotating Circle */}
                       <div className="absolute inset-0 animate-spin-slow">
-                        <div className="w-24 h-24 rounded-full border-4 border-transparent border-t-purple-500 border-r-blue-500"></div>
+                        <div className="w-24 h-24 rounded-full border-4 border-transparent" style={{ borderTopColor: branding.primaryColor, borderRightColor: branding.secondaryColor }}></div>
                       </div>
                       
                       {/* Center Icon */}
-                      <div className="relative w-24 h-24 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center shadow-2xl animate-pulse">
+                      <div className="relative w-24 h-24 bg-brand-gradient rounded-full flex items-center justify-center shadow-2xl animate-pulse">
                         <FiClock className="text-4xl text-white animate-bounce-slow" />
                       </div>
                       
                       {/* Floating Particles */}
-                      <div className="absolute -top-2 -right-2 w-3 h-3 bg-purple-400 rounded-full animate-ping"></div>
-                      <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
+                      <div className="absolute -top-2 -right-2 w-3 h-3 rounded-full animate-ping" style={{ backgroundColor: branding.primaryColor }}></div>
+                      <div className="absolute -bottom-2 -left-2 w-3 h-3 rounded-full animate-ping" style={{ backgroundColor: branding.secondaryColor, animationDelay: '0.5s' }}></div>
                     </div>
                   </div>
 
@@ -142,11 +167,12 @@ export default function LoginPage() {
                         key={index}
                         className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-500 ${
                           index <= loadingStep
-                            ? 'bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 scale-100'
+                            ? 'border-2 scale-100'
                             : 'bg-gray-50 border-2 border-gray-200 scale-95 opacity-50'
                         }`}
+                        style={index <= loadingStep ? { backgroundColor: `${branding.primaryColor}15`, borderColor: `${branding.primaryColor}40` } : undefined}
                       >
-                        <div className={`w-10 h-10 bg-gradient-to-br ${step.color} rounded-lg flex items-center justify-center flex-shrink-0 shadow-md ${
+                        <div className={`w-10 h-10 bg-brand-gradient rounded-lg flex items-center justify-center flex-shrink-0 shadow-md ${
                           index <= loadingStep ? 'animate-bounce-slow' : ''
                         }`}>
                           {index < loadingStep ? (
@@ -160,7 +186,7 @@ export default function LoginPage() {
                           <p className="text-gray-900 font-semibold text-sm">{step.text}</p>
                           {index === loadingStep && (
                             <div className="mt-1.5 h-1 bg-gray-200 rounded-full overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-progress"></div>
+                              <div className="h-full bg-brand-gradient rounded-full animate-progress"></div>
                             </div>
                           )}
                         </div>
@@ -180,7 +206,7 @@ export default function LoginPage() {
 
                   {/* Fun Message */}
                   <div className="mt-6 text-center">
-                    <p className="text-purple-600 text-sm animate-pulse">
+                    <p className="text-sm animate-pulse" style={{ color: branding.primaryColor }}>
                       ✨ Preparando tu acceso seguro...
                     </p>
                   </div>
@@ -188,9 +214,17 @@ export default function LoginPage() {
               </div>
             )}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl mb-6 shadow-lg transform hover:rotate-12 transition-transform duration-300">
-                <FiFileText className="text-4xl text-white" />
-              </div>
+              {branding.logoUrl ? (
+                <img
+                  src={getLogoUrl(branding.logoUrl) || ''}
+                  alt={branding.appName}
+                  className="h-20 mx-auto mb-6 object-contain"
+                />
+              ) : (
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 shadow-lg transform hover:rotate-12 transition-transform duration-300" style={{ background: `linear-gradient(to bottom right, ${branding.primaryColor}, ${branding.secondaryColor})` }}>
+                  <FiFileText className="text-4xl text-white" />
+                </div>
+              )}
               
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
                 Bienvenido de vuelta
@@ -202,9 +236,12 @@ export default function LoginPage() {
 
             <button
               onClick={handleGoogleLogin}
-              className="group w-full relative overflow-hidden bg-white border-2 border-gray-200 hover:border-purple-500 text-gray-700 font-semibold py-5 px-6 rounded-2xl transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+              className="group w-full relative overflow-hidden bg-white border-2 border-gray-200 text-gray-700 font-semibold py-5 px-6 rounded-2xl transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+              style={{ '--hover-border': branding.primaryColor } as any}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = branding.primaryColor)}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = '#e5e7eb')}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300" style={{ background: `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor})` }}></div>
               <div className="relative flex items-center justify-center gap-3">
                 <FcGoogle className="text-3xl" />
                 <span className="text-lg">Continuar con Google</span>
@@ -220,11 +257,11 @@ export default function LoginPage() {
 
             {/* Features */}
             <div className="mt-8 grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-purple-50 rounded-xl">
+              <div className="text-center p-3 rounded-xl" style={{ backgroundColor: `${branding.primaryColor}10` }}>
                 <div className="text-2xl mb-1">⚡</div>
                 <div className="text-xs font-medium text-gray-700">Acceso Rápido</div>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-xl">
+              <div className="text-center p-3 rounded-xl" style={{ backgroundColor: `${branding.secondaryColor}10` }}>
                 <div className="text-2xl mb-1">🔒</div>
                 <div className="text-xs font-medium text-gray-700">100% Seguro</div>
               </div>

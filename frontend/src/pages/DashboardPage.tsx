@@ -32,10 +32,10 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-brand-gradient rounded-xl flex items-center justify-center shadow-lg">
                 <FiFileText className="text-white text-xl" />
               </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-brand-gradient bg-clip-text text-transparent">
                 Sistema de Tickets
               </h1>
             </div>
@@ -69,7 +69,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 shadow-lg">
+        <div className="bg-brand-gradient rounded-2xl p-8 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-4xl font-bold text-white mb-2">

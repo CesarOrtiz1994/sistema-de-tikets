@@ -152,7 +152,7 @@ export default function SLAConfigurationsPage() {
           isSuperAdmin ? (
             <button 
               onClick={handleCreate}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
+              className="flex items-center gap-2 px-4 py-2 bg-brand-gradient bg-brand-gradient-hover text-white rounded-xl hover:shadow-lg transition-all duration-200"
             >
               <FiPlus />
               Nueva Configuración SLA
@@ -172,7 +172,7 @@ export default function SLAConfigurationsPage() {
             isSuperAdmin ? (
               <button 
                 onClick={handleCreate}
-                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
+                className="px-4 py-2 bg-brand-gradient bg-brand-gradient-hover text-white rounded-lg hover:shadow-lg transition-all duration-200"
               >
                 <FiPlus className="inline mr-2" />
                 Crear Configuración SLA

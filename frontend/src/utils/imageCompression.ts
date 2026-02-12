@@ -74,6 +74,11 @@ export async function compressImage(
           // Dibujar imagen redimensionada
           ctx.drawImage(img, 0, 0, width, height);
 
+          // Determinar formato de salida: preservar PNG para transparencia
+          const isPng = file.type === 'image/png';
+          const outputType = isPng ? 'image/png' : 'image/jpeg';
+          const outputExt = isPng ? '.png' : '.jpg';
+
           // Convertir a blob con compresión
           canvas.toBlob(
             (blob) => {
@@ -93,9 +98,9 @@ export async function compressImage(
               // Crear nuevo archivo con el blob comprimido
               const compressedFile = new File(
                 [blob],
-                file.name.replace(/\.[^.]+$/, '.jpg'), // Cambiar extensión a .jpg
+                file.name.replace(/\.[^.]+$/, outputExt),
                 {
-                  type: 'image/jpeg',
+                  type: outputType,
                   lastModified: Date.now()
                 }
               );
@@ -108,8 +113,8 @@ export async function compressImage(
 
               resolve(compressedFile);
             },
-            'image/jpeg',
-            opts.quality
+            outputType,
+            isPng ? undefined : opts.quality
           );
         } catch (error) {
           reject(error);

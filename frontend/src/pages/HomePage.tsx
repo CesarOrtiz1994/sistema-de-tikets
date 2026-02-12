@@ -51,7 +51,7 @@ export default function HomePage() {
         <div className="p-6">
           <div className="flex items-center justify-between mb-8">
             {sidebarOpen && (
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold bg-brand-gradient bg-clip-text text-transparent">
                 Tickets
               </h2>
             )}
@@ -74,7 +74,7 @@ export default function HomePage() {
                 key={index}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                   item.active
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                    ? 'bg-brand-gradient text-white shadow-lg'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -135,7 +135,7 @@ export default function HomePage() {
         {/* Content */}
         <main className="p-6 space-y-6">
           {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white shadow-xl">
+          <div className="bg-brand-gradient rounded-2xl p-8 text-white shadow-xl">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold mb-2">

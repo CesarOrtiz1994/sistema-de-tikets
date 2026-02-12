@@ -37,6 +37,7 @@ import deliverablesRoutes from './routes/deliverables.routes';
 import notificationsRoutes from './routes/notifications.routes';
 import emailTemplateRoutes from './routes/emailTemplate.routes';
 import metricsRoutes from './routes/metrics.routes';
+import brandingRoutes from './routes/branding.routes';
 
 const app: Application = express();
 
@@ -64,6 +65,9 @@ app.use(passport.initialize());
 
 // Rutas de autenticación
 app.use('/api/auth', authRoutes);
+
+// Rutas de branding (público GET, SUPER_ADMIN PUT) - debe ir antes de rutas con auth global
+app.use('/api/branding', brandingRoutes);
 
 // Rutas de permisos
 app.use('/api/permissions', permissionsRoutes);

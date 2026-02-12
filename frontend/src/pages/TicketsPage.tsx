@@ -226,7 +226,7 @@ export default function TicketsPage() {
         action={
           <button
             onClick={() => navigate('/tickets/create')}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-gradient bg-brand-gradient-hover text-white rounded-xl hover:shadow-lg transition-all duration-200"
           >
             <FiPlus />
             <span>Nuevo Ticket</span>
@@ -339,7 +339,7 @@ export default function TicketsPage() {
             action={
               <button
                 onClick={() => navigate('/tickets/create')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2 bg-brand-gradient bg-brand-gradient-hover text-white rounded-xl hover:shadow-lg transition-all duration-200"
               >
                 <FiPlus />
                 <span>Crear Ticket</span>

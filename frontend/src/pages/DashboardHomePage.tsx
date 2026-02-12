@@ -148,7 +148,7 @@ export default function DashboardHomePage() {
   if (loading && !dashboard) {
     return (
       <div className="space-y-6">
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 shadow-lg">
+        <div className="bg-brand-gradient rounded-2xl p-8 shadow-lg">
           <h2 className="text-3xl font-bold text-white">¡Bienvenido, {user.name}!</h2>
         </div>
         <LoadingSpinner />
@@ -179,7 +179,7 @@ export default function DashboardHomePage() {
   return (
     <div className="space-y-8">
       {/* ═══════════════════════ BIENVENIDA ═══════════════════════ */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 shadow-lg">
+      <div className="bg-brand-gradient rounded-2xl p-8 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-white mb-2">
