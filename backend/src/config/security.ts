@@ -28,7 +28,7 @@ export const corsOptions: CorsOptions = {
 // Configuración de Rate Limiting
 export const rateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: env.NODE_ENV === 'development' ? 1000 : 50, // Más permisivo en desarrollo
+  max: env.NODE_ENV === 'development' ? 1000 : 500, // Más permisivo en desarrollo
   message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -45,7 +45,7 @@ export const rateLimitOptions: Partial<RateLimitOptions> = {
 // Rate limit más estricto para autenticación
 export const authRateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: env.NODE_ENV === 'development' ? 100 : 5, // Más permisivo en desarrollo
+  max: env.NODE_ENV === 'development' ? 100 : 15, // Más permisivo en desarrollo
   message: 'Demasiados intentos de inicio de sesión, por favor intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -61,7 +61,7 @@ export const authRateLimitOptions: Partial<RateLimitOptions> = {
 // Rate limit para mensajes de chat
 export const chatMessageRateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 1 * 60 * 1000, // 1 minuto
-  max: env.NODE_ENV === 'development' ? 100 : 15, // 10 mensajes por minuto en producción
+  max: env.NODE_ENV === 'development' ? 100 : 50, // 10 mensajes por minuto en producción
   message: 'Estás enviando mensajes demasiado rápido. Por favor espera un momento.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -82,7 +82,7 @@ export const chatMessageRateLimitOptions: Partial<RateLimitOptions> = {
 // Rate limit para archivos adjuntos
 export const chatAttachmentRateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 5 * 60 * 1000, // 5 minutos
-  max: env.NODE_ENV === 'development' ? 50 : 5, // 5 archivos cada 5 minutos
+  max: env.NODE_ENV === 'development' ? 50 : 20, // 5 archivos cada 5 minutos
   message: 'Estás subiendo archivos demasiado rápido. Por favor espera un momento.',
   standardHeaders: true,
   legacyHeaders: false,
