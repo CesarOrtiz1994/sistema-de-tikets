@@ -271,9 +271,8 @@ export default function DynamicFormRenderer({
 
     try {
       await onSubmit(values);
-      toast.success('Formulario enviado exitosamente');
+      console.log('Formulario enviado exitosamente');
     } catch (error) {
-      toast.error('Error al enviar el formulario');
       console.error('Error submitting form:', error);
     } finally {
       setIsSubmitting(false);
