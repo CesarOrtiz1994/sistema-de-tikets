@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import Card from '../common/Card';
 import ValidationError from '../common/ValidationError';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { FiSave, FiAlertCircle } from 'react-icons/fi';
+import { FiSave } from 'react-icons/fi';
 import { departmentInfoSchema, DepartmentInfoFormData } from '../../validators/department.validator';
 import { departmentsService, Department } from '../../services/departments.service';
 import { z } from 'zod';
