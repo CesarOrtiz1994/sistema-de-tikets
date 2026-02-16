@@ -44,6 +44,13 @@ router.get(
   ticketFormController.getActiveDepartmentForm
 );
 
+// Obtener todos los formularios activos del departamento
+router.get(
+  '/departments/:id/active-forms',
+  authenticate,
+  ticketFormController.getActiveDepartmentForms
+);
+
 // Obtener un formulario por ID
 router.get(
   '/:id',

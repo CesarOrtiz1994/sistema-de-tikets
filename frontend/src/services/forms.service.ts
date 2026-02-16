@@ -160,6 +160,11 @@ class FormsService {
     const response = await api.get(`/api/forms/departments/${departmentId}/active-form`);
     return response.data.data;
   }
+
+  async getActiveDepartmentForms(departmentId: string): Promise<TicketForm[]> {
+    const response = await api.get(`/api/forms/departments/${departmentId}/active-forms`);
+    return response.data.data;
+  }
 }
 
 export const formsService = new FormsService();
