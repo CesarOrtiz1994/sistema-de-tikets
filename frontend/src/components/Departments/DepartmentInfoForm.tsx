@@ -168,12 +168,7 @@ export default function DepartmentInfoForm({ department, onUpdate }: DepartmentI
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Cualquier usuario podrá crear tickets en este departamento sin necesidad de asignarle acceso específico
               </p>
-              {formData.isDefaultForRequesters && (
-                <div className="mt-2 flex items-start gap-2 text-sm text-yellow-700 dark:text-yellow-400">
-                  <FiAlertCircle className="mt-0.5 flex-shrink-0" />
-                  <span>Solo un departamento puede ser público a la vez. Al activar esto, se desactivará en otros departamentos.</span>
-                </div>
-              )}
+              
             </div>
           </div>
         </div>

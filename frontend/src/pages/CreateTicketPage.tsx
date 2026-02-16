@@ -23,6 +23,8 @@ export default function CreateTicketPage() {
   
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
+  const [activeForms, setActiveForms] = useState<TicketForm[]>([]);
+  const [selectedFormId, setSelectedFormId] = useState<string>('');
   const [activeForm, setActiveForm] = useState<TicketForm | null>(null);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<TicketPriority>('MEDIUM');
@@ -36,14 +38,26 @@ export default function CreateTicketPage() {
     loadDepartments();
   }, []);
 
-  // Cargar formulario activo cuando se selecciona un departamento
+  // Cargar formularios activos cuando se selecciona un departamento
   useEffect(() => {
     if (selectedDepartmentId) {
-      loadActiveForm(selectedDepartmentId);
+      loadActiveForms(selectedDepartmentId);
     } else {
+      setActiveForms([]);
+      setSelectedFormId('');
       setActiveForm(null);
     }
   }, [selectedDepartmentId]);
+
+  // Cargar formulario completo cuando se selecciona uno
+  useEffect(() => {
+    if (selectedFormId) {
+      const form = activeForms.find(f => f.id === selectedFormId);
+      setActiveForm(form || null);
+    } else {
+      setActiveForm(null);
+    }
+  }, [selectedFormId, activeForms]);
 
   const loadDepartments = async () => {
     try {
@@ -59,15 +73,20 @@ export default function CreateTicketPage() {
     }
   };
 
-  const loadActiveForm = async (departmentId: string) => {
+  const loadActiveForms = async (departmentId: string) => {
     try {
       setLoadingForm(true);
-      const form = await formsService.getActiveDepartmentForm(departmentId);
-      setActiveForm(form);
+      const forms = await formsService.getActiveDepartmentForms(departmentId);
+      setActiveForms(forms);
+      // No pre-seleccionar ningún formulario
+      setSelectedFormId('');
+      setActiveForm(null);
     } catch (error: any) {
-      console.error('Error loading form:', error);
-      const message = error.response?.data?.message || 'No hay formulario activo para este departamento';
+      console.error('Error loading forms:', error);
+      const message = error.response?.data?.message || 'Error al cargar formularios';
       toast.error(message);
+      setActiveForms([]);
+      setSelectedFormId('');
       setActiveForm(null);
     } finally {
       setLoadingForm(false);
@@ -75,8 +94,13 @@ export default function CreateTicketPage() {
   };
 
   const handleFormSubmit = async (formData: Record<string, any>) => {
-    if (!selectedDepartmentId || !activeForm) {
+    if (!selectedDepartmentId) {
       toast.error('Selecciona un departamento primero');
+      return;
+    }
+
+    if (!selectedFormId || !activeForm) {
+      toast.error('Selecciona un formulario primero');
       return;
     }
 
@@ -177,8 +201,38 @@ export default function CreateTicketPage() {
             </p>
           </div>
 
-          {selectedDepartmentId && (
+          {selectedDepartmentId && activeForms.length > 0 && (
             <>
+              {/* Selector de formulario */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Formulario <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedFormId}
+                  onChange={(e) => setSelectedFormId(e.target.value)}
+                  disabled={isSubmitting || loadingForm}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                >
+                  <option value="">Selecciona un formulario</option>
+                  {activeForms.map((form) => (
+                    <option key={form.id} value={form.id}>
+                      {form.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedFormId && activeForms.find(f => f.id === selectedFormId)?.description && (
+                  <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      <span className="font-medium">Descripción:</span> {activeForms.find(f => f.id === selectedFormId)?.description}
+                    </p>
+                  </div>
+                )}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Selecciona el formulario que mejor se ajuste a tu solicitud
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Título del Ticket <span className="text-red-500">*</span>
@@ -235,33 +289,33 @@ export default function CreateTicketPage() {
               <div className="flex items-center justify-center py-12">
                 <LoadingSpinner size="lg" />
                 <span className="ml-3 text-gray-600 dark:text-gray-400">
-                  Cargando formulario...
+                  Cargando formularios...
                 </span>
               </div>
             </Card>
-          ) : activeForm ? (
-            <DynamicFormRenderer
-              form={activeForm}
-              onSubmit={handleFormSubmit}
-              submitButtonText={isSubmitting ? 'Creando ticket...' : 'Crear Ticket'}
-              showProgress={true}
-            />
-          ) : (
+          ) : activeForms.length === 0 ? (
             <Card>
               <div className="text-center py-12">
                 <FiAlertCircle className="mx-auto text-5xl text-yellow-500 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  No hay formulario disponible
+                  No hay formularios disponibles
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Este departamento no tiene un formulario activo configurado.
+                  Este departamento no tiene formularios activos configurados.
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
                   Por favor contacta al administrador del departamento.
                 </p>
               </div>
             </Card>
-          )}
+          ) : selectedFormId && activeForm ? (
+            <DynamicFormRenderer
+              form={activeForm}
+              onSubmit={handleFormSubmit}
+              submitButtonText={isSubmitting ? 'Creando ticket...' : 'Crear Ticket'}
+              showProgress={true}
+            />
+          ) : null}
         </>
       )}
 

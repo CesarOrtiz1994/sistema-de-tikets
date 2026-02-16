@@ -253,6 +253,40 @@ class TicketFormService {
     return activeForm;
   }
 
+  async getActiveDepartmentForms(departmentId: string) {
+    const activeForms = await prisma.ticketForm.findMany({
+      where: {
+        departmentId,
+        status: FormStatus.ACTIVE,
+        deletedAt: null
+      },
+      include: {
+        department: {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        },
+        fields: {
+          where: {
+            isVisible: true
+          },
+          include: {
+            fieldType: true,
+            options: {
+              orderBy: { order: 'asc' }
+            }
+          },
+          orderBy: { order: 'asc' }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return activeForms;
+  }
+
   async activateForm(formId: string, userId: string, incrementVersion: boolean = false) {
     const form = await this.getFormById(formId);
     

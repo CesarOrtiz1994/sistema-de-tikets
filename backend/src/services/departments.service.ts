@@ -206,19 +206,6 @@ export class DepartmentsService {
       throw new Error('Ya existe un departamento con ese prefijo');
     }
 
-    // Si se marca como default, desmarcar otros
-    if (data.isDefaultForRequesters) {
-      await prisma.department.updateMany({
-        where: {
-          isDefaultForRequesters: true,
-          deletedAt: null
-        },
-        data: {
-          isDefaultForRequesters: false
-        }
-      });
-    }
-
     const department = await prisma.department.create({
       data: {
         name: data.name,
@@ -272,20 +259,6 @@ export class DepartmentsService {
       if (prefixExists) {
         throw new Error('Ya existe un departamento con ese prefijo');
       }
-    }
-
-    // Si se marca como default, desmarcar otros
-    if (data.isDefaultForRequesters) {
-      await prisma.department.updateMany({
-        where: {
-          isDefaultForRequesters: true,
-          deletedAt: null,
-          id: { not: id }
-        },
-        data: {
-          isDefaultForRequesters: false
-        }
-      });
     }
 
     // Filtrar campos undefined para no sobrescribir datos existentes
