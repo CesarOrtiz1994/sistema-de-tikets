@@ -4,6 +4,7 @@ export interface SLAConfiguration {
   id: string;
   name: string;
   description: string | null;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   response_time: number;
   resolution_time: number;
   escalation_enabled: boolean;
@@ -12,6 +13,7 @@ export interface SLAConfiguration {
   notify_on_breach: boolean;
   notify_before: number | null;
   is_active: boolean;
+  is_default: boolean;
   created_at: string;
   updated_at: string;
 }

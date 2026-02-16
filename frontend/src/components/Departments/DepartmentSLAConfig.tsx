@@ -11,8 +11,24 @@ import ValidationError from '../common/ValidationError';
 import Badge from '../common/Badge';
 import { FiClock, FiPlus, FiTrash2, FiEdit2, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 import departmentSLAService, { DepartmentSLA, SLAPriority } from '../../services/departmentSLA.service';
+import api from '../../services/api';
 import { createDepartmentSLASchema, CreateDepartmentSLAFormData } from '../../validators/department.validator';
 import { z } from 'zod';
+
+interface GlobalSLAConfig {
+  id: string;
+  name: string;
+  description: string | null;
+  priority: SLAPriority;
+  responseTime: number;
+  resolutionTime: number;
+  escalationEnabled: boolean;
+  escalationTime: number | null;
+  businessHoursOnly: boolean;
+  notifyOnBreach: boolean;
+  notifyBefore: number | null;
+  isDefault: boolean;
+}
 
 interface DepartmentSLAConfigProps {
   departmentId: string;
@@ -56,6 +72,7 @@ const initialFormData: CreateDepartmentSLAFormData = {
 
 export default function DepartmentSLAConfig({ departmentId, onUpdate }: DepartmentSLAConfigProps) {
   const [slas, setSlas] = useState<DepartmentSLA[]>([]);
+  const [globalSLAs, setGlobalSLAs] = useState<GlobalSLAConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPriority, setEditingPriority] = useState<SLAPriority | null>(null);
@@ -71,8 +88,12 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
   const loadData = async () => {
     try {
       setLoading(true);
-      const slasData = await departmentSLAService.getDepartmentSLAs(departmentId);
+      const [slasData, globalData] = await Promise.all([
+        departmentSLAService.getDepartmentSLAs(departmentId),
+        api.get('/api/sla-configurations').then(r => r.data).catch(() => [])
+      ]);
       setSlas(Array.isArray(slasData) ? slasData : []);
+      setGlobalSLAs(Array.isArray(globalData) ? globalData : []);
     } catch (error) {
       console.error('Error al cargar SLAs:', error);
       toast.error('Error al cargar la configuración de SLA');
@@ -80,6 +101,10 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
     } finally {
       setLoading(false);
     }
+  };
+
+  const getGlobalSLAForPriority = (priority: SLAPriority): GlobalSLAConfig | undefined => {
+    return globalSLAs.find(g => g.priority === priority);
   };
 
   const handleOpenModal = (priority?: SLAPriority, existingSLA?: DepartmentSLA) => {
@@ -242,11 +267,66 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
             </button>
           </div>
 
+          {/* Valores por defecto del sistema */}
+          {globalSLAs.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <FiAlertCircle className="text-blue-500" />
+                Valores por defecto del sistema (referencia)
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as SLAPriority[]).map((priority) => {
+                  const global = getGlobalSLAForPriority(priority);
+                  const hasDeptSLA = slas.some(s => (s.priority as string).toUpperCase() === priority);
+                  return (
+                    <div
+                      key={priority}
+                      className={`rounded-lg p-3 border ${priorityBorderColors[priority]} ${
+                        hasDeptSLA
+                          ? 'bg-gray-50 dark:bg-gray-800 opacity-60'
+                          : 'bg-white dark:bg-gray-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge className={priorityColors[priority]}>
+                          {priorityLabels[priority]}
+                        </Badge>
+                        {hasDeptSLA && (
+                          <span className="text-xs text-green-600 dark:text-green-400 font-medium">Personalizado</span>
+                        )}
+                      </div>
+                      {global ? (
+                        <div className="space-y-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={global.name}>{global.name}</p>
+                          <div className="flex items-center gap-3 text-xs">
+                            <div>
+                              <span className="text-gray-400">Resp: </span>
+                              <span className="font-semibold text-gray-700 dark:text-gray-200">{formatTime(global.responseTime)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Res: </span>
+                              <span className="font-semibold text-gray-700 dark:text-gray-200">{formatTime(global.resolutionTime)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">Sin valor global</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                Estos son los valores globales del sistema. Si no configuras un SLA personalizado para una prioridad, se usarán estos valores.
+              </p>
+            </div>
+          )}
+
           {slas.length === 0 ? (
             <EmptyState
               icon={FiClock}
-              title="No hay SLAs configurados"
-              description="Crea configuraciones SLA para definir tiempos de respuesta según la prioridad"
+              title="No hay SLAs personalizados"
+              description="Se están usando los valores por defecto del sistema. Crea configuraciones SLA personalizadas si necesitas tiempos diferentes."
             />
           ) : (
             <div className="space-y-4">
