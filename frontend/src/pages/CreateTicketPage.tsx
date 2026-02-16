@@ -78,9 +78,16 @@ export default function CreateTicketPage() {
       setLoadingForm(true);
       const forms = await formsService.getActiveDepartmentForms(departmentId);
       setActiveForms(forms);
-      // No pre-seleccionar ningún formulario
-      setSelectedFormId('');
-      setActiveForm(null);
+      
+      // Si solo hay un formulario, seleccionarlo automáticamente
+      if (forms.length === 1) {
+        setSelectedFormId(forms[0].id);
+        setActiveForm(forms[0]);
+      } else {
+        // Si hay múltiples, no pre-seleccionar ninguno
+        setSelectedFormId('');
+        setActiveForm(null);
+      }
     } catch (error: any) {
       console.error('Error loading forms:', error);
       const message = error.response?.data?.message || 'Error al cargar formularios';
@@ -203,35 +210,48 @@ export default function CreateTicketPage() {
 
           {selectedDepartmentId && activeForms.length > 0 && (
             <>
-              {/* Selector de formulario */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Formulario <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={selectedFormId}
-                  onChange={(e) => setSelectedFormId(e.target.value)}
-                  disabled={isSubmitting || loadingForm}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
-                >
-                  <option value="">Selecciona un formulario</option>
-                  {activeForms.map((form) => (
-                    <option key={form.id} value={form.id}>
-                      {form.name}
-                    </option>
-                  ))}
-                </select>
-                {selectedFormId && activeForms.find(f => f.id === selectedFormId)?.description && (
-                  <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p className="text-sm text-blue-800 dark:text-blue-200">
-                      <span className="font-medium">Descripción:</span> {activeForms.find(f => f.id === selectedFormId)?.description}
-                    </p>
-                  </div>
-                )}
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Selecciona el formulario que mejor se ajuste a tu solicitud
-                </p>
-              </div>
+              {/* Selector de formulario - solo mostrar si hay múltiples */}
+              {activeForms.length > 1 ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Formulario <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={selectedFormId}
+                    onChange={(e) => setSelectedFormId(e.target.value)}
+                    disabled={isSubmitting || loadingForm}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  >
+                    <option value="">Selecciona un subdepartamento</option>
+                    {activeForms.map((form) => (
+                      <option key={form.id} value={form.id}>
+                        {form.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedFormId && activeForms.find(f => f.id === selectedFormId)?.description && (
+                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <span className="font-medium">Descripción:</span> {activeForms.find(f => f.id === selectedFormId)?.description}
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Selecciona el subdepartamento que mejor se ajuste a tu solicitud
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    <span className="font-medium">Subdepartamento:</span> {activeForms[0].name}
+                    {activeForms[0].description && (
+                      <span className="block mt-1 text-green-700 dark:text-green-300">
+                        {activeForms[0].description}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
