@@ -17,7 +17,6 @@ import DepartmentTicketAccessModal from '../components/Departments/DepartmentTic
 import DepartmentSLAModal from '../components/Departments/DepartmentSLAModal';
 import DepartmentWorkScheduleModal from '../components/Departments/DepartmentWorkScheduleModal';
 import { usePermissions } from '../hooks/usePermissions';
-import { formatDate } from '../utils/dateUtils';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { RoleType } from '../types/permissions';
 

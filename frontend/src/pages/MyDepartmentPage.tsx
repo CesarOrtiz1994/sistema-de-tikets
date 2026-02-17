@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { useAuth } from '../hooks/useAuth';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -18,7 +17,6 @@ import DepartmentWorkScheduleConfig from '../components/Departments/DepartmentWo
 
 export default function MyDepartmentPage() {
   usePageTitle('Mi Departamento');
-  const { user } = useAuth();
   const [department, setDepartment] = useState<Department | null>(null);
   const [myDepartments, setMyDepartments] = useState<Department[]>([]);
   const [users, setUsers] = useState<DepartmentUser[]>([]);
