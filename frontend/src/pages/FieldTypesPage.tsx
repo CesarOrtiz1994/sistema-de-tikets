@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
 import { toast } from 'sonner';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 interface FieldType {
   id: string;
@@ -49,6 +50,7 @@ const categoryLabels = {
 };
 
 export default function FieldTypesPage() {
+  usePageTitle('Tipos de Campos');
   const [fieldTypes, setFieldTypes] = useState<FieldType[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');

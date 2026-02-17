@@ -10,6 +10,7 @@ import {
   useSensors
 } from '@dnd-kit/core';
 import { useAuth } from '../hooks/useAuth';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { usePermissions } from '../hooks/usePermissions';
 import { RoleType } from '../types/permissions';
 import kanbanService, { KanbanColumn as KanbanColumnType, KanbanTicket, KanbanFilters } from '../services/kanban.service';
@@ -29,6 +30,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FiFilter, FiRefreshCw, FiUpload } from 'react-icons/fi';
 
 export default function KanbanBoardPage() {
+  usePageTitle('Kanban');
   const { user } = useAuth();
   const { hasRole } = usePermissions();
   const [columns, setColumns] = useState<KanbanColumnType[]>([]);

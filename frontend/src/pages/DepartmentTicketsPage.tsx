@@ -16,6 +16,7 @@ import { departmentsService, Department } from '../services/departments.service'
 import { usersService } from '../services/users.service';
 import { BadgeVariant } from '../components/common/Badge';
 import { formatDate } from '../utils/dateUtils';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { useAuth } from '../hooks/useAuth';
 
 const STATUS_OPTIONS: { value: TicketStatus | ''; label: string }[] = [
@@ -79,6 +80,7 @@ const getPriorityBadge = (priority: TicketPriority) => {
 };
 
 export default function DepartmentTicketsPage() {
+  usePageTitle('Tickets del Departamento');
   const navigate = useNavigate();
   const { user } = useAuth();
 

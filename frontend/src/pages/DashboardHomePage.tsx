@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { usePermissions } from '../hooks/usePermissions';
 import { RoleType } from '../types/permissions';
 import {
@@ -77,6 +78,7 @@ const PERIOD_OPTIONS = [
 ];
 
 export default function DashboardHomePage() {
+  usePageTitle('Dashboard');
   const { user } = useAuth();
   const { userRole } = usePermissions();
   const navigate = useNavigate();

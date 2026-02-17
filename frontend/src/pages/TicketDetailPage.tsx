@@ -22,6 +22,7 @@ import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../service
 import { departmentsService } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
 import { formatDate } from '../utils/dateUtils';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { getHistoryMessage, getHistoryIcon } from '../utils/historyUtils';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
@@ -93,6 +94,8 @@ export default function TicketDetailPage() {
   const { userRole } = usePermissions();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  
+  usePageTitle(ticket ? `Ticket ${ticket.ticketNumber}` : 'Detalle del Ticket');
   const [loading, setLoading] = useState(true);
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
 

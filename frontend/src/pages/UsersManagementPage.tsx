@@ -25,8 +25,10 @@ import UserModal from '../components/Users/UserModal';
 import { RoleType } from '../types/permissions';
 import usersService, { User, CreateUserData, UpdateUserData } from '../services/users.service';
 import { getRoleLabel } from '../utils/permissions';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function UsersManagementPage() {
+  usePageTitle('Usuarios');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

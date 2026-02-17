@@ -10,6 +10,7 @@ import ModalButtons from '../components/common/ModalButtons';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { emailTemplatesService, EmailTemplate, UpdateEmailTemplateData } from '../services/emailTemplates.service';
 import { toast } from 'sonner';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const templateLabels: Record<string, string> = {
   TICKET_CREATED: 'Ticket Creado',
@@ -28,6 +29,7 @@ const templateLabels: Record<string, string> = {
 };
 
 export default function EmailTemplatesPage() {
+  usePageTitle('Plantillas de Email');
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);

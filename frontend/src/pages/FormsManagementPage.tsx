@@ -15,8 +15,10 @@ import { departmentsService, Department } from '../services/departments.service'
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { useAuth } from '../hooks/useAuth';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function FormsManagementPage() {
+  usePageTitle('Formularios');
   const navigate = useNavigate();
   const { user } = useAuth();
   const [forms, setForms] = useState<TicketForm[]>([]);
