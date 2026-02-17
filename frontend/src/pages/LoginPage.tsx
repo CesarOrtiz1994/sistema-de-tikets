@@ -97,16 +97,12 @@ export default function LoginPage() {
             </div>
             
             <h1 className="text-6xl lg:text-7xl font-black text-white mb-4 leading-tight">
-              Gestión de
+              Sistema de Control de Tickets
               <span className="block bg-clip-text text-transparent animate-gradient" style={{ backgroundImage: `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor}, ${branding.primaryColor})`, backgroundSize: '200% 200%' }}>
-                Tickets
+                SCOT
               </span>
             </h1>
             
-            <p className="text-xl text-gray-300 leading-relaxed">
-              Plataforma profesional para gestionar tickets de soporte con formularios dinámicos, 
-              seguimiento en tiempo real y colaboración en equipo.
-            </p>
           </div>
 
           {/* Stats */}
