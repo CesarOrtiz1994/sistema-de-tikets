@@ -2,7 +2,6 @@ import { Router } from 'express';
 import ticketsController from '../controllers/tickets.controller';
 import { authenticate } from '../middlewares/auth';
 import { validateBody } from '../middlewares/validateZod';
-import { auditAction } from '../middlewares/audit.middleware';
 import { ticketCreationLimiter } from '../middlewares/rateLimiter.middleware';
 import {
   createTicketSchema,
@@ -26,7 +25,6 @@ router.post(
   '/',
   ticketCreationLimiter,
   validateBody(createTicketSchema),
-  auditAction('CREATE_TICKET', 'ticket') as any,
   ticketsController.createTicket
 );
 
@@ -58,7 +56,6 @@ router.get(
 router.put(
   '/:id',
   validateBody(updateTicketSchema),
-  auditAction('UPDATE_TICKET', 'ticket') as any,
   ticketsController.updateTicket
 );
 
@@ -70,7 +67,6 @@ router.put(
 router.put(
   '/:id/assign',
   validateBody(assignTicketSchema),
-  auditAction('ASSIGN_TICKET', 'ticket') as any,
   ticketsController.assignTicket
 );
 
@@ -82,7 +78,6 @@ router.put(
 router.put(
   '/:id/status',
   validateBody(changeStatusSchema),
-  auditAction('CHANGE_TICKET_STATUS', 'ticket') as any,
   ticketsController.changeStatus
 );
 
@@ -94,7 +89,6 @@ router.put(
 router.put(
   '/:id/priority',
   validateBody(changePrioritySchema),
-  auditAction('CHANGE_TICKET_PRIORITY', 'ticket') as any,
   ticketsController.changePriority
 );
 

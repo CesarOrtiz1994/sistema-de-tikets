@@ -210,11 +210,11 @@ export default function CreateTicketPage() {
 
           {selectedDepartmentId && activeForms.length > 0 && (
             <>
-              {/* Selector de formulario - solo mostrar si hay múltiples */}
+              {/* Selector de subdepartamento - solo mostrar si hay múltiples */}
               {activeForms.length > 1 ? (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Formulario <span className="text-red-500">*</span>
+                    Subdepartamento <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={selectedFormId}
