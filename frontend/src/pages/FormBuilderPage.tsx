@@ -11,7 +11,6 @@ import ModalButtons from '../components/common/ModalButtons';
 import FormBuilder from '../components/FormBuilder/FormBuilder';
 import DynamicFormRenderer from '../components/DynamicForm/DynamicFormRenderer';
 import { formsService, TicketForm, UpdateFormData } from '../services/forms.service';
-import { useAuth } from '../hooks/useAuth';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
