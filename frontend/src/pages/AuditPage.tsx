@@ -7,6 +7,8 @@ import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
 import Badge from '../components/common/Badge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { formatDate } from '../utils/dateUtils';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { RoleType } from '../types/permissions';
 import { 
   FiShield, 
@@ -16,6 +18,7 @@ import {
 import auditService, { AuditLog, AuditFilters } from '../services/audit.service';
 
 export default function AuditPage() {
+  usePageTitle('Auditoría');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<AuditFilters>({

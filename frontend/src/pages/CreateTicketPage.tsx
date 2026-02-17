@@ -10,6 +10,7 @@ import { departmentsService, Department } from '../services/departments.service'
 import { formsService, TicketForm } from '../services/forms.service';
 import { ticketsService, TicketPriority } from '../services/tickets.service';
 import { createTicketSchema } from '../validators/tickets.validator';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const PRIORITY_OPTIONS: { value: TicketPriority; label: string; color: string }[] = [
   { value: 'LOW', label: 'Baja', color: 'bg-gray-100 text-gray-800 border-gray-300' },
@@ -20,6 +21,7 @@ const PRIORITY_OPTIONS: { value: TicketPriority; label: string; color: string }[
 
 export default function CreateTicketPage() {
   const navigate = useNavigate();
+  usePageTitle('Crear Ticket');
   
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');

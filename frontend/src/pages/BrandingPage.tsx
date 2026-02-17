@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { FiSave, FiUpload, FiImage, FiDroplet, FiType, FiMonitor, FiTrash2, FiSidebar } from 'react-icons/fi';
 import { useBranding } from '../contexts/BrandingContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 import brandingService, { BrandingConfig } from '../services/branding.service';
 import { compressImage } from '../utils/imageCompression';
 import { toast } from 'sonner';
 
 export default function BrandingPage() {
+  usePageTitle('Personalización');
   const { branding, refreshBranding, getLogoUrl } = useBranding();
   const [form, setForm] = useState<Partial<BrandingConfig>>({});
   const [saving, setSaving] = useState(false);

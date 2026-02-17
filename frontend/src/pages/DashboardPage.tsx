@@ -1,10 +1,12 @@
 import { useAuth } from '../hooks/useAuth';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { usePermissions } from '../hooks/usePermissions';
 import { getRoleLabel, getRoleBadgeColor } from '../utils/permissions';
 import { FiLogOut, FiUser, FiMail, FiShield, FiCalendar, FiFileText, FiCheckCircle, FiClock } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
 export default function DashboardPage() {
+  usePageTitle('Dashboard');
   const { user, logout } = useAuth();
   const { userRole } = usePermissions();
   const navigate = useNavigate();

@@ -14,6 +14,7 @@ import StatCard from '../components/common/StatCard';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { BadgeVariant } from '../components/common/Badge';
 import { formatDate } from '../utils/dateUtils';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const STATUS_OPTIONS: { value: TicketStatus | ''; label: string }[] = [
   { value: '', label: 'Todos los estados' },
@@ -76,6 +77,7 @@ const getPriorityBadge = (priority: TicketPriority) => {
 };
 
 export default function AssignedTicketsPage() {
+  usePageTitle('Tickets Asignados');
   const navigate = useNavigate();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);

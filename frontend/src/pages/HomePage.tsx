@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { 
   FiLogOut, 
   FiHome, 
@@ -18,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
   const { user, logout } = useAuth();
+  usePageTitle('Inicio');
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 

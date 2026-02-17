@@ -8,6 +8,7 @@ import EmptyState from '../components/common/EmptyState';
 import SLAConfigurationModal from '../components/SLA/SLAConfigurationModal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import { usePermissions } from '../hooks/usePermissions';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { RoleType } from '../types/permissions';
 import api from '../services/api';
 import { toast } from 'sonner';
@@ -68,6 +69,7 @@ const formatTime = (minutes: number): string => {
 };
 
 export default function SLAConfigurationsPage() {
+  usePageTitle('Configuración SLA');
   const [slaConfigurations, setSlaConfigurations] = useState<SLAConfiguration[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);

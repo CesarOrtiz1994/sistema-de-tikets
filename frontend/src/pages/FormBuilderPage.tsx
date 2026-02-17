@@ -11,6 +11,8 @@ import ModalButtons from '../components/common/ModalButtons';
 import FormBuilder from '../components/FormBuilder/FormBuilder';
 import DynamicFormRenderer from '../components/DynamicForm/DynamicFormRenderer';
 import { formsService, TicketForm, UpdateFormData } from '../services/forms.service';
+import { useAuth } from '../hooks/useAuth';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
@@ -18,6 +20,8 @@ export default function FormBuilderPage() {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
   const [form, setForm] = useState<TicketForm | null>(null);
+  
+  usePageTitle(form ? `Formulario: ${form.name}` : 'Constructor de Formularios');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formName, setFormName] = useState('');
