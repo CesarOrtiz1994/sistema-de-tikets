@@ -37,9 +37,9 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const [branding, setBranding] = useState<BrandingConfig>(DEFAULT_BRANDING);
   const [loading, setLoading] = useState(true);
 
-  const fetchBranding = async () => {
+  const fetchBranding = async (bustCache = false) => {
     try {
-      const data = await brandingService.getActiveBranding();
+      const data = await brandingService.getActiveBranding(bustCache);
       setBranding(data);
       applyCSSVariables(data);
     } catch (err) {
@@ -64,7 +64,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       value={{
         branding,
         loading,
-        refreshBranding: fetchBranding,
+        refreshBranding: () => fetchBranding(true),
         getLogoUrl,
       }}
     >
