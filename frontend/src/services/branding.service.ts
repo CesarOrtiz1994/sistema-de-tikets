@@ -19,10 +19,14 @@ export interface BrandingConfig {
 }
 
 class BrandingService {
-  async getActiveBranding(): Promise<BrandingConfig> {
+  async getActiveBranding(bustCache = false): Promise<BrandingConfig> {
     // Usar fetch directo (no api de axios) porque este endpoint es público
     // y se llama antes de que el usuario tenga token
-    const res = await fetch(`${API_BASE_URL}/api/branding`);
+    // Agregar timestamp para evitar caché cuando bustCache=true
+    const url = bustCache 
+      ? `${API_BASE_URL}/api/branding?_t=${Date.now()}`
+      : `${API_BASE_URL}/api/branding`;
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Error al obtener branding');
     return res.json();
   }
