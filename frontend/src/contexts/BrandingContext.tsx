@@ -52,7 +52,9 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const getLogoUrl = (url: string | null): string | null => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `${API_BASE_URL}${url}`;
+    // Agregar timestamp para evitar caché de imágenes
+    const timestamp = branding.updatedAt ? new Date(branding.updatedAt).getTime() : Date.now();
+    return `${API_BASE_URL}${url}?v=${timestamp}`;
   };
 
   useEffect(() => {

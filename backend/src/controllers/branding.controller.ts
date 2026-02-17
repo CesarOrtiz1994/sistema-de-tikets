@@ -16,6 +16,12 @@ export class BrandingController {
   async getActiveBranding(_req: Request, res: Response) {
     try {
       logger.info('[Branding] GET /api/branding called');
+      
+      // Agregar headers para evitar caché en navegador/proxy
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       const cached = await cacheService.get('branding:active');
       if (cached) {
         logger.info('[Branding] Returning cached branding');
