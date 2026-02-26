@@ -38,6 +38,7 @@ import notificationsRoutes from './routes/notifications.routes';
 import emailTemplateRoutes from './routes/emailTemplate.routes';
 import metricsRoutes from './routes/metrics.routes';
 import brandingRoutes from './routes/branding.routes';
+import botRoutes from './routes/bot.routes';
 
 const app: Application = express();
 
@@ -126,6 +127,10 @@ app.use('/api/email-templates', emailTemplateRoutes);
 
 // Rutas de métricas (SEMANA 22)
 app.use('/api/metrics', metricsRoutes);
+
+// Rutas del chatbot de ayuda
+app.use('/api/bot', botRoutes);
+
 app.use('/uploads', express.static('uploads'));
 
 // Documentación API con Swagger UI

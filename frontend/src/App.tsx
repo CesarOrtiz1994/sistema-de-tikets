@@ -9,6 +9,7 @@ import Toaster from './components/Toaster';
 import { UnreadMessagesProvider } from './contexts/UnreadMessagesContext';
 import { useAuth } from './hooks/useAuth';
 import { usePermissions } from './hooks/usePermissions';
+import BotChat from './components/BotChat';
 
 // Lazy-loaded pages (code splitting por ruta)
 const DashboardHomePage = lazy(() => import('./pages/DashboardHomePage'));
@@ -76,6 +77,7 @@ function App() {
       <UnreadMessagesProvider>
         <Router>
           <Toaster />
+          {isAuthenticated && <BotChat />}
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route 

@@ -24,6 +24,7 @@ export const authenticate = async (
       select: {
         id: true,
         email: true,
+        name: true,
         roleType: true,
         isActive: true,
         deletedAt: true,
@@ -38,6 +39,7 @@ export const authenticate = async (
       id: user.id,
       userId: user.id,
       email: user.email,
+      name: user.name,
       roleType: user.roleType,
     };
 
