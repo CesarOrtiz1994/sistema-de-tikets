@@ -547,7 +547,29 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                   </h5>
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
                     {Array.isArray(fullTicket?.formFields) && fullTicket.formFields.length > 0 ? (
-                      fullTicket.formFields.map((field: any) => {
+                      fullTicket.formFields
+                        .filter((field: any) => {
+                          const value = fullTicket?.formData?.[field.id];
+                          const fieldTypeName = field.fieldType?.name?.toUpperCase() || field.fieldType?.type?.toUpperCase();
+                          
+                          // Excluir campos de sección
+                          if (fieldTypeName === 'SECTION_TITLE' || fieldTypeName === 'SECTION_DIVIDER') {
+                            return false;
+                          }
+                          
+                          // Solo mostrar campos con valores no vacíos
+                          if (value === undefined || value === null || value === '') {
+                            return false;
+                          }
+                          
+                          // Para arrays, verificar que no estén vacíos
+                          if (Array.isArray(value) && value.length === 0) {
+                            return false;
+                          }
+                          
+                          return true;
+                        })
+                        .map((field: any) => {
                         const value = fullTicket?.formData?.[field.id];
                         
                         // Función para renderizar el valor según su tipo
