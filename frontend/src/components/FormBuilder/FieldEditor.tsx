@@ -154,18 +154,21 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
 
       if (!field) return;
 
-      // Construir validaciones
+      // Construir validaciones solo si son aplicables al tipo de campo
+      const availableValidations = getAvailableValidations();
       const validations: any = {};
-      if (minLength) validations.minLength = minLength;
-      if (maxLength) validations.maxLength = maxLength;
-      if (pattern) validations.pattern = pattern;
-      if (minValue !== undefined) validations.minValue = minValue;
-      if (maxValue !== undefined) validations.maxValue = maxValue;
-      if (step) validations.step = step;
-      if (acceptedFileTypes) validations.acceptedFileTypes = acceptedFileTypes;
+      
+      // Solo agregar validaciones que sean aplicables al tipo de campo
+      if (availableValidations.includes('minLength') && minLength) validations.minLength = minLength;
+      if (availableValidations.includes('maxLength') && maxLength) validations.maxLength = maxLength;
+      if (availableValidations.includes('pattern') && pattern) validations.pattern = pattern;
+      if (availableValidations.includes('minValue') && minValue !== undefined) validations.minValue = minValue;
+      if (availableValidations.includes('maxValue') && maxValue !== undefined) validations.maxValue = maxValue;
+      if (availableValidations.includes('step') && step) validations.step = step;
+      if (availableValidations.includes('fileConfig') && acceptedFileTypes) validations.acceptedFileTypes = acceptedFileTypes;
       // Convertir de MB a bytes para guardar
-      if (maxFileSizeMB) validations.maxFileSize = maxFileSizeMB * 1024 * 1024;
-      if (allowMultiple) validations.allowMultiple = allowMultiple;
+      if (availableValidations.includes('fileConfig') && maxFileSizeMB) validations.maxFileSize = maxFileSizeMB * 1024 * 1024;
+      if (availableValidations.includes('fileConfig') && allowMultiple) validations.allowMultiple = allowMultiple;
 
       // Construir lógica condicional
       let conditionalLogic = null;
@@ -200,7 +203,7 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
       };
 
       onSave(updatedField);
-      setErrors({});
+      resetForm();
       onClose();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -232,6 +235,37 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
     if (!fieldType) return false;
     const typeCode = (fieldType.code || fieldType.name || '').toLowerCase();
     return ['select', 'radio', 'checkbox', 'multiselect'].includes(typeCode);
+  };
+
+  // Función para resetear el formulario
+  const resetForm = () => {
+    setLabel('');
+    setPlaceholder('');
+    setHelpText('');
+    setIsRequired(false);
+    setIsVisible(true);
+    setColumnSpan(3);
+    setOptions([]);
+    setErrors({});
+    setMinLength(undefined);
+    setMaxLength(undefined);
+    setPattern('');
+    setMinValue(undefined);
+    setMaxValue(undefined);
+    setStep(undefined);
+    setAcceptedFileTypes('');
+    setMaxFileSizeMB(undefined);
+    setAllowMultiple(false);
+    setHasConditional(false);
+    setConditionalField('');
+    setConditionalOperator('equals');
+    setConditionalValue('');
+  };
+
+  // Resetear formulario al cerrar el modal
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   const getAvailableValidations = (): string[] => {
@@ -278,13 +312,13 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Configurar Campo"
       subtitle={`Tipo: ${field.fieldType?.name || 'Campo'}`}
       size="lg"
       footer={
         <ModalButtons
-          onCancel={onClose}
+          onCancel={handleClose}
           onConfirm={handleSave}
           confirmText="Guardar Cambios"
           variant="primary"
