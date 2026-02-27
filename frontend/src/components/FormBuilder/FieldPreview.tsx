@@ -94,18 +94,29 @@ export default function FieldPreview({
     // RADIO
     if (fieldTypeCode === 'radio') {
       return (
-        <div className="space-y-2">
+        <div 
+          className={`
+            grid gap-2
+            ${options.length > 5 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}
+          `}
+        >
           {options.map((opt) => (
-            <label key={opt.id} className="flex items-center gap-2 cursor-not-allowed">
-              <input
-                type="radio"
-                name="preview-radio"
-                disabled
-                defaultChecked={opt.isDefault}
-                className="w-4 h-4 text-purple-600 border-gray-300 cursor-not-allowed"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{opt.label}</span>
-            </label>
+            <div key={opt.id} className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  type="radio"
+                  name="preview-radio"
+                  disabled
+                  defaultChecked={opt.isDefault}
+                  className="w-4 h-4 text-purple-600 border-gray-300 cursor-not-allowed"
+                />
+              </div>
+              <div className="ml-3">
+                <label className="text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed">
+                  {opt.label}
+                </label>
+              </div>
+            </div>
           ))}
         </div>
       );
@@ -114,17 +125,28 @@ export default function FieldPreview({
     // CHECKBOX
     if (fieldTypeCode === 'checkbox') {
       return (
-        <div className="space-y-2">
+        <div 
+          className={`
+            grid gap-2
+            ${options.length > 5 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}
+          `}
+        >
           {options.map((opt) => (
-            <label key={opt.id} className="flex items-center gap-2 cursor-not-allowed">
-              <input
-                type="checkbox"
-                disabled
-                defaultChecked={opt.isDefault}
-                className="w-4 h-4 text-purple-600 border-gray-300 rounded cursor-not-allowed"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{opt.label}</span>
-            </label>
+            <div key={opt.id} className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  type="checkbox"
+                  disabled
+                  defaultChecked={opt.isDefault}
+                  className="w-4 h-4 text-purple-600 border-gray-300 rounded cursor-not-allowed"
+                />
+              </div>
+              <div className="ml-3">
+                <label className="text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed">
+                  {opt.label}
+                </label>
+              </div>
+            </div>
           ))}
         </div>
       );
