@@ -799,7 +799,29 @@ export default function TicketDetailPage() {
             </h3>
             <div className="space-y-4">
               {(ticket.form as any)?.fields && (ticket.form as any).fields.length > 0 ? (
-                (ticket.form as any).fields.map((field: any) => {
+                (ticket.form as any).fields
+                  .filter((field: any) => {
+                    const value = ticket.formData?.[field.id];
+                    const fieldTypeName = field.fieldType?.name?.toUpperCase() || field.fieldType?.type?.toUpperCase();
+                    
+                    // Excluir campos de sección
+                    if (fieldTypeName === 'SECTION_TITLE' || fieldTypeName === 'SECTION_DIVIDER') {
+                      return false;
+                    }
+                    
+                    // Solo mostrar campos con valores no vacíos
+                    if (value === undefined || value === null || value === '') {
+                      return false;
+                    }
+                    
+                    // Para arrays, verificar que no estén vacíos
+                    if (Array.isArray(value) && value.length === 0) {
+                      return false;
+                    }
+                    
+                    return true;
+                  })
+                  .map((field: any) => {
                   const value = ticket.formData?.[field.id];
                   
                   // Función para renderizar el valor según su tipo
