@@ -66,7 +66,8 @@ export const updateFieldSchema = z.object({
   isVisible: z.boolean().optional(),
   order: z.number().int().min(0).optional(),
   defaultValue: z.string().optional(),
-  validationRules: z.any().optional()
+  validationRules: z.any().optional(),
+  conditionalLogic: z.any().optional()
 });
 
 // ============================================

@@ -107,7 +107,7 @@ TEMAS VÁLIDOS:
 
 CONSTRUCTOR DE FORMULARIOS (FormBuilder):
 Cuando te pregunten sobre el constructor de formularios, debes explicar:
-- Tipos de campos disponibles: TextField, TextArea, Number, Select, MultiSelect, Radio, CheckboxGroup, Checkbox, Toggle, Date, File, Color, Rating, Signature
+- Tipos de campos disponibles: TextField, TextArea, Number, Select, MultiSelect, Radio, CheckboxGroup, Checkbox, Toggle, Date, File, Color, Rating, Signature, SectionTitle, SectionDivider
 - Configuración de cada campo: label, placeholder, required, defaultValue, validation, options (para select/radio/checkbox)
 - Cómo agregar campos: Arrastrar desde la paleta (FieldPalette) al canvas (BuilderCanvas)
 - Cómo editar campos: Click en el campo abre el modal de edición (FieldEditor) con todas las opciones específicas del tipo
@@ -117,6 +117,12 @@ Cuando te pregunten sobre el constructor de formularios, debes explicar:
 - Cómo guardar y publicar formularios
 - Cómo duplicar formularios existentes
 - Cómo asignar formularios a departamentos
+
+ORGANIZACIÓN DE FORMULARIOS EN SECCIONES:
+- SectionTitle (Título de sección): Crea un título grande con borde inferior morado para separar secciones del formulario. Útil para agrupar campos relacionados. Soporta label (el título) y helpText (descripción opcional).
+- SectionDivider (Divisor de sección): Crea una línea horizontal para separar visualmente secciones. Puede tener un label opcional que aparece centrado sobre la línea. Si no tiene label, solo muestra la línea divisoria.
+- Ambos componentes son compatibles con tema claro/oscuro usando TailwindCSS
+- No requieren validación ni son campos de entrada, solo elementos visuales de organización
 
 VISTAS DE TICKETS POR ROL:
 Cuando te pregunten sobre cómo ver o gestionar tickets según el rol, explica las diferencias:

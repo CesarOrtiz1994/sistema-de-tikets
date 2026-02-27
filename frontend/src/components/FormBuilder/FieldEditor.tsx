@@ -59,6 +59,10 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
   const [conditionalField, setConditionalField] = useState('');
   const [conditionalOperator, setConditionalOperator] = useState('equals');
   const [conditionalValue, setConditionalValue] = useState('');
+  
+  // Obtener campo seleccionado para lógica condicional
+  const selectedConditionalField = allFields.find(f => f.id === conditionalField);
+  const conditionalFieldOptions = selectedConditionalField?.options || [];
 
   useEffect(() => {
     if (field) {
@@ -165,11 +169,11 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
 
       // Construir lógica condicional
       let conditionalLogic = null;
-      if (hasConditional && conditionalField && conditionalValue) {
+      if (hasConditional && conditionalField) {
         conditionalLogic = {
           field: conditionalField,
           operator: conditionalOperator,
-          value: conditionalValue
+          value: conditionalValue || ''
         };
       }
 
@@ -222,6 +226,12 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
     const result = ['select', 'radio', 'checkbox', 'multiselect', 'toggle'].includes(typeCode);
     console.log('needsOptions result:', result);
     return result;
+  };
+  
+  const isSelectionField = (fieldType?: { code?: string; name?: string; [key: string]: any }) => {
+    if (!fieldType) return false;
+    const typeCode = (fieldType.code || fieldType.name || '').toLowerCase();
+    return ['select', 'radio', 'checkbox', 'multiselect'].includes(typeCode);
   };
 
   const getAvailableValidations = (): string[] => {
@@ -791,18 +801,24 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
                   </label>
                   <select
                     value={conditionalField}
-                    onChange={(e) => setConditionalField(e.target.value)}
+                    onChange={(e) => {
+                      setConditionalField(e.target.value);
+                      setConditionalValue(''); // Resetear valor al cambiar campo
+                    }}
                     className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="">Seleccionar...</option>
                     {allFields
-                      .filter(f => f.id !== field.id)
+                      .filter(f => f.id !== field.id && isSelectionField(f.fieldType))
                       .map(f => (
                         <option key={f.id} value={f.id}>
-                          {f.label}
+                          {f.label} ({f.fieldType?.name})
                         </option>
                       ))}
                   </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Solo campos de selección
+                  </p>
                 </div>
 
                 <div>
@@ -823,13 +839,29 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
                   <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Valor
                   </label>
-                  <input
-                    type="text"
-                    value={conditionalValue}
-                    onChange={(e) => setConditionalValue(e.target.value)}
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Valor..."
-                  />
+                  {conditionalField && conditionalFieldOptions.length > 0 ? (
+                    <select
+                      value={conditionalValue}
+                      onChange={(e) => setConditionalValue(e.target.value)}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Seleccionar...</option>
+                      {conditionalFieldOptions.map(opt => (
+                        <option key={opt.id} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={conditionalValue}
+                      onChange={(e) => setConditionalValue(e.target.value)}
+                      disabled={!conditionalField}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      placeholder={conditionalField ? "Sin opciones" : "Selecciona un campo"}
+                    />
+                  )}
                 </div>
               </div>
             </div>

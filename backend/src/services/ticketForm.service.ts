@@ -41,6 +41,7 @@ interface UpdateFormFieldData {
   columnSpan?: number;
   defaultValue?: string;
   validationRules?: any;
+  conditionalLogic?: any;
   options?: Array<{
     id?: string;
     label: string;

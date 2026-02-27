@@ -143,6 +143,7 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
         isVisible: updatedField.isVisible,
         columnSpan: updatedField.columnSpan,
         validationRules: updatedField.validationRules,
+        conditionalLogic: updatedField.conditionalLogic,
         options: updatedField.options,
       };
       console.log('Guardando campo con payload:', payload);

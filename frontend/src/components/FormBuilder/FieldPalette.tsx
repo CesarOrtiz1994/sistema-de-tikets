@@ -13,7 +13,8 @@ import {
   FiPhone,
   FiLink,
   FiDroplet,
-  FiSearch
+  FiSearch,
+  FiMinus
 } from 'react-icons/fi';
 
 interface FieldType {
@@ -40,7 +41,9 @@ const iconMap: Record<string, any> = {
   email: FiMail,
   phone: FiPhone,
   url: FiLink,
-  color: FiDroplet
+  color: FiDroplet,
+  'section-title': FiType,
+  'section-divider': FiMinus
 };
 
 function DraggableFieldType({ fieldType }: { fieldType: FieldType }) {
