@@ -57,11 +57,31 @@ export default function DynamicFormRenderer({
     const dependentValue = values[logic.field];
     const conditionValue = logic.value;
 
+    // Si el valor dependiente es undefined o null, no mostrar el campo
+    if (dependentValue === undefined || dependentValue === null) {
+      return false;
+    }
+
+    // Manejar arrays (CHECKBOX con múltiples valores)
+    const isArray = Array.isArray(dependentValue);
+    
     switch (logic.operator) {
       case 'equals':
+        if (isArray) {
+          // Para arrays (CHECKBOX), verificar si el valor está incluido
+          return dependentValue.includes(conditionValue);
+        }
+        // Para valores simples (SELECT, RADIO)
         return dependentValue === conditionValue;
+      
       case 'not_equals':
+        if (isArray) {
+          // Para arrays (CHECKBOX), verificar que el valor NO esté incluido
+          return !dependentValue.includes(conditionValue);
+        }
+        // Para valores simples (SELECT, RADIO)
         return dependentValue !== conditionValue;
+      
       default:
         return true;
     }
@@ -347,7 +367,16 @@ export default function DynamicFormRenderer({
             <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
               {sortedFields.map((field) => {
                 // Evaluar si el campo debe mostrarse según su lógica condicional
-                if (!evaluateCondition(field)) {
+                const shouldShow = evaluateCondition(field);
+                console.log('Campo en lista:', {
+                  id: field.id,
+                  label: field.label,
+                  fieldTypeName: field.fieldType?.name,
+                  shouldShow: shouldShow,
+                  hasConditionalLogic: !!field.conditionalLogic
+                });
+                
+                if (!shouldShow) {
                   return null;
                 }
 
