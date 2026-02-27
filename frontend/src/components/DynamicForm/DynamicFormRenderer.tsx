@@ -94,9 +94,32 @@ export default function DynamicFormRenderer({
     setValue,
     setFieldTouched,
     validateAll,
-    getProgress,
     getMissingRequiredFields,
   } = useFormValidation(sortedFields);
+
+  // Calcular progreso dinámico excluyendo campos de sección y considerando lógica condicional
+  const getVisibleFormFields = () => {
+    return sortedFields.filter((field) => {
+      const fieldTypeName = field.fieldType?.name?.toUpperCase();
+      // Excluir campos de sección
+      if (fieldTypeName === 'SECTION_TITLE' || fieldTypeName === 'SECTION_DIVIDER') {
+        return false;
+      }
+      // Solo incluir si cumple la lógica condicional
+      return evaluateCondition(field);
+    });
+  };
+
+  const visibleFormFields = getVisibleFormFields();
+  
+  const filledFields = visibleFormFields.filter((field) => {
+    const value = values[field.id];
+    return value !== undefined && value !== null && value !== '';
+  }).length;
+
+  const progress = visibleFormFields.length > 0 
+    ? Math.round((filledFields / visibleFormFields.length) * 100) 
+    : 0;
 
   // Inicializar valores por defecto
   useEffect(() => {
@@ -331,12 +354,6 @@ export default function DynamicFormRenderer({
     }
   };
 
-  const progress = getProgress();
-  const filledFields = sortedFields.filter((field) => {
-    const value = values[field.id];
-    return value !== undefined && value !== null && value !== '';
-  }).length;
-
   return (
     <div className={className}>
       {/* Información del formulario */}
@@ -354,7 +371,7 @@ export default function DynamicFormRenderer({
         <div className="mb-6">
           <FormProgress
             progress={progress}
-            totalFields={sortedFields.length}
+            totalFields={visibleFormFields.length}
             filledFields={filledFields}
           />
         </div>
