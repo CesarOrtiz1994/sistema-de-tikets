@@ -89,6 +89,7 @@ export interface UpdateFieldData {
   defaultValue?: string;
   columnSpan?: 1 | 2 | 3;
   validationRules?: any;
+  conditionalLogic?: any;
   options?: Array<{
     id?: string;
     label: string;

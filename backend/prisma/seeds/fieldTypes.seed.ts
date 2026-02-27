@@ -355,6 +355,34 @@ export const fieldTypesSeed = async (prisma: PrismaClient) => {
           '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788'
         ]
       }
+    },
+    {
+      name: 'SECTION_TITLE',
+      label: 'Título de sección',
+      category: FieldCategory.ADVANCED,
+      description: 'Título para organizar el formulario en secciones',
+      icon: 'FiType',
+      hasOptions: false,
+      allowMultiple: false,
+      hasPlaceholder: false,
+      hasDefaultValue: false,
+      availableValidations: [],
+      componentType: 'section-title',
+      inputProps: {}
+    },
+    {
+      name: 'SECTION_DIVIDER',
+      label: 'Divisor de sección',
+      category: FieldCategory.ADVANCED,
+      description: 'Línea divisoria para separar secciones del formulario',
+      icon: 'FiMinus',
+      hasOptions: false,
+      allowMultiple: false,
+      hasPlaceholder: false,
+      hasDefaultValue: false,
+      availableValidations: [],
+      componentType: 'section-divider',
+      inputProps: {}
     }
   ];
 

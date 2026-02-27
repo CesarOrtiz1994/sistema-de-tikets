@@ -22,6 +22,8 @@ import {
   SignatureField,
   RatingField,
 } from '../fields';
+import SectionTitleField from '../fields/SectionTitleField';
+import SectionDividerField from '../fields/SectionDividerField';
 
 interface DynamicFormRendererProps {
   form: TicketForm;
@@ -41,6 +43,29 @@ export default function DynamicFormRenderer({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const visibleFields = (form.fields || []).filter((f) => f.isVisible);
   const sortedFields = [...visibleFields].sort((a, b) => a.order - b.order);
+
+  // Evaluar lógica condicional
+  const evaluateCondition = (field: FormField): boolean => {
+    if (!field.conditionalLogic) return true;
+
+    const logic = typeof field.conditionalLogic === 'string'
+      ? JSON.parse(field.conditionalLogic)
+      : field.conditionalLogic;
+
+    if (!logic.field || !logic.operator) return true;
+
+    const dependentValue = values[logic.field];
+    const conditionValue = logic.value;
+
+    switch (logic.operator) {
+      case 'equals':
+        return dependentValue === conditionValue;
+      case 'not_equals':
+        return dependentValue !== conditionValue;
+      default:
+        return true;
+    }
+  };
 
   const {
     values,
@@ -244,6 +269,13 @@ export default function DynamicFormRenderer({
       case 'COLOR':
         return <ColorField {...commonProps} />;
 
+      // Campos de sección
+      case 'SECTION_TITLE':
+        return <SectionTitleField label={field.label} helpText={field.helpText} />;
+
+      case 'SECTION_DIVIDER':
+        return <SectionDividerField label={field.label} />;
+
       default:
         console.warn(`Tipo de campo no reconocido: ${fieldTypeName}`);
         return <TextField {...commonProps} type="text" />;
@@ -314,6 +346,11 @@ export default function DynamicFormRenderer({
           {sortedFields.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
               {sortedFields.map((field) => {
+                // Evaluar si el campo debe mostrarse según su lógica condicional
+                if (!evaluateCondition(field)) {
+                  return null;
+                }
+
                 const span = field.columnSpan || 3;
                 // span 1 = 33% (2 cols de 6), span 2 = 50% (3 cols de 6), span 3 = 100% (6 cols de 6)
                 const colSpanClass = span === 3 ? 'md:col-span-6' : span === 2 ? 'md:col-span-3' : 'md:col-span-2';

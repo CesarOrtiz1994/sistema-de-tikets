@@ -190,6 +190,44 @@ export default function FieldPreview({
       );
     }
 
+    // SECTION_TITLE
+    if (fieldTypeCode === 'section-title' || fieldTypeCode === 'section_title') {
+      return (
+        <div className="mb-6 mt-8">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white border-b-2 border-purple-600 pb-2">
+            {label || 'Título de Sección'}
+          </h3>
+          {helpText && (
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              {helpText}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    // SECTION_DIVIDER
+    if (fieldTypeCode === 'section-divider' || fieldTypeCode === 'section_divider') {
+      return (
+        <div className="my-6">
+          {label ? (
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t-2 border-gray-300 dark:border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-white dark:bg-gray-800 px-3 text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {label}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="border-t-2 border-gray-300 dark:border-gray-600"></div>
+          )}
+        </div>
+      );
+    }
+
     // Default
     return (
       <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-center">
@@ -199,6 +237,12 @@ export default function FieldPreview({
       </div>
     );
   };
+
+  // Para SECTION_TITLE y SECTION_DIVIDER, renderizar directamente sin el wrapper de label
+  if (fieldTypeCode === 'section-title' || fieldTypeCode === 'section_title' || 
+      fieldTypeCode === 'section-divider' || fieldTypeCode === 'section_divider') {
+    return renderField();
+  }
 
   return (
     <div className="space-y-2">
