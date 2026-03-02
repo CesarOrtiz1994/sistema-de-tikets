@@ -138,14 +138,14 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     >
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="p-4 mb-4">
+        <div className="p-4">
           <div className="flex items-center justify-between">
             {isOpen && (
               branding.logoUrl ? (
                 <img
                   src={getLogoUrl(branding.logoUrl) || ''}
                   alt={branding.appName}
-                  className="h-8 max-w-[140px] object-contain"
+                  className="h-16 object-contain"
                 />
               ) : (
                 <h2 className="text-xl font-bold bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor})` }}>
