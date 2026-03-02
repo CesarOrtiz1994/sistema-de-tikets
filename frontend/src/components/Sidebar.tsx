@@ -138,7 +138,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     >
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="p-4 mx-4 mb-4">
+        <div className="p-4 mb-4">
           <div className="flex items-center justify-between">
             {isOpen && (
               branding.logoUrl ? (
