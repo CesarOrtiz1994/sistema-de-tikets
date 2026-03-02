@@ -293,9 +293,9 @@ export default function FormsManagementPage() {
             key: 'form',
             header: 'Formulario',
             render: (form: TicketForm) => (
-              <div>
+              <div className="max-w-xs lg:max-w-md xl:max-w-lg">
                 <div className="flex items-center gap-2">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                     {form.name}
                   </div>
                   {form.isDefault && (
@@ -303,7 +303,10 @@ export default function FormsManagementPage() {
                   )}
                 </div>
                 {form.description && (
-                  <div className="text-sm text-gray-500 dark:text-gray-300 mt-1">
+                  <div 
+                    className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 hover:line-clamp-none transition-all cursor-help" 
+                    title={form.description}
+                  >
                     {form.description}
                   </div>
                 )}

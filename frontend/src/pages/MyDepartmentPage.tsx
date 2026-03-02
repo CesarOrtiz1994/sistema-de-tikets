@@ -14,6 +14,7 @@ import DepartmentTabs, { TabId } from '../components/Departments/DepartmentTabs'
 import DepartmentInfoForm from '../components/Departments/DepartmentInfoForm';
 import DepartmentSLAConfig from '../components/Departments/DepartmentSLAConfig';
 import DepartmentWorkScheduleConfig from '../components/Departments/DepartmentWorkScheduleConfig';
+import DepartmentTicketAccessConfig from '../components/Departments/DepartmentTicketAccessConfig';
 
 export default function MyDepartmentPage() {
   usePageTitle('Mi Departamento');
@@ -291,6 +292,15 @@ export default function MyDepartmentPage() {
         {activeTab === 'schedule' && (
           <DepartmentWorkScheduleConfig 
             departmentId={department.id}
+            onUpdate={handleDepartmentUpdate}
+          />
+        )}
+
+        {activeTab === 'access' && (
+          <DepartmentTicketAccessConfig
+            departmentId={department.id}
+            departmentName={department.name}
+            isDefaultForRequesters={department.isDefaultForRequesters || false}
             onUpdate={handleDepartmentUpdate}
           />
         )}

@@ -42,6 +42,26 @@ export class DepartmentAccessController {
   async getUsersWithAccess(req: Request, res: Response) {
     try {
       const { departmentId } = req.params;
+      const user = (req as any).user;
+
+      // Si es DEPT_ADMIN, verificar que sea administrador de este departamento
+      if (user.roleType === 'DEPT_ADMIN') {
+        const prisma = (await import('../config/database')).default;
+        const isAdmin = await prisma.departmentUser.findFirst({
+          where: {
+            userId: user.id,
+            departmentId: departmentId,
+            role: 'ADMIN'
+          }
+        });
+
+        if (!isAdmin) {
+          return res.status(403).json({
+            success: false,
+            message: 'No tienes permisos para gestionar este departamento'
+          });
+        }
+      }
 
       const result = await departmentAccessService.getUsersWithAccessToDepartment(departmentId);
 
@@ -65,7 +85,27 @@ export class DepartmentAccessController {
   async grantAccess(req: Request, res: Response) {
     try {
       const { departmentId } = req.params;
+      const user = (req as any).user;
       const validatedData = grantAccessSchema.parse(req.body);
+
+      // Si es DEPT_ADMIN, verificar que sea administrador de este departamento
+      if (user.roleType === 'DEPT_ADMIN') {
+        const prisma = (await import('../config/database')).default;
+        const isAdmin = await prisma.departmentUser.findFirst({
+          where: {
+            userId: user.id,
+            departmentId: departmentId,
+            role: 'ADMIN'
+          }
+        });
+
+        if (!isAdmin) {
+          return res.status(403).json({
+            success: false,
+            message: 'No tienes permisos para gestionar este departamento'
+          });
+        }
+      }
 
       const result = await departmentAccessService.grantUserAccessToDepartment(
         validatedData.userId,
@@ -102,6 +142,26 @@ export class DepartmentAccessController {
   async revokeAccess(req: Request, res: Response) {
     try {
       const { departmentId, userId } = req.params;
+      const user = (req as any).user;
+
+      // Si es DEPT_ADMIN, verificar que sea administrador de este departamento
+      if (user.roleType === 'DEPT_ADMIN') {
+        const prisma = (await import('../config/database')).default;
+        const isAdmin = await prisma.departmentUser.findFirst({
+          where: {
+            userId: user.id,
+            departmentId: departmentId,
+            role: 'ADMIN'
+          }
+        });
+
+        if (!isAdmin) {
+          return res.status(403).json({
+            success: false,
+            message: 'No tienes permisos para gestionar este departamento'
+          });
+        }
+      }
 
       await departmentAccessService.revokeUserAccessFromDepartment(userId, departmentId);
 
@@ -125,7 +185,27 @@ export class DepartmentAccessController {
   async setAsDefault(req: Request, res: Response) {
     try {
       const { departmentId } = req.params;
+      const user = (req as any).user;
       const validatedData = setDefaultSchema.parse(req.body);
+
+      // Si es DEPT_ADMIN, verificar que sea administrador de este departamento
+      if (user.roleType === 'DEPT_ADMIN') {
+        const prisma = (await import('../config/database')).default;
+        const isAdmin = await prisma.departmentUser.findFirst({
+          where: {
+            userId: user.id,
+            departmentId: departmentId,
+            role: 'ADMIN'
+          }
+        });
+
+        if (!isAdmin) {
+          return res.status(403).json({
+            success: false,
+            message: 'No tienes permisos para gestionar este departamento'
+          });
+        }
+      }
 
       const department = await departmentAccessService.setDepartmentAsDefault(
         departmentId,

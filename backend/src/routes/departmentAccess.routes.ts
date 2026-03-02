@@ -18,41 +18,41 @@ router.get(
 
 /**
  * GET /api/departments/:departmentId/users-with-access
- * Obtiene usuarios con acceso a un departamento (Solo SUPER_ADMIN)
+ * Obtiene usuarios con acceso a un departamento (SUPER_ADMIN y DEPT_ADMIN)
  */
 router.get(
   '/:departmentId/users-with-access',
-  authorize('SUPER_ADMIN'),
+  authorize('SUPER_ADMIN', 'DEPT_ADMIN'),
   departmentAccessController.getUsersWithAccess.bind(departmentAccessController)
 );
 
 /**
  * POST /api/departments/:departmentId/grant-access
- * Otorga acceso a un usuario (Solo SUPER_ADMIN)
+ * Otorga acceso a un usuario (SUPER_ADMIN y DEPT_ADMIN)
  */
 router.post(
   '/:departmentId/grant-access',
-  authorize('SUPER_ADMIN'),
+  authorize('SUPER_ADMIN', 'DEPT_ADMIN'),
   departmentAccessController.grantAccess.bind(departmentAccessController)
 );
 
 /**
  * DELETE /api/departments/:departmentId/revoke-access/:userId
- * Revoca acceso de un usuario (Solo SUPER_ADMIN)
+ * Revoca acceso de un usuario (SUPER_ADMIN y DEPT_ADMIN)
  */
 router.delete(
   '/:departmentId/revoke-access/:userId',
-  authorize('SUPER_ADMIN'),
+  authorize('SUPER_ADMIN', 'DEPT_ADMIN'),
   departmentAccessController.revokeAccess.bind(departmentAccessController)
 );
 
 /**
  * PUT /api/departments/:departmentId/set-default
- * Marca departamento como por defecto (Solo SUPER_ADMIN)
+ * Marca departamento como por defecto (SUPER_ADMIN y DEPT_ADMIN)
  */
 router.put(
   '/:departmentId/set-default',
-  authorize('SUPER_ADMIN'),
+  authorize('SUPER_ADMIN', 'DEPT_ADMIN'),
   departmentAccessController.setAsDefault.bind(departmentAccessController)
 );
 

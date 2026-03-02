@@ -1,6 +1,6 @@
-import { FiInfo, FiClock, FiCalendar, FiUsers } from 'react-icons/fi';
+import { FiInfo, FiClock, FiCalendar, FiUsers, FiKey } from 'react-icons/fi';
 
-export type TabId = 'info' | 'sla' | 'schedule' | 'members';
+export type TabId = 'info' | 'sla' | 'schedule' | 'members' | 'access';
 
 interface Tab {
   id: TabId;
@@ -17,7 +17,8 @@ const tabs: Tab[] = [
   { id: 'info', label: 'Información', icon: <FiInfo /> },
   { id: 'sla', label: 'SLA', icon: <FiClock /> },
   { id: 'schedule', label: 'Horarios', icon: <FiCalendar /> },
-  { id: 'members', label: 'Miembros', icon: <FiUsers /> }
+  { id: 'members', label: 'Miembros', icon: <FiUsers /> },
+  { id: 'access', label: 'Accesos', icon: <FiKey /> }
 ];
 
 export default function DepartmentTabs({ activeTab, onTabChange }: DepartmentTabsProps) {
