@@ -41,7 +41,8 @@ export class DeliverablesController {
         notifyDeliverableUploaded(
           ticket,
           deliverable.fileName,
-          deliverable.uploadedBy.name
+          deliverable.uploadedBy.name,
+          deliverable.fileUrl
         ).catch(err => logger.error('Error sending deliverable uploaded notification:', err));
       }
 

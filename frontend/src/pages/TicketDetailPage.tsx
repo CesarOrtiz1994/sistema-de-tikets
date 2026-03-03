@@ -9,14 +9,13 @@ import WorkScheduleInfo from '../components/Tickets/WorkScheduleInfo';
 import Modal from '../components/common/Modal';
 import ModalButtons from '../components/common/ModalButtons';
 import CloseTicketModal from '../components/Tickets/CloseTicketModal';
-import ReopenTicketModal from '../components/Tickets/ReopenTicketModal';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import StarRating from '../components/common/StarRating';
 import ChatWindow from '../components/Chat/ChatWindow';
 import FileHistory from '../components/Chat/FileHistory';
 import TicketRelationship from '../components/Tickets/TicketRelationship';
 import DeliverableUpload, { DeliverableUploadHandle } from '../components/Deliverables/DeliverableUpload';
-import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw, FiRefreshCw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle } from 'react-icons/fi';
+import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRefreshCw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle } from 'react-icons/fi';
 import { deliverablesService } from '../services/deliverables.service';
 import { Deliverable, DeliverableStatus } from '../types/deliverable';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
@@ -154,7 +153,6 @@ export default function TicketDetailPage() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
-  const [showReopenModal, setShowReopenModal] = useState(false);
 
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('NEW');
@@ -429,19 +427,6 @@ export default function TicketDetailPage() {
     }
   };
 
-  const handleReopenTicket = async (reason: string) => {
-    if (!ticket) return;
-
-    try {
-      await ticketsService.reopenTicket(ticket.id, reason);
-      toast.success('Ticket reabierto exitosamente');
-      loadTicket();
-    } catch (error: any) {
-      console.error('Error reopening ticket:', error);
-      toast.error(error.response?.data?.message || 'Error al reabrir el ticket');
-      throw error;
-    }
-  };
 
   if (loading) {
     return (
@@ -478,9 +463,6 @@ export default function TicketDetailPage() {
   
   // CERRAR: Solo el solicitante cuando el ticket está RESOLVED
   const canCloseTicket = ticket?.requesterId === user?.id && ticket?.status === 'RESOLVED';
-  
-  // REABRIR: Solo el solicitante cuando el ticket está CLOSED
-  const canReopenTicket = ticket?.requesterId === user?.id && ticket?.status === 'CLOSED';
 
   return (
     <div className="space-y-6">
@@ -564,15 +546,6 @@ export default function TicketDetailPage() {
                 <span>{ticket?.department?.requireRating ? 'Cerrar y Calificar' : 'Cerrar Ticket'}</span>
               </button>
             )}
-            {canReopenTicket && (
-              <button
-                onClick={() => setShowReopenModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
-              >
-                <FiRotateCcw />
-                <span>Reabrir Ticket</span>
-              </button>
-            )}
           </div> 
         }
         other={
@@ -607,7 +580,7 @@ export default function TicketDetailPage() {
       )}
 
       {/* Entregable */}
-      {ticket.department?.requireDeliverable && !['CLOSED', 'CANCELLED'].includes(ticket.status) && (
+      {ticket.department?.requireDeliverable && (
         <Card>
           <div className="flex items-start justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -624,13 +597,46 @@ export default function TicketDetailPage() {
           </div>
 
           {deliverableApproved ? (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-              <p className="text-sm text-green-700 dark:text-green-300">
-                {ticket.department?.requireRating
-                  ? 'El entregable fue aprobado. Por favor cierra y califica el ticket.'
-                  : 'El entregable fue aprobado. Por favor cierra el ticket.'}
-              </p>
-            </div>
+            <>
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-4">
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  {['CLOSED', 'CANCELLED'].includes(ticket.status)
+                    ? 'El entregable fue aprobado. Puedes ver el entregable en la seción de entregables.'
+                    : ticket.department?.requireRating
+                    ? 'El entregable fue aprobado. Por favor cierra y califica el ticket. Puedes ver el entregable en la seción de entregables.'
+                    : 'El entregable fue aprobado. Por favor cierra el ticket. Puedes ver el entregable en la seción de entregables.'}
+                </p>
+              </div>
+              
+              {/* Mostrar entregable aprobado con botón de descarga */}
+              {(() => {
+                const approvedDeliverable = deliverables.find(d => d.status === DeliverableStatus.APPROVED);
+                return approvedDeliverable && (
+                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="p-2 rounded-lg bg-white dark:bg-gray-800">
+                      <FiFolder className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {approvedDeliverable.fileName}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Subido por {approvedDeliverable.uploadedBy.name} • Aprobado el {new Date(approvedDeliverable.reviewedAt!).toLocaleDateString('es-MX')}
+                      </p>
+                    </div>
+                    <a
+                      href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${approvedDeliverable.fileUrl}`}
+                      download
+                      className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                      title="Descargar entregable"
+                    >
+                      <FiDownload className="w-4 h-4" />
+                      <span>Descargar</span>
+                    </a>
+                  </div>
+                );
+              })()}
+            </>
           ) : (
             <>
               {/* Info de rechazos */}
@@ -1307,15 +1313,7 @@ export default function TicketDetailPage() {
         isOpen={showCloseModal}
         onClose={() => setShowCloseModal(false)}
         onConfirm={handleCloseTicket}
-        requireRating={ticket?.department?.requireRating ?? false}
-        ticketNumber={ticket?.ticketNumber || ''}
-      />
-
-      {/* Modal Reabrir Ticket */}
-      <ReopenTicketModal
-        isOpen={showReopenModal}
-        onClose={() => setShowReopenModal(false)}
-        onConfirm={handleReopenTicket}
+        requireRating={ticket?.department?.requireRating || false}
         ticketNumber={ticket?.ticketNumber || ''}
       />
 

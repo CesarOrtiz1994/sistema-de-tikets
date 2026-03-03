@@ -232,12 +232,13 @@ export const emailTemplatesSeed = async (prisma: PrismaClient) => {
           <p>Subido por: <strong>{{uploaded_by}}</strong></p>
           <p>Por favor revisa el entregable y decide si lo apruebas o rechazas.</p>
           <p style="text-align: center; margin-top: 24px;">
-            <a href="{{ticket_url}}" class="btn">Revisar Entregable</a>
+            <a href="{{download_url}}" class="btn" style="background-color: #10b981; margin-right: 10px;">Descargar Archivo</a>
+            <a href="{{ticket_url}}" class="btn">Revisar Ticket</a>
           </p>
         </div>
       `),
-      textBody: 'Nuevo entregable subido en el ticket {{ticket_number}}: {{file_name}} - Subido por: {{uploaded_by}}',
-      variables: ['user_name', 'ticket_number', 'ticket_title', 'file_name', 'uploaded_by', 'ticket_url', 'year']
+      textBody: 'Nuevo entregable subido en el ticket {{ticket_number}}: {{file_name}} - Subido por: {{uploaded_by}} - Descargar: {{download_url}}',
+      variables: ['user_name', 'ticket_number', 'ticket_title', 'file_name', 'uploaded_by', 'ticket_url', 'download_url', 'year']
     },
     {
       code: 'DELIVERABLE_REJECTED',
