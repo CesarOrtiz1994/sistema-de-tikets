@@ -403,9 +403,10 @@ export async function notifyDeliverableUploaded(ticket: {
   ticketNumber: string;
   title: string;
   requesterId: string;
-}, fileName: string, uploadedByName: string) {
+}, fileName: string, uploadedByName: string, fileUrl: string) {
   try {
     const ticketUrl = `${FRONTEND_URL}/tickets/${ticket.id}`;
+    const downloadUrl = `${process.env.API_URL || 'http://localhost:3000'}${fileUrl}`;
 
     await notificationService.send(
       {
@@ -424,6 +425,7 @@ export async function notifyDeliverableUploaded(ticket: {
           file_name: fileName,
           uploaded_by: uploadedByName,
           ticket_url: ticketUrl,
+          download_url: downloadUrl,
           year: currentYear()
         },
         sendPush: true,
