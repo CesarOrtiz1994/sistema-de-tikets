@@ -24,7 +24,7 @@ const ALLOWED_MIME_TYPES = [
 
 const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.svg', '.pdf'];
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 // Tipos de imagen que se pueden comprimir
 const COMPRESSIBLE_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg'];
