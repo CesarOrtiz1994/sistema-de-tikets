@@ -649,8 +649,18 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                             return <pre className="text-xs">{JSON.stringify(value, null, 2)}</pre>;
                           }
                           
-                          // Valor simple
-                          return <span className="whitespace-pre-wrap">{value || '-'}</span>;
+                          // Valor simple - decodificar entidades HTML
+                          const decodedValue = typeof value === 'string'
+                            ? value
+                                .replace(/&#x2F;/g, '/')
+                                .replace(/&amp;/g, '&')
+                                .replace(/&lt;/g, '<')
+                                .replace(/&gt;/g, '>')
+                                .replace(/&quot;/g, '"')
+                                .replace(/&#x27;/g, "'")
+                                .replace(/&#x3A;/g, ':')
+                            : value;
+                          return <span className="whitespace-pre-wrap">{decodedValue || '-'}</span>;
                         };
 
                         return (
