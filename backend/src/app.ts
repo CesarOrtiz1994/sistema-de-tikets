@@ -58,8 +58,8 @@ app.use('/api/', generalRateLimiter);
 app.use(bodySizeLimiter);
 
 // Body parsers con límites
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Inicializar Passport
 app.use(passport.initialize());

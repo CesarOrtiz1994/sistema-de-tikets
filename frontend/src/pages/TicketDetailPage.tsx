@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import PageHeader from '../components/common/PageHeader';
@@ -15,6 +15,7 @@ import StarRating from '../components/common/StarRating';
 import ChatWindow from '../components/Chat/ChatWindow';
 import FileHistory from '../components/Chat/FileHistory';
 import TicketRelationship from '../components/Tickets/TicketRelationship';
+import DeliverableUpload, { DeliverableUploadHandle } from '../components/Deliverables/DeliverableUpload';
 import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRotateCcw, FiRefreshCw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle } from 'react-icons/fi';
 import { deliverablesService } from '../services/deliverables.service';
 import { Deliverable, DeliverableStatus } from '../types/deliverable';
@@ -44,6 +45,56 @@ const PRIORITY_OPTIONS: { value: TicketPriority; label: string }[] = [
   { value: 'HIGH', label: 'Alta' },
   { value: 'CRITICAL', label: 'Crítica' },
 ];
+
+const getAvailableStatusOptions = (currentStatus: TicketStatus, userRole: RoleType): typeof STATUS_OPTIONS => {
+  // SUPER_ADMIN y DEPT_ADMIN pueden cambiar a cualquier estado
+  if (userRole === RoleType.SUPER_ADMIN || userRole === RoleType.DEPT_ADMIN) {
+    return STATUS_OPTIONS;
+  }
+
+  // SUBORDINATE tiene restricciones según el estado actual
+  if (userRole === RoleType.SUBORDINATE) {
+    const allowedStatuses: TicketStatus[] = [];
+
+    switch (currentStatus) {
+      case 'NEW':
+        // Desde NEW no pueden cambiar (normalmente no deberían ver este estado)
+        allowedStatuses.push('NEW');
+        break;
+      
+      case 'ASSIGNED':
+        // Solo puede ir a IN_PROGRESS
+        allowedStatuses.push('ASSIGNED', 'IN_PROGRESS');
+        break;
+      
+      case 'IN_PROGRESS':
+        // Puede ir a WAITING o RESOLVED (NO puede regresar a ASSIGNED)
+        allowedStatuses.push('IN_PROGRESS', 'WAITING', 'RESOLVED');
+        break;
+      
+      case 'WAITING':
+        // Solo puede volver a IN_PROGRESS
+        allowedStatuses.push('WAITING', 'IN_PROGRESS');
+        break;
+      
+      case 'RESOLVED':
+        // Solo puede regresar a IN_PROGRESS
+        allowedStatuses.push('RESOLVED', 'IN_PROGRESS');
+        break;
+      
+      case 'CLOSED':
+      case 'CANCELLED':
+        // No pueden cambiar desde estos estados
+        allowedStatuses.push(currentStatus);
+        break;
+    }
+
+    return STATUS_OPTIONS.filter(option => allowedStatuses.includes(option.value));
+  }
+
+  // REQUESTER no debería tener acceso a cambiar estado
+  return STATUS_OPTIONS.filter(option => option.value === currentStatus);
+};
 
 const getStatusBadge = (status: TicketStatus) => {
   const variants: Record<TicketStatus, BadgeVariant> = {
@@ -114,11 +165,18 @@ export default function TicketDetailPage() {
 
   // Entregables
   const [pendingDeliverable, setPendingDeliverable] = useState<Deliverable | null>(null);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [showRejectDeliverableModal, setShowRejectDeliverableModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [deliverableProcessing, setDeliverableProcessing] = useState(false);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [deliverableApproved, setDeliverableApproved] = useState(false);
+  const [isMemberOfDepartment, setIsMemberOfDepartment] = useState(false);
+  
+  // Modal de entregable al cambiar estado a RESOLVED
+  const [showDeliverableUploadModal, setShowDeliverableUploadModal] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<TicketStatus | null>(null);
+  const deliverableUploadRef = useRef<DeliverableUploadHandle>(null);
 
   useEffect(() => {
     if (id) {
@@ -138,6 +196,12 @@ export default function TicketDetailPage() {
     }
   }, [ticket?.id, ticket?.department?.requireDeliverable]);
 
+  useEffect(() => {
+    if (ticket?.departmentId && user?.id) {
+      checkDepartmentMembership();
+    }
+  }, [ticket?.departmentId, user?.id]);
+
   const loadTicket = async () => {
     try {
       setLoading(true);
@@ -154,13 +218,28 @@ export default function TicketDetailPage() {
 
   const loadPendingDeliverable = async () => {
     try {
-      const deliverables = await deliverablesService.getTicketDeliverables(id!);
-      const pending = deliverables.find(d => d.status === DeliverableStatus.PENDING);
+      const data = await deliverablesService.getTicketDeliverables(id!);
+      setDeliverables(data);
+      const pending = data.find(d => d.status === DeliverableStatus.PENDING);
       setPendingDeliverable(pending || null);
-      const approved = deliverables.some(d => d.status === DeliverableStatus.APPROVED);
+      const approved = data.some(d => d.status === DeliverableStatus.APPROVED);
       setDeliverableApproved(approved);
     } catch (error) {
       console.error('Error loading deliverables:', error);
+    }
+  };
+
+  const checkDepartmentMembership = async () => {
+    if (!ticket?.departmentId || !user?.id) return;
+    
+    try {
+      const response = await departmentsService.getDepartmentUsers(ticket.departmentId);
+      const users = response.data?.map((du: any) => du.user) || [];
+      const isMember = users.some((u: any) => u.id === user.id);
+      setIsMemberOfDepartment(isMember);
+    } catch (error) {
+      console.error('Error checking department membership:', error);
+      setIsMemberOfDepartment(false);
     }
   };
 
@@ -249,8 +328,17 @@ export default function TicketDetailPage() {
   const handleChangeStatus = async () => {
     if (!ticket) return;
 
+    // Si se cambia a WAITING, validar que tenga motivo
     if (selectedStatus === 'WAITING' && !waitingReason.trim()) {
       toast.error('Debes indicar el motivo de espera');
+      return;
+    }
+
+    // Si se cambia a RESOLVED y el departamento requiere entregable, mostrar modal
+    if (selectedStatus === 'RESOLVED' && ticket.department?.requireDeliverable && !deliverableApproved) {
+      setShowStatusModal(false);
+      setPendingStatusChange(selectedStatus);
+      setShowDeliverableUploadModal(true);
       return;
     }
 
@@ -262,11 +350,35 @@ export default function TicketDetailPage() {
       setShowStatusModal(false);
       setWaitingReason('');
       loadTicket();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing status:', error);
-      toast.error('Error al cambiar el estado');
+      const errorMessage = error.response?.data?.error || error.message || 'Error al cambiar el estado';
+      toast.error(errorMessage);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleDeliverableUploadSuccess = async () => {
+    setShowDeliverableUploadModal(false);
+    
+    if (pendingStatusChange) {
+      // Cambiar el estado después de subir el entregable
+      try {
+        setActionLoading(true);
+        await ticketsService.changeStatus(ticket!.id, pendingStatusChange);
+        toast.success('Entregable subido y estado actualizado exitosamente');
+        setPendingStatusChange(null);
+        loadTicket();
+      } catch (error: any) {
+        console.error('Error changing status:', error);
+        const errorMessage = error.response?.data?.error || error.message || 'Error al cambiar el estado';
+        toast.error(errorMessage);
+      } finally {
+        setActionLoading(false);
+      }
+    } else {
+      loadPendingDeliverable();
     }
   };
 
@@ -331,13 +443,6 @@ export default function TicketDetailPage() {
     }
   };
 
-  const canAssign = userRole === RoleType.DEPT_ADMIN || userRole === RoleType.SUPER_ADMIN;
-  const canChangeStatus = ticket?.assignedToId === user?.id || canAssign;
-  const canChangePriority = canAssign;
-  const canCancel = ticket?.requesterId === user?.id && ticket?.status === 'NEW';
-  const canCloseTicket = ticket?.requesterId === user?.id && ticket?.status === 'RESOLVED';
-  const canReopenTicket = ticket?.requesterId === user?.id && ticket?.status === 'CLOSED';
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -353,6 +458,29 @@ export default function TicketDetailPage() {
       </div>
     );
   }
+
+  // Permisos diferenciados por rol
+  // ASIGNAR: Solo SUPER_ADMIN y DEPT_ADMIN del departamento
+  const canAssign = (userRole === RoleType.SUPER_ADMIN) || 
+                    (userRole === RoleType.DEPT_ADMIN && isMemberOfDepartment);
+  
+  // CAMBIAR ESTADO: SUPER_ADMIN, DEPT_ADMIN del departamento, o SUBORDINATE asignado del departamento
+  const canChangeStatus = (userRole === RoleType.SUPER_ADMIN) ||
+                          (userRole === RoleType.DEPT_ADMIN && isMemberOfDepartment) ||
+                          (userRole === RoleType.SUBORDINATE && ticket?.assignedToId === user?.id && isMemberOfDepartment);
+  
+  // CAMBIAR PRIORIDAD: Solo SUPER_ADMIN y DEPT_ADMIN del departamento
+  const canChangePriority = (userRole === RoleType.SUPER_ADMIN) || 
+                            (userRole === RoleType.DEPT_ADMIN && isMemberOfDepartment);
+  
+  // CANCELAR: Solo el solicitante cuando el ticket está en estado NEW
+  const canCancel = ticket?.requesterId === user?.id && ticket?.status === 'NEW';
+  
+  // CERRAR: Solo el solicitante cuando el ticket está RESOLVED
+  const canCloseTicket = ticket?.requesterId === user?.id && ticket?.status === 'RESOLVED';
+  
+  // REABRIR: Solo el solicitante cuando el ticket está CLOSED
+  const canReopenTicket = ticket?.requesterId === user?.id && ticket?.status === 'CLOSED';
 
   return (
     <div className="space-y-6">
@@ -522,6 +650,22 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
               )}
+
+              {/* Motivo del último rechazo - Solo visible para miembros del departamento */}
+              {(() => {
+                const lastRejected = deliverables.find(d => d.status === DeliverableStatus.REJECTED);
+                return lastRejected && lastRejected.rejectionReason && isMemberOfDepartment && (userRole === RoleType.DEPT_ADMIN || userRole === RoleType.SUBORDINATE || userRole === RoleType.SUPER_ADMIN) && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+                    <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">Motivo del último rechazo:</p>
+                    <p className="text-sm text-red-600 dark:text-red-400">{lastRejected.rejectionReason}</p>
+                    {lastRejected.reviewedBy && (
+                      <p className="text-xs text-red-500 dark:text-red-500 mt-1">
+                        Por {lastRejected.reviewedBy.name} • {new Date(lastRejected.reviewedAt!).toLocaleDateString('es-MX')}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {pendingDeliverable && (user?.id === ticket.requesterId || userRole === RoleType.SUPER_ADMIN) ? (
                 <div className="space-y-4">
@@ -1095,7 +1239,7 @@ export default function TicketDetailPage() {
               onChange={(e) => setSelectedStatus(e.target.value as TicketStatus)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             >
-              {STATUS_OPTIONS.map((option) => (
+              {getAvailableStatusOptions(ticket.status, userRole || RoleType.REQUESTER).map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -1238,6 +1382,28 @@ export default function TicketDetailPage() {
         }}
         onCancel={() => setShowApproveConfirm(false)}
       />
+
+      {/* Modal de Subida de Entregable al cambiar estado a RESOLVED */}
+      <Modal
+        isOpen={showDeliverableUploadModal}
+        onClose={() => {
+          setShowDeliverableUploadModal(false);
+          setPendingStatusChange(null);
+        }}
+        title="Subir Entregable"
+        subtitle="Este departamento requiere un entregable antes de resolver el ticket"
+        size="lg"
+      >
+        <DeliverableUpload
+          ref={deliverableUploadRef}
+          ticketId={ticket?.id || ''}
+          onUploadSuccess={handleDeliverableUploadSuccess}
+          onCancel={() => {
+            setShowDeliverableUploadModal(false);
+            setPendingStatusChange(null);
+          }}
+        />
+      </Modal>
     </div>
   );
 }

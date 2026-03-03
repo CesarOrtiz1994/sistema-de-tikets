@@ -152,7 +152,7 @@ const DeliverableUpload = forwardRef<DeliverableUploadHandle, DeliverableUploadP
               <span className="text-gray-600 dark:text-gray-400"> o arrastra y suelta</span>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Máximo 50MB
+              Máximo 100MB
             </p>
           </div>
         ) : (

@@ -19,8 +19,8 @@ export const ALLOWED_DOCUMENT_TYPES = [
 export const ALL_ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
 
 // Límites de tamaño (en bytes)
-export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-export const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_IMAGE_SIZE = 100 * 1024 * 1024; // 100MB
+export const MAX_DOCUMENT_SIZE = 100 * 1024 * 1024; // 100MB
 
 // Crear directorios si no existen
 const ensureDirectoryExists = (dirPath: string) => {

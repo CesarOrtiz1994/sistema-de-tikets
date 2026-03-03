@@ -18,7 +18,7 @@ interface ChatInputProps {
 
 const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'application/pdf'];
 const ALLOWED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.svg', '.pdf'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled = false, replyingTo, onCancelReply }: ChatInputProps) {
   const [message, setMessage] = useState('');
@@ -96,7 +96,7 @@ export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled 
 
     // Validar tamaño
     if (file.size > MAX_FILE_SIZE) {
-      toast.error('El archivo es demasiado grande. Tamaño máximo: 10MB');
+      toast.error('El archivo es demasiado grande. Tamaño máximo: 100MB');
       return;
     }
 

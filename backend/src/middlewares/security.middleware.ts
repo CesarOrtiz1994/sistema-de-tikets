@@ -37,12 +37,12 @@ export const chatAttachmentRateLimiter = rateLimit(chatAttachmentRateLimitOption
 // Middleware para validar tamaño de body
 export const bodySizeLimiter = (req: Request, res: Response, next: NextFunction) => {
   const contentLength = req.headers['content-length'];
-  const maxSize = 10 * 1024 * 1024; // 10 MB
+  const maxSize = 100 * 1024 * 1024; // 100 MB
 
   if (contentLength && parseInt(contentLength, 10) > maxSize) {
     res.status(413).json({
       success: false,
-      message: 'El tamaño del contenido excede el límite permitido (10 MB)',
+      message: 'El tamaño del contenido excede el límite permitido (100 MB)',
     });
     return;
   }
