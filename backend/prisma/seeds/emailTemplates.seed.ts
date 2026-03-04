@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
 export const emailTemplatesSeed = async (prisma: PrismaClient) => {
-  console.log('🌱 Seeding email templates...');
 
   const baseStyles = `
     <style>
@@ -350,5 +349,4 @@ export const emailTemplatesSeed = async (prisma: PrismaClient) => {
     });
   }
 
-  console.log(`✅ Created ${templates.length} email templates`);
 };

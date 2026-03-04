@@ -220,14 +220,11 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
 
   const needsOptions = (fieldType?: { code?: string; name?: string; [key: string]: any }) => {
     if (!fieldType) {
-      console.log('needsOptions: no fieldType', fieldType);
       return false;
     }
     // Usar 'code' si existe, sino usar 'name'
     const typeCode = (fieldType.code || fieldType.name || '').toLowerCase();
-    console.log('needsOptions checking typeCode:', typeCode);
     const result = ['select', 'radio', 'checkbox', 'multiselect', 'toggle'].includes(typeCode);
-    console.log('needsOptions result:', result);
     return result;
   };
   

@@ -8,7 +8,6 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ title, description, action, other }: PageHeaderProps) {
-  console.log('PageHeader', { title, description, action, other })
   return (
     <div className="flex items-center justify-between">
       <div>

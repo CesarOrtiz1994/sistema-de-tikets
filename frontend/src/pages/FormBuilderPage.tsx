@@ -326,8 +326,8 @@ export default function FormBuilderPage() {
             <DynamicFormRenderer
               form={form}
               onSubmit={(values) => {
-                console.log('Preview form values:', values);
                 toast.success('Vista previa - Formulario válido');
+                console.info(values)
                 setIsPreviewModalOpen(false);
               }}
               submitButtonText="Probar Envío"

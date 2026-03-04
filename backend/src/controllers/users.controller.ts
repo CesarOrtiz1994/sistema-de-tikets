@@ -25,7 +25,6 @@ const toggleActivationSchema = z.object({
 
 export const listUsers = async (req: Request, res: Response) => {
   try {
-    console.log('listUsers - query params:', req.query);
     const { search, roleType, isActive, includeDeleted, page, limit } = req.query;
 
     const filters = {
@@ -37,9 +36,7 @@ export const listUsers = async (req: Request, res: Response) => {
       limit: limit ? parseInt(limit as string) : 10
     };
 
-    console.log('listUsers - filters:', filters);
     const result = await usersService.listUsers(filters);
-    console.log('listUsers - result:', { usersCount: result.users.length, total: result.pagination.total });
 
     return res.json({
       success: true,

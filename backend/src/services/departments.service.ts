@@ -272,11 +272,6 @@ export class DepartmentsService {
     if (data.requireDeliverable !== undefined) updateData.requireDeliverable = data.requireDeliverable;
     if (data.maxDeliverableRejections !== undefined) updateData.maxDeliverableRejections = data.maxDeliverableRejections;
 
-    console.log('UPDATE DEPARTMENT SERVICE - Datos a guardar:', {
-      id,
-      data: updateData
-    });
-
     const department = await prisma.department.update({
       where: { id },
       data: updateData,

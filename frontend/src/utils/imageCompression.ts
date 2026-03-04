@@ -90,7 +90,6 @@ export async function compressImage(
               // Verificar si la compresión redujo el tamaño
               if (blob.size >= file.size) {
                 // Si el archivo comprimido es más grande, usar el original
-                console.log('[ImageCompression] Original file is smaller, using original');
                 resolve(file);
                 return;
               }
@@ -104,12 +103,6 @@ export async function compressImage(
                   lastModified: Date.now()
                 }
               );
-
-              const originalSizeKB = (file.size / 1024).toFixed(2);
-              const compressedSizeKB = (compressedFile.size / 1024).toFixed(2);
-              const reduction = (((file.size - compressedFile.size) / file.size) * 100).toFixed(2);
-
-              console.log(`[ImageCompression] Original: ${originalSizeKB} KB → Compressed: ${compressedSizeKB} KB (${reduction}% reduction)`);
 
               resolve(compressedFile);
             },

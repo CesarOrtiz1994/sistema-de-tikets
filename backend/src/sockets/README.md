@@ -231,26 +231,22 @@ const socket = io('http://localhost:3000', {
 
 // Escuchar eventos de conexión
 socket.on('connect', () => {
-  console.log('Connected to Socket.IO');
-  
-  // Unirse a un ticket
+
+// Unirse a un ticket
   socket.emit('join-ticket', { ticketId: 'ticket-id' });
 });
 
 // Confirmación de unión
 socket.on('joined-ticket', (data) => {
-  console.log('Joined ticket:', data.ticketId);
 });
 
 // Escuchar nuevos mensajes
 socket.on('new-message', (message) => {
-  console.log('New message:', message);
   // Actualizar UI con el nuevo mensaje
 });
 
 // Escuchar cuando alguien está escribiendo
 socket.on('user-typing', (data) => {
-  console.log('User typing:', data.userId);
   // Mostrar indicador de "escribiendo..."
 });
 

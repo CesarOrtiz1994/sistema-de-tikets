@@ -8,7 +8,6 @@ interface QuotedMessageProps {
 }
 
 export default function QuotedMessage({ message, onClick, compact = false }: QuotedMessageProps) {
-  console.log('[QuotedMessage] Rendering with message:', message);
   
   const truncateMessage = (text: string, maxLength: number = 80) => {
     if (text.length <= maxLength) return text;

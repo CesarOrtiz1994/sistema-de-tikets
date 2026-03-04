@@ -22,16 +22,13 @@ export const useSocket = () => {
       
       // Establecer estado inicial basado en si el socket ya está conectado
       setIsConnected(socketInstance.connected);
-      console.log('[useSocket] Initial connection state:', socketInstance.connected);
 
       const handleConnect = () => {
-        console.log('[useSocket] Socket connected');
         setIsConnected(true);
         setError(null);
       };
 
       const handleDisconnect = () => {
-        console.log('[useSocket] Socket disconnected');
         setIsConnected(false);
       };
 
@@ -46,10 +43,8 @@ export const useSocket = () => {
       socketInstance.on('disconnect', handleDisconnect);
       socketInstance.on('connect_error', handleConnectError);
 
-      console.log('[useSocket] Socket listeners configured');
 
       return () => {
-        console.log('[useSocket] Cleaning up socket listeners');
         socketInstance.off('connect', handleConnect);
         socketInstance.off('disconnect', handleDisconnect);
         socketInstance.off('connect_error', handleConnectError);
@@ -81,9 +76,7 @@ export const useSocket = () => {
 
   const sendMessage = useCallback(async (ticketId: string, message: string, attachment?: { url: string; name: string; type: string; size: number }, replyToId?: string) => {
     try {
-      console.log('[useSocket] sendMessage called', { ticketId, message, hasAttachment: !!attachment, replyToId });
       await socketService.sendMessage(ticketId, message, attachment, replyToId);
-      console.log('[useSocket] sendMessage completed');
     } catch (err) {
       console.error('[useSocket] Error in sendMessage:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error al enviar mensaje';

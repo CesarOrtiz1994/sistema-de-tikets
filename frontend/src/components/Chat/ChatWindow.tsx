@@ -59,18 +59,14 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
       }
 
       try {
-        console.log('[ChatWindow] Loading message history for ticket:', ticketId);
         const { messages: historyMessages, total } = await ticketMessagesService.getMessages(ticketId);
-        console.log('[ChatWindow] History loaded:', historyMessages.length, 'messages of', total, 'total');
         // Invertir el orden para mostrar más recientes abajo
         setMessages(historyMessages.reverse());
         setHasMoreMessages(historyMessages.length < total);
         
         // Marcar mensajes como leídos al abrir el chat
         await markAsRead(ticketId);
-        console.log('[ChatWindow] Messages marked as read for ticket:', ticketId);
       } catch (error) {
-        console.error('[ChatWindow] Error loading history:', error);
         toast.error('Error al cargar historial de mensajes');
       } finally {
         setIsLoadingHistory(false);
@@ -90,12 +86,9 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
     setIsJoined(true);
 
     const unsubscribeMessages = onMessageReceived((message) => {
-      console.log('[ChatWindow] Message received from socket:', message);
       setMessages((prev) => {
-        console.log('[ChatWindow] Adding message to state. Current count:', prev.length);
         // Evitar duplicados
         if (prev.some(m => m.id === message.id)) {
-          console.log('[ChatWindow] Message already exists, skipping');
           return prev;
         }
         return [...prev, message];
@@ -133,7 +126,6 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
     });
 
     return () => {
-      console.log('[ChatWindow] Leaving ticket and clearing timeouts');
       unsubscribeMessages();
       leaveTicket(ticketId);
       setIsJoined(false);
@@ -142,10 +134,8 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
   }, [isConnected, ticketId, joinTicket, leaveTicket, onMessageReceived, onTyping, isChatEnabled]);
 
   const handleSendMessage = async (message: string, attachment?: { url: string; name: string; type: string; size: number }, replyToId?: string) => {
-    console.log('[ChatWindow] handleSendMessage called', { ticketId, message, hasAttachment: !!attachment, replyToId });
     try {
       await sendMessage(ticketId, message, attachment, replyToId);
-      console.log('[ChatWindow] Message sent successfully');
       setReplyingTo(null); // Limpiar respuesta después de enviar
     } catch (err: any) {
       console.error('[ChatWindow] Error sending message:', err);
@@ -160,7 +150,6 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
   };
 
   const handleTyping = (isTyping: boolean) => {
-    console.log('[ChatWindow] handleTyping called', { ticketId, isTyping });
     sendTyping(ticketId, isTyping);
   };
 
@@ -218,15 +207,12 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
     setIsLoadingMore(true);
     try {
       const currentOffset = messages.length;
-      console.log('[ChatWindow] Loading more messages. Offset:', currentOffset);
       
       const { messages: olderMessages, total } = await ticketMessagesService.getMessages(
         ticketId,
         50,
         currentOffset
       );
-      
-      console.log('[ChatWindow] Loaded', olderMessages.length, 'older messages');
       
       if (olderMessages.length > 0) {
         // Invertir y agregar al inicio, filtrando duplicados

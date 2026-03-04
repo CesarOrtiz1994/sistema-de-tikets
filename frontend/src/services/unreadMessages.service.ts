@@ -41,7 +41,6 @@ export const unreadMessagesService = {
       // Si es 404, significa que no hay mensajes no leídos (chat nuevo)
       // Esto es normal y no debe considerarse un error
       if (error?.response?.status === 404) {
-        console.log('No unread messages to mark for ticket:', ticketId);
         return;
       }
       console.error('Error marking ticket as read:', error);

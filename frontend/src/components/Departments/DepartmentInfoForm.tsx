@@ -46,8 +46,6 @@ export default function DepartmentInfoForm({ department, onUpdate }: DepartmentI
       // Validar con Zod
       const validatedData = departmentInfoSchema.parse(formData);
       
-      console.log('Datos validados a enviar:', validatedData);
-
       setLoading(true);
 
       // Enviar datos al backend

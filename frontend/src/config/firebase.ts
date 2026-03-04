@@ -51,7 +51,6 @@ export async function requestNotificationPermission(): Promise<string | null> {
   try {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      console.log('[Firebase] Notification permission denied');
       return null;
     }
 
@@ -66,7 +65,6 @@ export async function requestNotificationPermission(): Promise<string | null> {
       serviceWorkerRegistration: registration,
     });
 
-    console.log('[Firebase] FCM token obtained:', token.substring(0, 20) + '...');
     return token;
   } catch (error) {
     console.error('[Firebase] Error getting FCM token:', error);

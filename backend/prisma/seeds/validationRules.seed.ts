@@ -1,7 +1,6 @@
 import { PrismaClient, ValidationType } from '@prisma/client';
 
 export const validationRulesSeed = async (prisma: PrismaClient) => {
-  console.log('🌱 Seeding validation rules...');
 
   const validationRules = [
     {
@@ -94,5 +93,4 @@ export const validationRulesSeed = async (prisma: PrismaClient) => {
     });
   }
 
-  console.log(`✅ Created ${validationRules.length} validation rules`);
 };

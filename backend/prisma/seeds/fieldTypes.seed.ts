@@ -1,7 +1,6 @@
 import { PrismaClient, FieldCategory } from '@prisma/client';
 
 export const fieldTypesSeed = async (prisma: PrismaClient) => {
-  console.log('🌱 Seeding field types...');
 
   const fieldTypes = [
     // ============================================
