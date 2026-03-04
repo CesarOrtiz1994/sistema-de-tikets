@@ -52,8 +52,13 @@ export class SanitizationService {
 
   /**
    * Sanitiza form_data antes de guardarlo en BD
+   * @param formData - Datos del formulario a sanitizar
+   * @param fieldOptionsMap - Mapa opcional de fieldId -> opciones válidas para campos selection
    */
-  sanitizeFormData(formData: Record<string, any>): Record<string, any> {
+  sanitizeFormData(
+    formData: Record<string, any>, 
+    fieldOptionsMap?: Record<string, string[]>
+  ): Record<string, any> {
     const sanitized: Record<string, any> = {};
 
     for (const [fieldId, value] of Object.entries(formData)) {
@@ -63,13 +68,25 @@ export class SanitizationService {
         continue;
       }
 
+      // Verificar si es un campo de selección con opciones válidas
+      const validOptions = fieldOptionsMap?.[fieldId];
+
       // Sanitizar según tipo
       if (typeof value === 'string') {
-        sanitized[fieldId] = this.sanitizeHtml(value);
+        // Si es un campo de selección y el valor está en las opciones válidas, NO sanitizar
+        if (validOptions && validOptions.includes(value)) {
+          sanitized[fieldId] = value;
+        } else {
+          sanitized[fieldId] = this.sanitizeHtml(value);
+        }
       } else if (Array.isArray(value)) {
         // Para arrays (multiselect, checkbox, archivos)
         sanitized[fieldId] = value.map(item => {
           if (typeof item === 'string') {
+            // Si es un campo de selección múltiple y el valor está en las opciones válidas, NO sanitizar
+            if (validOptions && validOptions.includes(item)) {
+              return item;
+            }
             return this.sanitizeHtml(item);
           }
           if (typeof item === 'object') {

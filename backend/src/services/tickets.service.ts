@@ -100,10 +100,22 @@ export class TicketsService {
         throw new Error('El formulario no está activo');
       }
 
-      // 2. Sanitizar form_data
-      const sanitizedFormData = sanitizationService.sanitizeFormData(data.formData);
+      // 2. Construir mapa de opciones válidas para campos de selección
+      const fieldOptionsMap: Record<string, string[]> = {};
+      for (const field of form.fields) {
+        const fieldTypeName = field.fieldType.name.toUpperCase();
+        // Solo para campos de selección (SELECT, MULTISELECT, RADIO, CHECKBOX)
+        if (['SELECT', 'MULTISELECT', 'RADIO', 'CHECKBOX'].includes(fieldTypeName)) {
+          if (field.options && field.options.length > 0) {
+            fieldOptionsMap[field.id] = field.options.map(opt => opt.value);
+          }
+        }
+      }
 
-      // 3. Validar form_data contra el schema del formulario
+      // 3. Sanitizar form_data (sin escapar valores de campos selection)
+      const sanitizedFormData = sanitizationService.sanitizeFormData(data.formData, fieldOptionsMap);
+
+      // 4. Validar form_data contra el schema del formulario
       const validation = await formValidationService.validateFormData(
         data.formId,
         sanitizedFormData
@@ -721,7 +733,33 @@ export class TicketsService {
     }
 
     if (data.formData) {
-      const sanitizedFormData = sanitizationService.sanitizeFormData(data.formData);
+      // Obtener el formulario con sus campos y opciones
+      const form = await prisma.ticketForm.findUnique({
+        where: { id: ticket.formId },
+        include: {
+          fields: {
+            include: {
+              fieldType: true,
+              options: true
+            }
+          }
+        }
+      });
+
+      // Construir mapa de opciones válidas para campos de selección
+      const fieldOptionsMap: Record<string, string[]> = {};
+      if (form) {
+        for (const field of form.fields) {
+          const fieldTypeName = field.fieldType.name.toUpperCase();
+          if (['SELECT', 'MULTISELECT', 'RADIO', 'CHECKBOX'].includes(fieldTypeName)) {
+            if (field.options && field.options.length > 0) {
+              fieldOptionsMap[field.id] = field.options.map(opt => opt.value);
+            }
+          }
+        }
+      }
+
+      const sanitizedFormData = sanitizationService.sanitizeFormData(data.formData, fieldOptionsMap);
       updates.formData = sanitizedFormData as Prisma.InputJsonValue;
       historyEntries.push({
         action: 'FORM_DATA_UPDATED',
