@@ -61,9 +61,8 @@ export default function BrandingPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      console.log('[BrandingPage] Saving form data:', JSON.stringify(form, null, 2));
       const result = await brandingService.updateBranding(form);
-      console.log('[BrandingPage] Save result:', JSON.stringify(result, null, 2));
+      console.info(result)
       await refreshBranding();
       toast.success('Branding actualizado correctamente');
     } catch (err: any) {

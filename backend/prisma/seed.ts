@@ -19,7 +19,6 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
   
   try {
     // FASE 2: Catálogo de Tipos de Campos y SLA
@@ -30,9 +29,8 @@ async function main() {
     // FASE 4: Email Templates para Notificaciones
     await emailTemplatesSeed(prisma);
     
-    console.log('✅ Database seeding completed successfully!');
   } catch (error) {
-    console.error('❌ Error during seeding:', error);
+    console.error('Error during seeding:', error);
     throw error;
   }
 }

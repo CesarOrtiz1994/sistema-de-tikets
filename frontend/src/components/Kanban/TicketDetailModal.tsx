@@ -471,8 +471,8 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
                           <p className="text-sm text-green-700 dark:text-green-300">
                             {fullTicket.department?.requireRating
-                              ? 'El entregable fue aprobado. En espera de que el solicitante cierre y califique el ticket.'
-                              : 'El entregable fue aprobado. En espera de que el solicitante cierre el ticket.'}
+                              ? 'El entregable fue aprobado. En espera de que el solicitante cierre y califique el ticket. Puedes ver el entregable en la seción de entregables.'
+                              : 'El entregable fue aprobado. En espera de que el solicitante cierre el ticket. Puedes ver el entregable en la seción de entregables.'}
                           </p>
                         </div>
                       ) : (
@@ -594,7 +594,6 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                                     
                                     // Construir URL completa
                                     const fileUrl = `${API_BASE_URL}/${decodedPath}`;
-                                    console.log('🔍 File URL Debug:', { file, decodedPath, fileUrl, API_BASE_URL });
                                     
                                     return (
                                       <button

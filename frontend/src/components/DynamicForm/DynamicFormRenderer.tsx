@@ -166,12 +166,6 @@ export default function DynamicFormRenderer({
       // Campos numéricos
       case 'NUMBER':
       case 'CURRENCY':
-        console.log(`Campo ${field.label}:`, {
-          validationRules: field.validationRules,
-          minValue: field.validationRules?.minValue,
-          maxValue: field.validationRules?.maxValue,
-          step: field.validationRules?.step
-        });
         return (
           <NumberField
             {...commonProps}
@@ -346,7 +340,6 @@ export default function DynamicFormRenderer({
 
     try {
       await onSubmit(values);
-      console.log('Formulario enviado exitosamente');
     } catch (error) {
       console.error('Error submitting form:', error);
     } finally {
@@ -385,13 +378,6 @@ export default function DynamicFormRenderer({
               {sortedFields.map((field) => {
                 // Evaluar si el campo debe mostrarse según su lógica condicional
                 const shouldShow = evaluateCondition(field);
-                console.log('Campo en lista:', {
-                  id: field.id,
-                  label: field.label,
-                  fieldTypeName: field.fieldType?.name,
-                  shouldShow: shouldShow,
-                  hasConditionalLogic: !!field.conditionalLogic
-                });
                 
                 if (!shouldShow) {
                   return null;

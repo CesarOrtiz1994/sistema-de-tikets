@@ -21,7 +21,6 @@ function initFirebase() {
 
   // Manejar notificaciones push en background
   messaging.onBackgroundMessage((payload) => {
-    console.log('[SW] Background message received:', payload);
 
     const notificationTitle = payload.notification?.title || 'Nueva notificación';
     const notificationOptions = {
@@ -44,7 +43,6 @@ function initFirebase() {
 
 // Manejar click en la notificación
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification click:', event);
   event.notification.close();
 
   const url = event.notification.data?.url || '/';

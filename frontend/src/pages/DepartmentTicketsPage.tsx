@@ -136,11 +136,9 @@ export default function DepartmentTicketsPage() {
   const loadMyAdminDepartments = async () => {
     try {
       const depts = await usersService.getMyAdminDepartments();
-      console.log('📋 Departamentos cargados para el usuario:', depts);
       setMyAdminDepartments(depts || []);
       // Si tiene departamentos y no hay uno seleccionado, seleccionar el primero
       if (depts && depts.length > 0 && !departmentFilterValue) {
-        console.log('✅ Seleccionando primer departamento:', depts[0].name, depts[0].id);
         setDepartmentFilterValue(depts[0].id);
       }
     } catch (error) {
@@ -166,7 +164,6 @@ export default function DepartmentTicketsPage() {
     try {
       setLoading(true);
       
-      console.log('🎫 Cargando tickets con filtro departmentId:', departmentFilterValue);
       
       // Super Admin y Admin de Departamento usan departmentFilterValue
       // Si no hay departmentFilterValue, no enviar nada (el backend aplicará el filtro correcto)

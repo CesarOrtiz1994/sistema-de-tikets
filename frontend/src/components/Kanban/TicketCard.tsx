@@ -83,7 +83,6 @@ export default function TicketCard({ ticket, isDragging, onClick }: TicketCardPr
   const slaStatus = getSLAStatus(ticket);
   const unreadCount = unreadCounts[ticket.id] || 0;
   
-  console.log('[TicketCard] Rendering ticket:', ticket.id, 'unreadCount:', unreadCount);
   
   // Calcular tiempo restante para mostrar
   let timeRemainingText = '';

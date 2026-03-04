@@ -53,7 +53,6 @@ export default function UsersManagementPage() {
 
   const loadUsers = async () => {
     try {
-      console.log('Cargando usuarios...');
       setLoading(true);
       const response = await usersService.listUsers({
         search: search,
@@ -64,7 +63,6 @@ export default function UsersManagementPage() {
         limit: 10
       });
       
-      console.log('Usuarios cargados:', response);
       setUsers(response.users);
       setTotalPages(response.pagination.totalPages);
     } catch (error: any) {
@@ -135,28 +133,20 @@ export default function UsersManagementPage() {
 
   const handleSaveUser = async (data: CreateUserData | UpdateUserData) => {
     try {
-      console.log('handleSaveUser - selectedUser:', selectedUser);
-      console.log('handleSaveUser - data a enviar:', data);
       
       if (selectedUser) {
-        console.log('Actualizando usuario:', selectedUser.id);
         const result = await usersService.updateUser(selectedUser.id, data as UpdateUserData);
         console.log('Usuario actualizado:', result);
         toast.success('Usuario actualizado exitosamente');
       } else {
-        console.log('Creando nuevo usuario');
         await usersService.createUser(data as CreateUserData);
         toast.success('Usuario creado exitosamente');
       }
       
-      console.log('Cerrando modal y recargando lista...');
       setShowModal(false);
       
-      console.log('Recargando usuarios...');
       await loadUsers();
-      console.log('Recargando estadísticas...');
       await loadStats();
-      console.log('Recarga completada');
     } catch (error) {
       console.error('Error en handleSaveUser:', error);
       throw error;

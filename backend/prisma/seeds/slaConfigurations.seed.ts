@@ -1,7 +1,6 @@
 import { PrismaClient, SLAPriority } from '@prisma/client';
 
 export const slaConfigurationsSeed = async (prisma: PrismaClient) => {
-  console.log('🌱 Seeding SLA configurations...');
 
   const slaConfigurations = [
     {
@@ -70,5 +69,4 @@ export const slaConfigurationsSeed = async (prisma: PrismaClient) => {
     });
   }
 
-  console.log(`✅ Created ${slaConfigurations.length} SLA configurations`);
 };

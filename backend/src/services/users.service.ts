@@ -58,9 +58,6 @@ export class UsersService {
 
     const skip = (page - 1) * limit;
 
-    console.log('UsersService.listUsers - where:', JSON.stringify(where));
-    console.log('UsersService.listUsers - skip:', skip, 'limit:', limit);
-
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -169,12 +166,6 @@ export class UsersService {
       throw new Error('No se puede actualizar un usuario eliminado');
     }
 
-    console.log('UsersService.updateUser - usuario actual:', {
-      id: user.id,
-      name: user.name,
-      roleType: user.roleType
-    });
-
     if (data.email && data.email !== user.email) {
       const existingUser = await prisma.user.findUnique({
         where: { email: data.email }
@@ -201,12 +192,6 @@ export class UsersService {
         profilePicture: true,
         updatedAt: true
       }
-    });
-
-    console.log('UsersService.updateUser - usuario actualizado:', {
-      id: updatedUser.id,
-      name: updatedUser.name,
-      roleType: updatedUser.roleType
     });
 
     return updatedUser;
@@ -384,23 +369,9 @@ export class UsersService {
       throw new Error('Usuario no encontrado');
     }
 
-    console.log('🔍 getUserAdminDepartments - Usuario:', {
-      userId: user.id,
-      email: user.email,
-      departmentUsersCount: user.departmentUsers.length,
-      departmentUsersDetails: user.departmentUsers.map(du => ({
-        role: du.role,
-        deptId: du.department.id,
-        deptName: du.department.name
-      }))
-    });
-
     const departments = user.departmentUsers.map(du => {
-      console.log('✅ Departamento donde es ADMIN:', du.department.name);
       return du.department;
     });
-
-    console.log('📋 Total departamentos donde es ADMIN:', departments.length, departments.map(d => d.name));
 
     return departments;
   }

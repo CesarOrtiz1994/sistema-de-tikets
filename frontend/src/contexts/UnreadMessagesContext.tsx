@@ -22,15 +22,12 @@ export function UnreadMessagesProvider({ children }: { children: ReactNode }) {
   // Cargar conteos iniciales
   const loadCounts = async () => {
     if (!user) {
-      console.log('[UnreadMessagesContext] No user, skipping loadCounts');
       return;
     }
     
     try {
-      console.log('[UnreadMessagesContext] Loading unread counts for user:', user.id);
       setIsLoading(true);
       const counts = await unreadMessagesService.getUnreadCounts();
-      console.log('[UnreadMessagesContext] Loaded counts:', counts);
       setUnreadCounts(counts);
     } catch (error) {
       console.error('[UnreadMessagesContext] Error loading unread counts:', error);
@@ -41,7 +38,6 @@ export function UnreadMessagesProvider({ children }: { children: ReactNode }) {
 
   // Cargar conteos al montar y cuando cambia el usuario
   useEffect(() => {
-    console.log('[UnreadMessagesContext] useEffect triggered, user:', user?.id);
     if (user) {
       loadCounts();
     }
@@ -52,10 +48,8 @@ export function UnreadMessagesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || !socket) return;
 
-    console.log('[UnreadMessagesContext] Setting up unread notification listener for user:', user.id);
 
     const handleUnreadNotification = (data: { ticketId: string; messageId: string; senderId: string; senderName: string }) => {
-      console.log('[UnreadMessagesContext] Unread notification received:', data);
       
       // Incrementar contador para este ticket
       setUnreadCounts(prev => ({
@@ -67,7 +61,6 @@ export function UnreadMessagesProvider({ children }: { children: ReactNode }) {
     socket.on('unread-message-notification', handleUnreadNotification);
 
     return () => {
-      console.log('[UnreadMessagesContext] Cleaning up unread notification listener');
       socket.off('unread-message-notification', handleUnreadNotification);
     };
   }, [user?.id, socket]);
@@ -92,7 +85,6 @@ export function UnreadMessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshCounts = async (): Promise<void> => {
-    console.log('[UnreadMessagesContext] refreshCounts called');
     await loadCounts();
   };
 

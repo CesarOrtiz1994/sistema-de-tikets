@@ -34,9 +34,6 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
         fieldTypesService.getFieldTypes()
       ]);
       
-      console.log('Field Types loaded:', typesData);
-      console.log('Field Types count:', typesData?.length);
-      
       setFields(formData.fields || []);
       setFieldTypes(typesData);
     } catch (error) {
@@ -57,24 +54,18 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
     setIsDraggingFromPalette(false);
     const { active, over } = event;
 
-    console.log('handleDragEnd - active:', active.id, 'over:', over?.id);
-
     if (!over) {
-      console.log('handleDragEnd - no over target');
       return;
     }
 
     if (active.id.toString().startsWith('palette-')) {
       const fieldType = active.data.current?.fieldType;
-      console.log('handleDragEnd - fieldType:', fieldType, 'over.id:', over.id);
       // Permitir soltar sobre el canvas o sobre cualquier campo existente
       const isValidDropTarget = over.id === 'builder-canvas' || fields.some(f => f.id === over.id);
-      console.log('handleDragEnd - isValidDropTarget:', isValidDropTarget);
       if (fieldType && isValidDropTarget) {
-        console.log('handleDragEnd - calling handleAddField');
         await handleAddField(fieldType);
       } else {
-        console.log('handleDragEnd - conditions not met for adding field');
+        console.error('handleDragEnd - conditions not met for adding field');
       }
     } else {
       const oldIndex = fields.findIndex(f => f.id === active.id);
@@ -105,7 +96,6 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
   };
 
   const handleAddField = async (fieldType: FieldType) => {
-    console.log('handleAddField called - fieldType:', fieldType.name, 'current fields count:', fields.length);
     try {
       const newField = await formsService.addField({
         formId,
@@ -116,9 +106,7 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
         order: fields.length
       });
 
-      console.log('handleAddField - newField received:', newField);
       setFields([...fields, { ...newField, fieldType }]);
-      console.log('handleAddField - fields updated, new count:', fields.length + 1);
       toast.success('Campo agregado al formulario');
     } catch (error) {
       console.error('Error adding field:', error);
@@ -127,8 +115,6 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
   };
 
   const handleEditField = (field: FormField) => {
-    console.log('handleEditField - field:', field);
-    console.log('handleEditField - field.fieldType:', field.fieldType);
     setEditingField(field);
     setIsEditorOpen(true);
   };
@@ -146,7 +132,6 @@ export default function FormBuilder({ formId }: FormBuilderProps) {
         conditionalLogic: updatedField.conditionalLogic,
         options: updatedField.options,
       };
-      console.log('Guardando campo con payload:', payload);
       const savedField = await formsService.updateField(updatedField.id, payload);
 
       setFields(fields.map(f => f.id === savedField.id ? { ...savedField, fieldType: f.fieldType } : f));

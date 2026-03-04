@@ -42,19 +42,16 @@ class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('[Socket] Connected:', this.socket?.id);
       this.reconnectAttempts = 0;
       this.notifyConnectionListeners(true);
       this.rejoinActiveRooms();
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('[Socket] Disconnected:', reason);
       this.notifyConnectionListeners(false);
       
       // Si el servidor desconectó, intentar reconectar manualmente
       if (reason === 'io server disconnect') {
-        console.log('[Socket] Server disconnected, attempting manual reconnect');
         setTimeout(() => {
           this.socket?.connect();
         }, 1000);
@@ -64,7 +61,6 @@ class SocketService {
     this.socket.on('connect_error', (error) => {
       console.error('[Socket] Connection error:', error.message);
       this.reconnectAttempts++;
-      console.log(`[Socket] Reconnect attempt ${this.reconnectAttempts}`);
     });
 
     // Manejar errores del servidor (incluyendo rate limiting)
@@ -77,16 +73,6 @@ class SocketService {
       }
     });
 
-    // Capturar TODOS los eventos para debugging
-    this.socket.onAny((eventName, ...args) => {
-      console.log('[Socket] Event received:', eventName, args);
-    });
-
-    // Capturar eventos salientes
-    this.socket.onAnyOutgoing((eventName, ...args) => {
-      console.log('[Socket] Event sent:', eventName, args);
-    });
-
     return this.socket;
   }
 
@@ -94,7 +80,6 @@ class SocketService {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
-      console.log('Socket desconectado manualmente');
     }
   }
 
@@ -114,7 +99,6 @@ class SocketService {
     const validated = joinTicketSchema.parse(data);
     this.socket.emit('join-ticket', validated);
     this.activeRooms.add(validated.ticketId);
-    console.log('✅ Join ticket:', validated.ticketId);
   }
 
   leaveTicket(data: LeaveTicketData): void {
@@ -125,11 +109,9 @@ class SocketService {
     const validated = leaveTicketSchema.parse(data);
     this.socket.emit('leave-ticket', validated);
     this.activeRooms.delete(validated.ticketId);
-    console.log('❌ Leave ticket:', validated.ticketId);
   }
 
   sendMessage(ticketId: string, message: string, attachment?: { url: string; name: string; type: string; size: number }, replyToId?: string): Promise<void> {
-    console.log('[SocketService] sendMessage called', { ticketId, messageLength: message.length, hasAttachment: !!attachment, replyToId });
     
     return new Promise((resolve, reject) => {
       if (!this.socket) {
@@ -138,11 +120,7 @@ class SocketService {
         return;
       }
 
-      console.log('[SocketService] Socket connected:', this.socket.connected);
-
       const payload = { ticketId, message, attachment, replyToId };
-      console.log('[SocketService] Payload:', payload);
-      
       const validation = sendMessageSchema.safeParse(payload);
       
       if (!validation.success) {
@@ -173,9 +151,7 @@ class SocketService {
 
       this.socket.on('new-message', messageHandler);
 
-      console.log('[SocketService] Validation passed, emitting event');
       this.socket.emit('send-message', { ...validation.data, attachment });
-      console.log('[SocketService] Event emitted successfully');
     });
   }
 
@@ -194,10 +170,8 @@ class SocketService {
     }
 
     const handler = (data: unknown) => {
-      console.log('[SocketService] new-message event received:', data);
       try {
         const validated = messageReceivedSchema.parse(data);
-        console.log('[SocketService] Message validated successfully:', validated);
         callback(validated);
       } catch (error) {
         console.error('❌ Error validando mensaje recibido:', error, 'Data:', data);
@@ -266,7 +240,6 @@ class SocketService {
   }
 
   private rejoinActiveRooms(): void {
-    console.log('[Socket] Rejoining active rooms:', Array.from(this.activeRooms));
     this.activeRooms.forEach(ticketId => {
       try {
         this.joinTicket({ ticketId });

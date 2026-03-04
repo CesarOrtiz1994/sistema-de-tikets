@@ -41,11 +41,9 @@ export default function DynamicFormTestPage() {
   };
 
   const handleSubmit = async (values: Record<string, any>) => {
-    console.log('Form submitted with values:', values);
     toast.success('Formulario enviado exitosamente');
     
-    // Aquí iría la lógica para crear el ticket
-    // await ticketsService.createTicket({ ...values, departmentId });
+    console.log(values)
     
     // Redirigir después de enviar
     setTimeout(() => {

@@ -140,15 +140,8 @@ export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled 
   };
 
   const handleSend = async () => {
-    console.log('[ChatInput] handleSend called', { 
-      messageLength: message.length, 
-      trimmedLength: message.trim().length,
-      hasFile: !!selectedFile,
-      disabled 
-    });
 
     if ((!message.trim() && !selectedFile) || disabled) {
-      console.log('[ChatInput] Message empty and no file, or disabled, aborting');
       return;
     }
 
@@ -181,15 +174,9 @@ export default function ChatInput({ ticketId, onSendMessage, onTyping, disabled 
         );
 
         attachmentData = response.data;
-        console.log('[ChatInput] File uploaded:', attachmentData);
       }
 
-      console.log('[ChatInput] Calling onSendMessage', { 
-        hasReplyingTo: !!replyingTo, 
-        replyToId: replyingTo?.id 
-      });
       onSendMessage(message.trim() || '📎 Archivo adjunto', attachmentData, replyingTo?.id);
-      console.log('[ChatInput] onSendMessage called successfully');
       
       setMessage('');
       setSelectedFile(null);

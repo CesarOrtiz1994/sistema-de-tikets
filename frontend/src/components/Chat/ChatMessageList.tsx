@@ -53,7 +53,6 @@ export default function ChatMessageList({ messages, onRetryMessage, highlightedM
       
       // Si el usuario hace scroll hacia arriba cerca del inicio
       if (scrollTop < 100 && hasMoreMessages && !isLoadingMore) {
-        console.log('[ChatMessageList] Loading more messages...');
         const previousScrollHeight = scrollHeight;
         
         onLoadMore();

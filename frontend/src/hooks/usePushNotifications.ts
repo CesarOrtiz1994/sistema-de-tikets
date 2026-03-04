@@ -101,8 +101,6 @@ export function usePushNotifications() {
     if (!isSupported || permission !== 'granted') return;
 
     const unsubscribe = onForegroundMessage((payload: any) => {
-      console.log('[Push] Foreground message:', payload);
-
       const title = payload.notification?.title || 'Nueva notificación';
       const body = payload.notification?.body || '';
       const ticketId = payload.data?.ticketId;

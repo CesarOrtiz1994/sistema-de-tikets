@@ -35,7 +35,6 @@ export default function AuditPage() {
     try {
       setLoading(true);
       const response = await auditService.getLogs(filters);
-      console.log('Audit response:', response);
       setLogs(response.logs || []);
       setTotalPages(response.pagination?.totalPages || 1);
     } catch (error) {

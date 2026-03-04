@@ -54,7 +54,6 @@ export default function Navbar() {
             {/* Theme Toggle */}
             <button
               onClick={() => {
-                console.log('Toggle theme clicked, current:', theme);
                 toggleTheme();
               }}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition text-gray-600 dark:text-gray-300"

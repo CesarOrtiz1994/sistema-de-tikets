@@ -170,8 +170,6 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
         isDefault: validatedData.isDefault
       };
 
-      console.log('Datos a enviar al backend:', dataToSend);
-
       // Enviar datos completos al backend
       await departmentSLAService.assignSLAToDepartment(departmentId, dataToSend);
 
