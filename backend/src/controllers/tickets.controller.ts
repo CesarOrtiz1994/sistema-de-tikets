@@ -79,9 +79,10 @@ class TicketsController {
         departmentId,
         status,
         priority,
-        assignedToId,
         requesterId,
         search,
+        dateFrom,
+        dateTo,
         page,
         limit
       } = req.query;
@@ -91,9 +92,10 @@ class TicketsController {
         departmentId: departmentId as string,
         status: status as any,
         priority: priority as any,
-        assignedToId: assignedToId as string,
         requesterId: requesterId as string,
         search: search as string,
+        dateFrom: dateFrom as string,
+        dateTo: dateTo as string,
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined
       });
@@ -125,8 +127,8 @@ class TicketsController {
       const ticket = await ticketsService.updateTicket(id, userId, updateData);
 
       // Disparar notificaciones según lo que cambió
-      if (updateData.assignedToId && updateData.assignedToId !== previousTicket.assignedToId) {
-        logger.info(`[updateTicket] Assignment changed, notifying assignee ${updateData.assignedToId}`);
+      if (updateData.assignedUserIds && updateData.assignedUserIds.length > 0) {
+        logger.info(`[updateTicket] Assignment changed, notifying assignees ${updateData.assignedUserIds.join(', ')}`);
         notifyTicketAssigned(ticket).catch(err =>
           logger.error('Error sending ticket assigned notification:', err)
         );
@@ -170,15 +172,15 @@ class TicketsController {
     try {
       const userId = (req as any).user.id;
       const { id } = req.params;
-      const { assignedToId } = req.body;
+      const { assignedUserIds } = req.body;
 
       const ticket = await ticketsService.updateTicket(id, userId, {
-        assignedToId
+        assignedUserIds
       });
 
-      // Notificar al subordinado asignado
-      logger.info(`[assignTicket] ticket.assignedToId=${ticket.assignedToId}, body.assignedToId=${assignedToId}`);
-      if (assignedToId) {
+      // Notificar a los subordinados asignados
+      logger.info(`[assignTicket] assignedUserIds=${assignedUserIds?.join(', ')}`);
+      if (assignedUserIds && assignedUserIds.length > 0) {
         notifyTicketAssigned(ticket).catch(err =>
           logger.error('Error sending ticket assigned notification:', err)
         );
@@ -215,7 +217,7 @@ class TicketsController {
       const ticket = await ticketsService.updateTicket(id, userId, updateData);
 
       // Notificar cambio de estado
-      logger.info(`[changeStatus] ticket.requesterId=${ticket.requesterId}, ticket.assignedToId=${ticket.assignedToId}, newStatus=${status}, changedBy=${userId}`);
+      logger.info(`[changeStatus] ticket.requesterId=${ticket.requesterId}, newStatus=${status}, changedBy=${userId}`);
       notifyTicketStatusChanged(ticket, status, userId).catch(err =>
         logger.error('Error sending status change notification:', err)
       );

@@ -180,7 +180,7 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Recent Activity */}
             <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Actividad Reciente</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-6"></h3>
               <div className="space-y-4">
                 {[1, 2, 3].map((_, index) => (
                   <div

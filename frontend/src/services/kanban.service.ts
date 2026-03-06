@@ -18,12 +18,14 @@ export interface KanbanTicket {
     email: string;
     profilePicture: string | null;
   };
-  assignedTo: {
-    id: string;
-    name: string;
-    email: string;
-    profilePicture: string | null;
-  } | null;
+  assignments: Array<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      profilePicture: string | null;
+    };
+  }>;
   department: {
     id: string;
     name: string;
@@ -41,7 +43,6 @@ export interface KanbanColumn {
 
 export interface KanbanFilters {
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  assignedToId?: string;
   onlyMine?: boolean;
 }
 
@@ -57,10 +58,6 @@ class KanbanService {
     
     if (filters?.priority) {
       params.append('priority', filters.priority);
-    }
-    
-    if (filters?.assignedToId) {
-      params.append('assignedToId', filters.assignedToId);
     }
     
     if (filters?.onlyMine) {
@@ -85,9 +82,6 @@ class KanbanService {
     if (filters?.priority) {
       params.append('priority', filters.priority);
     }
-    if (filters?.assignedToId) {
-      params.append('assignedToId', filters.assignedToId);
-    }
     if (filters?.onlyMine) {
       params.append('onlyMine', 'true');
     }
@@ -104,10 +98,10 @@ class KanbanService {
    */
   async quickAssignTicket(
     ticketId: string,
-    assignedToId: string | null
+    assignedUserIds: string[]
   ): Promise<void> {
     await api.put(`/api/tickets/${ticketId}/quick-assign`, {
-      assignedToId
+      assignedUserIds
     });
   }
 }

@@ -154,7 +154,7 @@ export default function TicketDetailPage() {
   const [showPriorityModal, setShowPriorityModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
 
-  const [selectedAssignee, setSelectedAssignee] = useState('');
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('NEW');
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority>('MEDIUM');
   const [waitingReason, setWaitingReason] = useState('');
@@ -307,11 +307,11 @@ export default function TicketDetailPage() {
   };
 
   const handleAssign = async () => {
-    if (!selectedAssignee || !ticket) return;
+    if (selectedAssignees.length === 0 || !ticket) return;
 
     try {
       setActionLoading(true);
-      await ticketsService.assignTicket(ticket.id, selectedAssignee);
+      await ticketsService.assignTicket(ticket.id, selectedAssignees);
       toast.success('Ticket asignado exitosamente');
       setShowAssignModal(false);
       loadTicket();
@@ -452,7 +452,7 @@ export default function TicketDetailPage() {
   // CAMBIAR ESTADO: SUPER_ADMIN, DEPT_ADMIN del departamento, o SUBORDINATE asignado del departamento
   const canChangeStatus = (userRole === RoleType.SUPER_ADMIN) ||
                           (userRole === RoleType.DEPT_ADMIN && isMemberOfDepartment) ||
-                          (userRole === RoleType.SUBORDINATE && ticket?.assignedToId === user?.id && isMemberOfDepartment);
+                          (userRole === RoleType.SUBORDINATE && ticket?.assignments?.some(a => a.user.id === user?.id) && isMemberOfDepartment);
   
   // CAMBIAR PRIORIDAD: Solo SUPER_ADMIN y DEPT_ADMIN del departamento
   const canChangePriority = (userRole === RoleType.SUPER_ADMIN) || 
@@ -492,7 +492,7 @@ export default function TicketDetailPage() {
             {canAssign && (
               <button
                 onClick={() => {
-                  setSelectedAssignee(ticket.assignedToId || '');
+                  setSelectedAssignees(ticket.assignments?.map(a => a.user.id) || []);
                   setShowAssignModal(true);
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
@@ -784,27 +784,31 @@ export default function TicketDetailPage() {
                 <label className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                   Asignado a
                 </label>
-                {ticket.assignedTo ? (
-                  <div className="flex items-center gap-2">
-                    {ticket.assignedTo.profilePicture ? (
-                      <img
-                        src={ticket.assignedTo.profilePicture}
-                        alt={ticket.assignedTo.name}
-                        className="w-8 h-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-600 to-teal-600 flex items-center justify-center text-white font-semibold">
-                        {ticket.assignedTo.name?.charAt(0).toUpperCase()}
+                {ticket.assignments && ticket.assignments.length > 0 ? (
+                  <div className="space-y-2">
+                    {ticket.assignments.map(assignment => (
+                      <div key={assignment.user.id} className="flex items-center gap-2">
+                        {assignment.user.profilePicture ? (
+                          <img
+                            src={assignment.user.profilePicture}
+                            alt={assignment.user.name}
+                            className="w-8 h-8 rounded-full"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-600 to-teal-600 flex items-center justify-center text-white font-semibold">
+                            {assignment.user.name?.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {assignment.user.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {assignment.user.email}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {ticket.assignedTo.name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {ticket.assignedTo.email}
-                      </p>
-                    </div>
+                    ))}
                   </div>
                 ) : (
                   <span className="text-sm text-gray-500 dark:text-gray-400 italic">
@@ -1172,7 +1176,6 @@ export default function TicketDetailPage() {
                 <ChatWindow 
                   ticketId={ticket.id}
                   ticketStatus={ticket.status}
-                  assignedToId={ticket.assignedToId}
                 />
               ) : (
                 <FileHistory ticketId={ticket.id} />
@@ -1186,8 +1189,8 @@ export default function TicketDetailPage() {
       <Modal
         isOpen={showAssignModal}
         onClose={() => setShowAssignModal(false)}
-        title="Asignar Ticket"
-        subtitle="Selecciona un usuario del departamento"
+        title="Asignar Ticket (Múltiple)"
+        subtitle="Selecciona uno o más usuarios del departamento"
         footer={
           <ModalButtons
             onCancel={() => setShowAssignModal(false)}
@@ -1195,26 +1198,37 @@ export default function TicketDetailPage() {
             confirmText="Asignar"
             confirmIcon={<FiUserCheck />}
             loading={actionLoading}
-            confirmDisabled={!selectedAssignee}
+            confirmDisabled={selectedAssignees.length === 0}
           />
         }
       >
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Usuario
+            Usuarios (múltiple)
           </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            💡 Mantén presionado <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Ctrl</kbd> (Windows/Linux) o <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Cmd</kbd> (Mac) para seleccionar múltiples usuarios
+          </p>
           <select
-            value={selectedAssignee}
-            onChange={(e) => setSelectedAssignee(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            multiple
+            value={selectedAssignees}
+            onChange={(e) => {
+              const selected = Array.from(e.target.selectedOptions, option => option.value);
+              setSelectedAssignees(selected);
+            }}
+            className="w-full px-3 py-2 border-2 border-blue-300 dark:border-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[150px]"
           >
-            <option value="">Seleccionar usuario</option>
             {departmentUsers.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.name} - {user.email}
               </option>
             ))}
           </select>
+          {selectedAssignees.length > 0 && (
+            <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+              ✓ {selectedAssignees.length} usuario(s) seleccionado(s)
+            </p>
+          )}
         </div>
       </Modal>
 

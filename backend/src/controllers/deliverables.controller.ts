@@ -74,7 +74,7 @@ export class DeliverablesController {
       // Notificar al subordinado asignado
       const approvedTicket = await prisma.ticket.findFirst({
         where: { deliverables: { some: { id } } },
-        select: { id: true, ticketNumber: true, assignedToId: true }
+        select: { id: true, ticketNumber: true }
       });
       if (approvedTicket) {
         notifyDeliverableApproved(approvedTicket).catch(err =>
@@ -122,7 +122,7 @@ export class DeliverablesController {
       // Notificar al subordinado asignado
       const rejectedTicket = await prisma.ticket.findFirst({
         where: { deliverables: { some: { id } } },
-        select: { id: true, ticketNumber: true, title: true, assignedToId: true }
+        select: { id: true, ticketNumber: true, title: true }
       });
       if (rejectedTicket) {
         notifyDeliverableRejected(

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { FiFilter, FiFileText, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiFilter, FiFileText, FiClock, FiCheckCircle, FiCalendar } from 'react-icons/fi';
 import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
 import DataTable from '../components/common/DataTable';
@@ -99,6 +99,9 @@ export default function DepartmentTicketsPage() {
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | ''>('');
   const [assignedToFilter, setAssignedToFilter] = useState('');
   const [departmentFilterValue, setDepartmentFilterValue] = useState('');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'yesterday' | 'custom'>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   const isSuperAdmin = user?.roleType === 'SUPER_ADMIN';
@@ -115,7 +118,7 @@ export default function DepartmentTicketsPage() {
         loadDepartments();
       }
     }
-  }, [currentPage, statusFilter, priorityFilter, assignedToFilter, departmentFilterValue, user?.id]);
+  }, [currentPage, statusFilter, priorityFilter, assignedToFilter, departmentFilterValue, dateFilter, dateFrom, dateTo, user?.id]);
 
   // Cargar usuarios cuando cambia el departamento seleccionado
   useEffect(() => {
@@ -164,6 +167,34 @@ export default function DepartmentTicketsPage() {
     try {
       setLoading(true);
       
+      // Calcular fechas según el filtro seleccionado
+      let calculatedDateFrom: string | undefined;
+      let calculatedDateTo: string | undefined;
+      
+      if (dateFilter === 'today') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        calculatedDateFrom = today.toISOString();
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        calculatedDateTo = endOfDay.toISOString();
+      } else if (dateFilter === 'yesterday') {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+        calculatedDateFrom = yesterday.toISOString();
+        const endOfYesterday = new Date();
+        endOfYesterday.setDate(endOfYesterday.getDate() - 1);
+        endOfYesterday.setHours(23, 59, 59, 999);
+        calculatedDateTo = endOfYesterday.toISOString();
+      } else if (dateFilter === 'custom' && dateFrom && dateTo) {
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        calculatedDateFrom = fromDate.toISOString();
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        calculatedDateTo = toDate.toISOString();
+      }
       
       // Super Admin y Admin de Departamento usan departmentFilterValue
       // Si no hay departmentFilterValue, no enviar nada (el backend aplicará el filtro correcto)
@@ -173,8 +204,9 @@ export default function DepartmentTicketsPage() {
         departmentId: departmentFilterValue || undefined,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
-        assignedToId: assignedToFilter || undefined,
         search: searchTerm || undefined,
+        dateFrom: calculatedDateFrom,
+        dateTo: calculatedDateTo,
       });
       
       setTickets(response.data);
@@ -250,7 +282,9 @@ export default function DepartmentTicketsPage() {
       header: 'Asignado a',
       render: (ticket: Ticket) => (
         <span className="text-sm text-gray-700 dark:text-gray-300">
-          {ticket.assignedTo?.name || 'Sin asignar'}
+          {ticket.assignments && ticket.assignments.length > 0 
+            ? ticket.assignments.map(a => a.user.name).join(', ')
+            : 'Sin asignar'}
         </span>
       ),
     },
@@ -348,81 +382,147 @@ export default function DepartmentTicketsPage() {
 
           {showFilters && (
             <Card>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Filtro de Departamento (solo Super Admin) */}
-                {isSuperAdmin && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Filtro de Departamento (solo Super Admin) */}
+                  {isSuperAdmin && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Departamento
+                      </label>
+                      <select
+                        value={departmentFilterValue}
+                        onChange={(e) => setDepartmentFilterValue(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      >
+                        <option value="">Todos los departamentos</option>
+                        {departments.map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Departamento
+                      Estado
                     </label>
                     <select
-                      value={departmentFilterValue}
-                      onChange={(e) => setDepartmentFilterValue(e.target.value)}
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value as TicketStatus | '')}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     >
-                      <option value="">Todos los departamentos</option>
-                      {departments.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name}
+                      {STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>
                   </div>
-                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Estado
-                  </label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as TicketStatus | '')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  >
-                    {STATUS_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Prioridad
-                  </label>
-                  <select
-                    value={priorityFilter}
-                    onChange={(e) => setPriorityFilter(e.target.value as TicketPriority | '')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  >
-                    {PRIORITY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {!isSuperAdmin && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Asignado a
+                      Prioridad
                     </label>
                     <select
-                      value={assignedToFilter}
-                      onChange={(e) => setAssignedToFilter(e.target.value)}
+                      value={priorityFilter}
+                      onChange={(e) => setPriorityFilter(e.target.value as TicketPriority | '')}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     >
-                      <option value="">Todos</option>
-                      {departmentUsers.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.name}
+                      {PRIORITY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>
                   </div>
-                )}
+
+                  {!isSuperAdmin && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Asignado a
+                      </label>
+                      <select
+                        value={assignedToFilter}
+                        onChange={(e) => setAssignedToFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      >
+                        <option value="">Todos</option>
+                        {departmentUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Filtro de Fechas */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    <FiCalendar className="text-blue-500" />
+                    Fecha de Creación
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <select
+                        value={dateFilter}
+                        onChange={(e) => {
+                          const value = e.target.value as 'all' | 'today' | 'yesterday' | 'custom';
+                          setDateFilter(value);
+                          if (value !== 'custom') {
+                            setDateFrom('');
+                            setDateTo('');
+                          }
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="all">Todas las fechas</option>
+                        <option value="today">Hoy</option>
+                        <option value="yesterday">Ayer</option>
+                        <option value="custom">Rango personalizado</option>
+                      </select>
+                    </div>
+                    
+                    {dateFilter === 'custom' && (
+                      <>
+                        <div>
+                          <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => {
+                              setDateFrom(e.target.value);
+                              setCurrentPage(1);
+                            }}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Desde"
+                          />
+                        </div>
+                        <div>
+                          <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => {
+                              setDateTo(e.target.value);
+                              setCurrentPage(1);
+                            }}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Hasta"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {dateFilter === 'custom' && (!dateFrom || !dateTo) && (
+                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                      ⚠️ Selecciona ambas fechas para aplicar el filtro personalizado
+                    </p>
+                  )}
+                </div>
               </div>
             </Card>
           )}

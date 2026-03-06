@@ -14,7 +14,7 @@ const kanbanFiltersSchema = z.object({
 
 // Validación Zod para asignación rápida
 const quickAssignSchema = z.object({
-  assignedToId: z.string().uuid().nullable()
+  assignedUserIds: z.array(z.string().uuid()).optional().default([])
 });
 
 /**
@@ -120,21 +120,21 @@ export const quickAssignTicket = async (req: Request, res: Response) => {
     const validatedTicketId = uuidSchema.parse(ticketId);
 
     // Validar datos de asignación
-    const { assignedToId } = quickAssignSchema.parse(req.body);
+    const { assignedUserIds } = quickAssignSchema.parse(req.body);
 
     await kanbanService.quickAssignTicket(
       validatedTicketId,
-      assignedToId,
+      assignedUserIds || [],
       userId
     );
 
     // Notificar al subordinado asignado
-    if (assignedToId) {
+    if (assignedUserIds && assignedUserIds.length > 0) {
       const ticket = await prisma.ticket.findUnique({
         where: { id: validatedTicketId },
         select: {
           id: true, ticketNumber: true, title: true, priority: true,
-          assignedToId: true, departmentId: true,
+          departmentId: true,
           department: { select: { name: true } },
           requester: { select: { name: true } }
         }
@@ -148,7 +148,7 @@ export const quickAssignTicket = async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      message: assignedToId 
+      message: assignedUserIds && assignedUserIds.length > 0
         ? 'Ticket asignado exitosamente' 
         : 'Asignación removida exitosamente'
     });

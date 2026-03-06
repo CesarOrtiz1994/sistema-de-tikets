@@ -175,7 +175,9 @@ export default function MyTicketsPage() {
       header: 'Asignado a',
       render: (ticket: Ticket) => (
         <span className="text-sm text-gray-700 dark:text-gray-300">
-          {ticket.assignedTo?.name || 'Sin asignar'}
+          {ticket.assignments && ticket.assignments.length > 0 
+            ? ticket.assignments.map(a => a.user.name).join(', ')
+            : 'Sin asignar'}
         </span>
       ),
     },

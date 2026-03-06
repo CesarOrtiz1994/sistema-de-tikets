@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../hooks/useAuth';
-import { FiPlus, FiFilter, FiFileText, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiPlus, FiFilter, FiFileText, FiClock, FiCheckCircle, FiCalendar } from 'react-icons/fi';
 import PageHeader from '../components/common/PageHeader';
 import Card from '../components/common/Card';
 import DataTable from '../components/common/DataTable';
@@ -95,13 +95,16 @@ export default function TicketsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
   const [priorityFilter, setPriorityFilter] = useState<TicketPriority | ''>('');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'yesterday' | 'custom'>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
       loadTickets();
     }
-  }, [currentPage, statusFilter, priorityFilter, user?.id]);
+  }, [currentPage, statusFilter, priorityFilter, dateFilter, dateFrom, dateTo, user?.id]);
 
   const loadTickets = async () => {
     try {
@@ -114,6 +117,36 @@ export default function TicketsPage() {
       
       // SOLO tickets creados por el usuario actual (Mis Tickets)
       // Forzamos requesterId para que TODOS los roles vean solo sus tickets
+      
+      // Calcular fechas según el filtro seleccionado
+      let calculatedDateFrom: string | undefined;
+      let calculatedDateTo: string | undefined;
+      
+      if (dateFilter === 'today') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        calculatedDateFrom = today.toISOString();
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        calculatedDateTo = endOfDay.toISOString();
+      } else if (dateFilter === 'yesterday') {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+        calculatedDateFrom = yesterday.toISOString();
+        const endOfYesterday = new Date();
+        endOfYesterday.setDate(endOfYesterday.getDate() - 1);
+        endOfYesterday.setHours(23, 59, 59, 999);
+        calculatedDateTo = endOfYesterday.toISOString();
+      } else if (dateFilter === 'custom' && dateFrom && dateTo) {
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        calculatedDateFrom = fromDate.toISOString();
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        calculatedDateTo = toDate.toISOString();
+      }
+      
       const response = await ticketsService.listTickets({
         page: currentPage,
         limit: 10,
@@ -121,6 +154,8 @@ export default function TicketsPage() {
         priority: priorityFilter || undefined,
         search: searchTerm || undefined,
         requesterId: user.id, // FORZAR: Solo tickets que YO creé
+        dateFrom: calculatedDateFrom,
+        dateTo: calculatedDateTo,
       });
 
       setTickets(response.data);
@@ -197,7 +232,9 @@ export default function TicketsPage() {
       header: 'Asignado a',
       render: (ticket: Ticket) => (
         <span className="text-sm text-gray-700 dark:text-gray-300">
-          {ticket.assignedTo?.name || 'Sin asignar'}
+          {ticket.assignments && ticket.assignments.length > 0 
+            ? ticket.assignments.map(a => a.user.name).join(', ')
+            : 'Sin asignar'}
         </span>
       ),
     },
@@ -283,45 +320,111 @@ export default function TicketsPage() {
           </div>
 
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Estado
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value as TicketStatus | '');
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Estado
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value as TicketStatus | '');
+                      setCurrentPage(1);
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Prioridad
+                  </label>
+                  <select
+                    value={priorityFilter}
+                    onChange={(e) => {
+                      setPriorityFilter(e.target.value as TicketPriority | '');
+                      setCurrentPage(1);
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Prioridad
+              {/* Filtro de Fechas */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  <FiCalendar className="text-blue-500" />
+                  Fecha de Creación
                 </label>
-                <select
-                  value={priorityFilter}
-                  onChange={(e) => {
-                    setPriorityFilter(e.target.value as TicketPriority | '');
-                    setCurrentPage(1);
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {PRIORITY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <select
+                      value={dateFilter}
+                      onChange={(e) => {
+                        const value = e.target.value as 'all' | 'today' | 'yesterday' | 'custom';
+                        setDateFilter(value);
+                        if (value !== 'custom') {
+                          setDateFrom('');
+                          setDateTo('');
+                        }
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="all">Todas las fechas</option>
+                      <option value="today">Hoy</option>
+                      <option value="yesterday">Ayer</option>
+                      <option value="custom">Rango personalizado</option>
+                    </select>
+                  </div>
+                  
+                  {dateFilter === 'custom' && (
+                    <>
+                      <div>
+                        <input
+                          type="date"
+                          value={dateFrom}
+                          onChange={(e) => {
+                            setDateFrom(e.target.value);
+                            setCurrentPage(1);
+                          }}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="Desde"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="date"
+                          value={dateTo}
+                          onChange={(e) => {
+                            setDateTo(e.target.value);
+                            setCurrentPage(1);
+                          }}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="Hasta"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+                {dateFilter === 'custom' && (!dateFrom || !dateTo) && (
+                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                    ⚠️ Selecciona ambas fechas para aplicar el filtro personalizado
+                  </p>
+                )}
               </div>
             </div>
           )}

@@ -43,7 +43,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
   const { unreadCounts } = useUnreadMessages();
   const [loading, setLoading] = useState(false);
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
-  const [selectedAssignee, setSelectedAssignee] = useState<string>(ticket.assignedTo?.id || '');
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>(ticket.assignments?.map(a => a.user.id) || []);
   const [selectedPriority, setSelectedPriority] = useState<string>(ticket.priority);
   const [fullTicket, setFullTicket] = useState<any>(null);
   const [loadingTicket, setLoadingTicket] = useState(true);
@@ -139,9 +139,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
     
     try {
       setLoading(true);
-      await ticketsService.updateTicket(ticket.id, {
-        assignedToId: selectedAssignee || null
-      });
+      await ticketsService.assignTicket(ticket.id, selectedAssignees);
       toast.success('Ticket asignado exitosamente');
       onUpdate();
       onClose();
@@ -367,16 +365,22 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                   <div className="space-y-3">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       <FiUser className="inline w-4 h-4 mr-2" />
-                      Asignar a
+                      Asignar a (múltiple)
                     </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">
+                      💡 Mantén presionado <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Ctrl</kbd> (Windows/Linux) o <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Cmd</kbd> (Mac) para seleccionar múltiples usuarios
+                    </p>
                     <div className="flex gap-3">
                       <select
-                        value={selectedAssignee}
-                        onChange={(e) => setSelectedAssignee(e.target.value)}
-                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        multiple
+                        value={selectedAssignees}
+                        onChange={(e) => {
+                          const selected = Array.from(e.target.selectedOptions, option => option.value);
+                          setSelectedAssignees(selected);
+                        }}
+                        className="flex-1 px-4 py-2 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
                         disabled={loading}
                       >
-                        <option value="">Sin asignar</option>
                         {departmentUsers.map((user) => (
                           <option key={user.id} value={user.id}>
                             {user.name} - {user.email}
@@ -385,7 +389,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                       </select>
                       <button
                         onClick={handleAssign}
-                        disabled={loading || selectedAssignee === (ticket.assignedTo?.id || '')}
+                        disabled={loading || JSON.stringify(selectedAssignees.sort()) === JSON.stringify((ticket.assignments?.map(a => a.user.id) || []).sort())}
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {loading ? 'Guardando...' : 'Asignar'}
@@ -425,17 +429,25 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                 )}
 
                 {/* Asignado actual (solo lectura si no puede editar) */}
-                {!canEdit && ticket.assignedTo && (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <FiUser className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Asignado a</p>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {ticket.assignedTo.name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {ticket.assignedTo.email}
-                      </p>
+                {!canEdit && ticket.assignments && ticket.assignments.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Asignado a</p>
+                    <div className="space-y-2">
+                      {ticket.assignments.map(assignment => (
+                        <div key={assignment.user.id} className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                            {assignment.user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {assignment.user.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {assignment.user.email}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -761,7 +773,6 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                     <ChatWindow 
                       ticketId={ticket.id}
                       ticketStatus={ticket.status}
-                      assignedToId={ticket.assignedTo?.id}
                     />
                   </div>
                 )}

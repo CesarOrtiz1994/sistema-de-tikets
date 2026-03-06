@@ -60,7 +60,7 @@ export const unreadMessagesService = {
         where: {
           OR: [
             { requesterId: userId },
-            { assignedToId: userId }
+            { assignments: { some: { userId } } }
           ],
           deletedAt: null
         },

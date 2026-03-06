@@ -95,22 +95,22 @@ export async function notifyTicketCreated(ticket: {
 }
 
 /**
- * Ticket asignado → notificar al subordinado asignado
+ * Ticket asignado → notificar a todos los subordinados asignados
  */
 export async function notifyTicketAssigned(ticket: {
   id: string;
   ticketNumber: string;
   title: string;
   priority: string;
-  assignedToId?: string | null;
   departmentId: string;
   department?: { name: string };
   requester?: { name: string };
+  assignments?: Array<{ user: { id: string; name: string } }>;
 }) {
   try {
-    logger.info(`[notifyTicketAssigned] Ticket: ${ticket.ticketNumber}, assignedToId: ${ticket.assignedToId}`);
-    if (!ticket.assignedToId) {
-      logger.warn(`[notifyTicketAssigned] No assignedToId, skipping`);
+    logger.info(`[notifyTicketAssigned] Ticket: ${ticket.ticketNumber}, assignments: ${ticket.assignments?.length || 0}`);
+    if (!ticket.assignments || ticket.assignments.length === 0) {
+      logger.warn(`[notifyTicketAssigned] No assignments, skipping`);
       return;
     }
 
@@ -118,30 +118,34 @@ export async function notifyTicketAssigned(ticket: {
     const requesterName = ticket.requester?.name || '';
     const ticketUrl = `${FRONTEND_URL}/tickets/${ticket.id}`;
 
-    await notificationService.send(
-      {
-        userId: ticket.assignedToId,
-        type: NotificationType.TICKET_ASSIGNED,
-        title: 'Ticket asignado',
-        message: `Se te asignó el ticket ${ticket.ticketNumber}: ${ticket.title}`,
-        data: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber }
-      },
-      {
-        sendEmail: true,
-        emailTemplateCode: 'TICKET_ASSIGNED',
-        emailVariables: {
-          ticket_number: ticket.ticketNumber,
-          ticket_title: ticket.title,
-          department_name: deptName,
-          ticket_priority: priorityLabels[ticket.priority] || ticket.priority,
-          requester_name: requesterName,
-          ticket_url: ticketUrl,
-          year: currentYear()
+    // Notificar a cada usuario asignado
+    for (const assignment of ticket.assignments) {
+      await notificationService.send(
+        {
+          userId: assignment.user.id,
+          type: NotificationType.TICKET_ASSIGNED,
+          title: 'Ticket asignado',
+          message: `Se te asignó el ticket ${ticket.ticketNumber}: ${ticket.title}`,
+          data: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber }
         },
-        sendPush: true,
-        pushData: { ticketId: ticket.id, url: ticketUrl }
-      }
-    );
+        {
+          sendEmail: true,
+          emailTemplateCode: 'TICKET_ASSIGNED',
+          emailVariables: {
+            ticket_number: ticket.ticketNumber,
+            ticket_title: ticket.title,
+            department_name: deptName,
+            ticket_priority: priorityLabels[ticket.priority] || ticket.priority,
+            requester_name: requesterName,
+            ticket_url: ticketUrl,
+            year: currentYear()
+          },
+          sendPush: true,
+          pushData: { ticketId: ticket.id, url: ticketUrl }
+        }
+      );
+      logger.info(`[notifyTicketAssigned] Notificación enviada a ${assignment.user.name} (${assignment.user.id})`);
+    }
   } catch (error) {
     logger.error('Error in notifyTicketAssigned:', error);
   }

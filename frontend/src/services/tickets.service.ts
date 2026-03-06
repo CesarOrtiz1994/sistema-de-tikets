@@ -9,7 +9,6 @@ export interface Ticket {
   departmentId: string;
   formId: string;
   requesterId: string;
-  assignedToId?: string;
   parentTicketId?: string;
   title: string;
   status: TicketStatus;
@@ -45,12 +44,14 @@ export interface Ticket {
     email: string;
     profilePicture?: string;
   };
-  assignedTo?: {
-    id: string;
-    name: string;
-    email: string;
-    profilePicture?: string;
-  };
+  assignments?: Array<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      profilePicture?: string;
+    };
+  }>;
   parentTicket?: {
     id: string;
     ticketNumber: string;
@@ -76,7 +77,7 @@ export interface UpdateTicketData {
   title?: string;
   status?: TicketStatus;
   priority?: TicketPriority;
-  assignedToId?: string | null;
+  assignedUserIds?: string[];
   formData?: Record<string, any>;
 }
 
@@ -84,11 +85,12 @@ export interface ListTicketsParams {
   departmentId?: string;
   status?: TicketStatus;
   priority?: TicketPriority;
-  assignedToId?: string;
   requesterId?: string;
   search?: string;
   page?: number;
   limit?: number;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export interface TicketsResponse {
@@ -116,9 +118,10 @@ class TicketsService {
     if (params.departmentId) queryParams.append('departmentId', params.departmentId);
     if (params.status) queryParams.append('status', params.status);
     if (params.priority) queryParams.append('priority', params.priority);
-    if (params.assignedToId) queryParams.append('assignedToId', params.assignedToId);
     if (params.requesterId) queryParams.append('requesterId', params.requesterId);
     if (params.search) queryParams.append('search', params.search);
+    if (params.dateFrom) queryParams.append('dateFrom', params.dateFrom);
+    if (params.dateTo) queryParams.append('dateTo', params.dateTo);
     if (params.page) queryParams.append('page', String(params.page));
     if (params.limit) queryParams.append('limit', String(params.limit));
 
@@ -139,8 +142,8 @@ class TicketsService {
     return response.data.data;
   }
 
-  async assignTicket(id: string, assignedToId: string): Promise<Ticket> {
-    const response = await api.put(`/api/tickets/${id}/assign`, { assignedToId });
+  async assignTicket(id: string, assignedUserIds: string[]): Promise<Ticket> {
+    const response = await api.put(`/api/tickets/${id}/assign`, { assignedUserIds });
     return response.data.data;
   }
 
