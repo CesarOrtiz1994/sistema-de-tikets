@@ -352,11 +352,20 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
         // (requester y assignedTo) excepto al que envió el mensaje
         const ticket = await prisma.ticket.findUnique({
           where: { id: ticketId },
-          select: { requesterId: true, assignedToId: true, ticketNumber: true }
+          select: { 
+            requesterId: true, 
+            ticketNumber: true,
+            assignments: {
+              select: {
+                userId: true
+              }
+            }
+          }
         });
 
         if (ticket) {
-          const usersToNotify = [ticket.requesterId, ticket.assignedToId].filter(
+          const assignedUserIds = ticket.assignments.map(a => a.userId);
+          const usersToNotify = [ticket.requesterId, ...assignedUserIds].filter(
             id => id && id !== userId
           );
 
@@ -371,7 +380,7 @@ export const setupTicketChatHandlers = (io: SocketIOServer) => {
 
           // Enviar push notification + notificación in-app para usuarios offline
           notifyNewMessage(
-            { id: ticketId, ticketNumber: ticket.ticketNumber, requesterId: ticket.requesterId, assignedToId: ticket.assignedToId },
+            { id: ticketId, ticketNumber: ticket.ticketNumber, requesterId: ticket.requesterId },
             userId,
             savedMessage.user!.name
           ).catch(err => logger.error('Error sending new message notification:', err));

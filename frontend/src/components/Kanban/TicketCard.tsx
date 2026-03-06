@@ -168,21 +168,22 @@ export default function TicketCard({ ticket, isDragging, onClick }: TicketCardPr
       <div className="flex items-center justify-between">
         {/* Avatar del asignado */}
         <div className="flex items-center gap-2">
-          {ticket.assignedTo ? (
+          {ticket.assignments && ticket.assignments.length > 0 ? (
             <>
-              {ticket.assignedTo.profilePicture ? (
+              {ticket.assignments[0].user.profilePicture ? (
                 <img
-                  src={ticket.assignedTo.profilePicture}
-                  alt={ticket.assignedTo.name}
+                  src={ticket.assignments[0].user.profilePicture}
+                  alt={ticket.assignments[0].user.name}
                   className="w-6 h-6 rounded-full"
                 />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
-                  {ticket.assignedTo.name.charAt(0).toUpperCase()}
+                  {ticket.assignments[0].user.name.charAt(0).toUpperCase()}
                 </div>
               )}
               <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[80px]">
-                {ticket.assignedTo.name.split(' ')[0]}
+                {ticket.assignments[0].user.name.split(' ')[0]}
+                {ticket.assignments.length > 1 && ` +${ticket.assignments.length - 1}`}
               </span>
             </>
           ) : (

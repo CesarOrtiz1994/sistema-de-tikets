@@ -83,12 +83,17 @@ class AutoCloseTicketsWorker {
               email: true
             }
           },
-          assignedTo: {
-            select: {
-              name: true,
-              email: true
+          assignments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
             }
-          }
+          },
         }
       });
 
@@ -102,13 +107,20 @@ class AutoCloseTicketsWorker {
       let closedCount = 0;
 
       for (const ticket of resolvedTickets) {
-        const autoCloseAfterDays = ticket.department.autoCloseAfterDays;
+        const department = await prisma.department.findUnique({
+          where: { id: ticket.departmentId },
+          select: { autoCloseAfterDays: true, name: true }
+        });
+        
+        if (!department) continue;
+        
+        const autoCloseAfterDays = department.autoCloseAfterDays;
         
         // Verificar si han pasado suficientes días hábiles
         const shouldClose = await this.hasPassedBusinessDays(
           ticket.resolvedAt!,
           autoCloseAfterDays,
-          ticket.department.id
+          ticket.departmentId
         );
 
         if (shouldClose) {
@@ -132,7 +144,7 @@ class AutoCloseTicketsWorker {
                 ticketNumber: ticket.ticketNumber,
                 resolvedAt: ticket.resolvedAt,
                 autoClosedAfterDays: autoCloseAfterDays,
-                department: ticket.department.name,
+                department: department.name,
                 reason: `Auto-cerrado después de ${autoCloseAfterDays} días hábiles desde la resolución`
               },
               status: 'success'
@@ -149,7 +161,7 @@ class AutoCloseTicketsWorker {
 
           // Notificar al solicitante del auto-cierre
           notifyTicketAutoClosed(
-            { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, requesterId: ticket.requester.id },
+            { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, requesterId: ticket.requesterId },
             autoCloseAfterDays
           ).catch(err => logger.error(`Error sending auto-close notification for ${ticket.ticketNumber}:`, err));
         }

@@ -4,6 +4,7 @@ import { formValidationService } from './formValidation.service';
 import { sanitizationService } from './sanitization.service';
 import slaDeadlineService from './slaDeadline.service';
 import departmentSLAService from './departmentSLA.service';
+import { ticketAssignmentService } from './ticketAssignment.service';
 import logger from '../config/logger';
 
 interface CreateTicketData {
@@ -19,7 +20,7 @@ interface UpdateTicketData {
   title?: string;
   status?: TicketStatus;
   priority?: TicketPriority;
-  assignedToId?: string | null;
+  assignedUserIds?: string[];
   formData?: Record<string, any>;
   waitingReason?: string;
 }
@@ -264,12 +265,16 @@ export class TicketsService {
             profilePicture: true
           }
         },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profilePicture: true
+        assignments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                profilePicture: true
+              }
+            }
           }
         },
         rating: {
@@ -311,9 +316,12 @@ export class TicketsService {
       du => du.departmentId === ticket.departmentId
     );
 
+    // Verificar si el usuario está asignado al ticket
+    const isAssigned = ticket.assignments.some(a => a.userId === userId);
+
     const canView =
       ticket.requesterId === userId ||
-      ticket.assignedToId === userId ||
+      isAssigned ||
       user?.roleType === 'SUPER_ADMIN' ||
       hasAccessToDepartment;
 
@@ -356,9 +364,10 @@ export class TicketsService {
     departmentId?: string;
     status?: TicketStatus;
     priority?: TicketPriority;
-    assignedToId?: string;
     requesterId?: string;
     search?: string;
+    dateFrom?: string;
+    dateTo?: string;
     page?: number;
     limit?: number;
   }) {
@@ -367,9 +376,10 @@ export class TicketsService {
       departmentId,
       status,
       priority,
-      assignedToId,
       requesterId,
       search,
+      dateFrom,
+      dateTo,
       page = 1,
       limit = 20
     } = params;
@@ -434,12 +444,12 @@ export class TicketsService {
         const deptIds = [...adminDepartmentIds, ...memberDepartmentIds];
         if (deptIds.length > 0) {
           where.OR = [
-            { assignedToId: userId },
+            { assignments: { some: { userId } } },
             { departmentId: { in: deptIds } }
           ];
         } else {
           // Si no tiene departamentos, solo ve tickets asignados a él
-          where.assignedToId = userId;
+          where.assignments = { some: { userId } };
         }
       } else if (isDeptAdmin && adminDepartmentIds.length > 0) {
         // Admins de departamento ven tickets de TODOS sus departamentos asignados
@@ -465,12 +475,22 @@ export class TicketsService {
     }
     if (status) where.status = status;
     if (priority) where.priority = priority;
-    if (assignedToId) where.assignedToId = assignedToId;
     if (search) {
       where.OR = [
         { ticketNumber: { contains: search, mode: 'insensitive' } },
         { title: { contains: search, mode: 'insensitive' } }
       ];
+    }
+
+    // Filtros de fecha
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) {
+        where.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        where.createdAt.lte = new Date(dateTo);
+      }
     }
 
     // Paginación
@@ -482,24 +502,7 @@ export class TicketsService {
         include: {
           department: {
             select: {
-              id: true,
-              name: true,
-              prefix: true
-            }
-          },
-          requester: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              profilePicture: true
-            }
-          },
-          assignedTo: {
-            select: {
-              id: true,
-              name: true,
-              profilePicture: true
+              name: true
             }
           }
         },
@@ -714,20 +717,12 @@ export class TicketsService {
       }
     }
 
-    if (data.assignedToId !== undefined && data.assignedToId !== ticket.assignedToId) {
-      updates.assignedTo = data.assignedToId 
-        ? { connect: { id: data.assignedToId } }
-        : { disconnect: true };
-      
-      historyEntries.push({
-        action: 'ASSIGNED',
-        field: 'assignedToId',
-        oldValue: ticket.assignedToId || 'null',
-        newValue: data.assignedToId || 'null'
-      });
-
+    // Manejar asignaciones de usuarios (se hace después de actualizar el ticket)
+    let assignmentsChanged = false;
+    if (data.assignedUserIds !== undefined) {
+      assignmentsChanged = true;
       // Cambiar estado a ASSIGNED si se asigna por primera vez
-      if (data.assignedToId && ticket.status === TicketStatus.NEW) {
+      if (data.assignedUserIds.length > 0 && ticket.status === TicketStatus.NEW) {
         updates.status = TicketStatus.ASSIGNED;
       }
     }
@@ -776,7 +771,18 @@ export class TicketsService {
           department: true,
           form: true,
           requester: true,
-          assignedTo: true
+          assignments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  profilePicture: true
+                }
+              }
+            }
+          }
         }
       });
 
@@ -801,6 +807,30 @@ export class TicketsService {
 
       return updated;
     });
+
+    // Actualizar asignaciones si cambiaron
+    if (assignmentsChanged && data.assignedUserIds !== undefined) {
+      await ticketAssignmentService.assignUsersToTicket(
+        ticketId,
+        data.assignedUserIds,
+        userId
+      );
+
+      // Registrar en audit log
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          action: 'ASSIGNED',
+          resource: 'ticket',
+          resourceId: ticketId,
+          details: {
+            assignedUserIds: data.assignedUserIds,
+            ticketNumber: ticket.ticketNumber
+          },
+          status: 'success'
+        }
+      });
+    }
 
     logger.info(`Ticket ${ticket.ticketNumber} actualizado por usuario ${userId}`);
 

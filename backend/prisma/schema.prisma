@@ -26,21 +26,21 @@ model User {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  departmentUsers    DepartmentUser[]
-  ticketAccess       DepartmentTicketAccess[]
-  createdDepartments Department[]             @relation("DepartmentCreator")
-  sessions           UserSession[]
-  auditLogs          AuditLog[]
-  requestedTickets   Ticket[]                 @relation("TicketRequester")
-  assignedTickets    Ticket[]                 @relation("TicketAssignedTo")
-  ticketRatings      TicketRating[]
-  ticketMessages     TicketMessage[]
-  ticketReads        TicketUserRead[]
-  uploadedDeliverables TicketDeliverable[]    @relation("DeliverableUploads")
-  reviewedDeliverables TicketDeliverable[]    @relation("DeliverableReviews")
+  departmentUsers      DepartmentUser[]
+  ticketAccess         DepartmentTicketAccess[]
+  createdDepartments   Department[]             @relation("DepartmentCreator")
+  sessions             UserSession[]
+  auditLogs            AuditLog[]
+  requestedTickets     Ticket[]                 @relation("TicketRequester")
+  ticketAssignments    TicketAssignment[]       @relation("TicketAssignedTo")
+  ticketRatings        TicketRating[]
+  ticketMessages       TicketMessage[]
+  ticketReads          TicketUserRead[]
+  uploadedDeliverables TicketDeliverable[]      @relation("DeliverableUploads")
+  reviewedDeliverables TicketDeliverable[]      @relation("DeliverableReviews")
   notifications        Notification[]
   fcmTokens            FcmToken[]
-  brandingUpdates      BrandingConfig[]     @relation("BrandingUpdatedBy")
+  brandingUpdates      BrandingConfig[]         @relation("BrandingUpdatedBy")
 
   @@map("users")
 }
@@ -396,7 +396,6 @@ model Ticket {
   departmentId String  @map("department_id")
   formId       String  @map("form_id")
   requesterId  String  @map("requester_id")
-  assignedToId String? @map("assigned_to_id")
   parentTicketId String? @map("parent_ticket_id")
 
   title    String
@@ -425,32 +424,47 @@ model Ticket {
   department Department @relation(fields: [departmentId], references: [id])
   form       TicketForm @relation(fields: [formId], references: [id])
   requester  User       @relation("TicketRequester", fields: [requesterId], references: [id])
-  assignedTo User?      @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
   parentTicket Ticket?  @relation("TicketFollowUp", fields: [parentTicketId], references: [id])
   childTickets Ticket[] @relation("TicketFollowUp")
 
-  rating   TicketRating?
-  messages TicketMessage[]
-  userReads TicketUserRead[]
+  assignments  TicketAssignment[]
+  rating       TicketRating?
+  messages     TicketMessage[]
+  userReads    TicketUserRead[]
   deliverables TicketDeliverable[]
 
   @@index([departmentId])
   @@index([formId])
   @@index([requesterId])
-  @@index([assignedToId])
   @@index([parentTicketId])
   @@index([status])
   @@index([priority])
   @@index([ticketNumber])
   @@index([createdAt])
   @@index([departmentId, status])
-  @@index([assignedToId, status])
   @@index([requesterId, status])
   @@index([slaExceeded])
   @@index([deletedAt])
   @@index([departmentId, createdAt])
   @@index([status, resolvedAt])
   @@map("tickets")
+}
+
+model TicketAssignment {
+  id         String   @id @default(uuid())
+  ticketId   String   @map("ticket_id")
+  userId     String   @map("user_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  assignedBy String?  @map("assigned_by")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User   @relation("TicketAssignedTo", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, userId])
+  @@index([ticketId])
+  @@index([userId])
+  @@index([userId, ticketId])
+  @@map("ticket_assignments")
 }
 
 model TicketRating {

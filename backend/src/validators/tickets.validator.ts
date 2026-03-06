@@ -46,7 +46,7 @@ export const updateTicketSchema = z.object({
 
 // Schema para asignar ticket
 export const assignTicketSchema = z.object({
-  assignedToId: z.string().uuid('ID de usuario inválido')
+  assignedUserIds: z.array(z.string().uuid('ID de usuario inválido')).min(1, 'Debe asignar al menos un usuario')
 });
 
 // Schema para cambiar estado

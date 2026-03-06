@@ -34,14 +34,22 @@ class SLACheckerWorker {
           id: true,
           ticketNumber: true,
           title: true,
-          assignedToId: true,
-          departmentId: true,
+          priority: true,
           slaDeadline: true,
+          departmentId: true,
+          assignments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            }
+          },
           department: {
             select: { name: true }
-          },
-          assignedTo: {
-            select: { name: true, email: true }
           }
         }
       });
@@ -71,7 +79,7 @@ class SLACheckerWorker {
                 ticketNumber: ticket.ticketNumber,
                 slaDeadline: ticket.slaDeadline,
                 department: ticket.department.name,
-                assignedTo: ticket.assignedTo?.name || 'Sin asignar'
+                assignedTo: ticket.assignments.map(a => a.user.name).join(', ') || 'Sin asignar'
               },
               status: 'success'
             }
@@ -120,15 +128,22 @@ class SLACheckerWorker {
         id: true,
         ticketNumber: true,
         title: true,
-        assignedToId: true,
-        departmentId: true,
-        slaDeadline: true,
         priority: true,
+        slaDeadline: true,
+        departmentId: true,
+        assignments: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
         department: {
           select: { name: true }
-        },
-        assignedTo: {
-          select: { name: true, email: true }
         }
       }
     });
@@ -143,7 +158,7 @@ class SLACheckerWorker {
 
         logger.warn(
           `⏰ Ticket ${ticket.ticketNumber} excederá SLA en ${minutesRemaining} minutos - ` +
-          `Asignado a: ${ticket.assignedTo?.name || 'Sin asignar'}`
+          `Asignado a: ${ticket.assignments.map(a => a.user.name).join(', ') || 'Sin asignar'}`
         );
 
         // Enviar notificación preventiva de SLA

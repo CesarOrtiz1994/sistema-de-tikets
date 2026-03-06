@@ -24,12 +24,14 @@ interface KanbanTicket {
     email: string;
     profilePicture: string | null;
   };
-  assignedTo: {
-    id: string;
-    name: string;
-    email: string;
-    profilePicture: string | null;
-  } | null;
+  assignments: Array<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      profilePicture: string | null;
+    };
+  }>;
   department: {
     id: string;
     name: string;
@@ -39,7 +41,6 @@ interface KanbanTicket {
 
 interface KanbanFilters {
   priority?: string;
-  assignedToId?: string;
   onlyMine?: boolean;
 }
 
@@ -126,15 +127,18 @@ export class KanbanService {
         where.priority = filters.priority as any;
       }
 
-      if (filters.assignedToId) {
-        where.assignedToId = filters.assignedToId;
+      // Para SUBORDINATE: solo mostrar tickets asignados a ellos
+      // Para DEPT_ADMIN: mostrar todos los tickets del departamento
+      // Para SUPER_ADMIN: mostrar todos del departamento
+      if (user.roleType === 'SUBORDINATE') {
+        // Subordinados SOLO ven tickets asignados a ellos
+        where.assignments = { some: { userId } };
       }
+      // DEPT_ADMIN y SUPER_ADMIN ven todos los tickets del departamento (no se agrega filtro adicional)
 
-      if (filters.onlyMine) {
-        where.OR = [
-          { requesterId: userId },
-          { assignedToId: userId }
-        ];
+      // Filtro onlyMine aplica para DEPT_ADMIN y SUPER_ADMIN
+      if (filters.onlyMine && (user.roleType === 'SUPER_ADMIN' || user.roleType === 'DEPT_ADMIN')) {
+        where.assignments = { some: { userId } };
       }
 
       // Obtener todos los tickets del departamento
@@ -159,12 +163,16 @@ export class KanbanService {
               profilePicture: true
             }
           },
-          assignedTo: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              profilePicture: true
+          assignments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  profilePicture: true
+                }
+              }
             }
           },
           department: {
@@ -279,14 +287,19 @@ export class KanbanService {
       if (filters.priority) {
         where.priority = filters.priority as any;
       }
-      if (filters.assignedToId) {
-        where.assignedToId = filters.assignedToId;
+
+      // Para SUBORDINATE: solo mostrar tickets asignados a ellos
+      // Para DEPT_ADMIN: mostrar todos los tickets de sus departamentos
+      // Para SUPER_ADMIN: mostrar todos
+      if (user.roleType === 'SUBORDINATE') {
+        // Subordinados SOLO ven tickets asignados a ellos
+        where.assignments = { some: { userId } };
       }
-      if (filters.onlyMine) {
-        where.OR = [
-          { requesterId: userId },
-          { assignedToId: userId }
-        ];
+      // DEPT_ADMIN y SUPER_ADMIN ven todos los tickets (no se agrega filtro adicional)
+
+      // Filtro onlyMine aplica para DEPT_ADMIN y SUPER_ADMIN
+      if (filters.onlyMine && (user.roleType === 'SUPER_ADMIN' || user.roleType === 'DEPT_ADMIN')) {
+        where.assignments = { some: { userId } };
       }
 
       const tickets = await prisma.ticket.findMany({
@@ -305,8 +318,12 @@ export class KanbanService {
           requester: {
             select: { id: true, name: true, email: true, profilePicture: true }
           },
-          assignedTo: {
-            select: { id: true, name: true, email: true, profilePicture: true }
+          assignments: {
+            include: {
+              user: {
+                select: { id: true, name: true, email: true, profilePicture: true }
+              }
+            }
           },
           department: {
             select: { id: true, name: true, prefix: true, requireDeliverable: true }
@@ -356,7 +373,7 @@ export class KanbanService {
    */
   async quickAssignTicket(
     ticketId: string,
-    assignedToId: string | null,
+    assignedUserIds: string[],
     userId: string
   ): Promise<void> {
     try {
@@ -366,8 +383,7 @@ export class KanbanService {
         select: {
           id: true,
           status: true,
-          departmentId: true,
-          assignedToId: true
+          departmentId: true
         }
       });
 
@@ -403,36 +419,43 @@ export class KanbanService {
         throw new Error('No tienes permisos para asignar tickets');
       }
 
-      // Si se está asignando a alguien, verificar que el usuario existe
-      if (assignedToId) {
-        const assignee = await prisma.user.findUnique({
-          where: { id: assignedToId }
+      // Verificar que los usuarios existen
+      if (assignedUserIds.length > 0) {
+        const users = await prisma.user.findMany({
+          where: { id: { in: assignedUserIds } }
         });
 
-        if (!assignee) {
-          throw new Error('Usuario asignado no encontrado');
+        if (users.length !== assignedUserIds.length) {
+          throw new Error('Uno o más usuarios asignados no fueron encontrados');
         }
       }
 
-      // Actualizar el ticket
-      const updateData: Prisma.TicketUpdateInput = {
-        assignedTo: assignedToId ? { connect: { id: assignedToId } } : { disconnect: true }
-      };
+      // Actualizar asignaciones
+      await prisma.ticketAssignment.deleteMany({
+        where: { ticketId }
+      });
 
-      // Si el ticket está en NEW y se asigna, cambiar a ASSIGNED
-      if (ticket.status === 'NEW' && assignedToId) {
-        updateData.status = 'ASSIGNED';
+      if (assignedUserIds.length > 0) {
+        await prisma.ticketAssignment.createMany({
+          data: assignedUserIds.map(uid => ({
+            ticketId,
+            userId: uid,
+            assignedBy: userId
+          }))
+        });
       }
 
-      await prisma.ticket.update({
-        where: { id: ticketId },
-        data: updateData
-      });
+      // Si el ticket está en NEW y se asigna, cambiar a ASSIGNED
+      if (ticket.status === 'NEW' && assignedUserIds.length > 0) {
+        await prisma.ticket.update({
+          where: { id: ticketId },
+          data: { status: 'ASSIGNED' }
+        });
+      }
 
       logger.info('Ticket quick assigned', {
         ticketId,
-        assignedToId,
-        previousAssignedTo: ticket.assignedToId,
+        assignedUserIds,
         userId
       });
     } catch (error) {

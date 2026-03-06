@@ -16,7 +16,11 @@ export class DeliverablesService {
       where: { id: ticketId },
       include: {
         department: true,
-        assignedTo: true
+        assignments: {
+          include: {
+            user: true
+          }
+        }
       }
     });
 
@@ -28,8 +32,9 @@ export class DeliverablesService {
       throw new Error('Este departamento no requiere entregables');
     }
 
-    if (ticket.assignedToId !== userId) {
-      throw new Error('Solo el agente asignado puede subir el entregable');
+    const isAssigned = ticket.assignments.some(a => a.userId === userId);
+    if (!isAssigned) {
+      throw new Error('Solo los agentes asignados pueden subir el entregable');
     }
 
     const allowedStatuses: string[] = ['IN_PROGRESS', 'WAITING', 'RESOLVED'];
@@ -135,7 +140,11 @@ export class DeliverablesService {
           include: {
             requester: true,
             department: true,
-            assignedTo: true,
+            assignments: {
+              include: {
+                user: true
+              }
+            },
             form: true
           }
         }
@@ -206,7 +215,6 @@ export class DeliverablesService {
             departmentId: ticket.departmentId,
             formId: ticket.formId,
             requesterId: ticket.requesterId,
-            assignedToId: ticket.assignedToId,
             parentTicketId: ticket.id,
             title: `Seguimiento: ${ticket.title}`,
             priority: ticket.priority,
@@ -216,7 +224,11 @@ export class DeliverablesService {
           include: {
             department: true,
             requester: true,
-            assignedTo: true
+            assignments: {
+              include: {
+                user: true
+              }
+            }
           }
         });
       }
@@ -243,8 +255,12 @@ export class DeliverablesService {
       where: { id: ticketId },
       select: {
         requesterId: true,
-        assignedToId: true,
-        departmentId: true
+        departmentId: true,
+        assignments: {
+          select: {
+            userId: true
+          }
+        }
       }
     });
 
@@ -253,9 +269,10 @@ export class DeliverablesService {
     }
 
     // Verificar que el usuario tiene acceso al ticket
+    const isAssigned = ticket.assignments.some(a => a.userId === userId);
     const hasAccess =
       ticket.requesterId === userId ||
-      ticket.assignedToId === userId ||
+      isAssigned ||
       (await this.userHasDepartmentAccess(userId, ticket.departmentId));
 
     if (!hasAccess) {

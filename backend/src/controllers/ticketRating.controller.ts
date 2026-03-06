@@ -21,7 +21,14 @@ class TicketRatingController {
 
       const ticket = await prisma.ticket.findUnique({
         where: { id },
-        include: { department: true }
+        include: { 
+          department: true,
+          assignments: {
+            select: {
+              userId: true
+            }
+          }
+        }
       });
 
       if (!ticket) {
@@ -33,7 +40,7 @@ class TicketRatingController {
 
       // Verificar permisos: solo el asignado o admin pueden resolver
       const userRole = (req as any).user?.roleType;
-      const isAssignee = ticket.assignedToId === userId;
+      const isAssignee = ticket.assignments?.some(a => a.userId === userId);
       const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'DEPT_ADMIN';
 
       if (!isAssignee && !isAdmin) {
@@ -181,7 +188,7 @@ class TicketRatingController {
 
       // Notificar al asignado
       notifyTicketRated(
-        { id: ticket.id, ticketNumber: ticket.ticketNumber, assignedToId: ticket.assignedToId },
+        { id: ticket.id, ticketNumber: ticket.ticketNumber },
         rating
       ).catch(err => logger.error('Error sending rate notification:', err));
 
@@ -314,7 +321,7 @@ class TicketRatingController {
       // Notificar al asignado
       const closer = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
       notifyTicketClosed(
-        { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, assignedToId: ticket.assignedToId },
+        { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title },
         closer?.name || 'Solicitante'
       ).catch(err => logger.error('Error sending close notification:', err));
 
@@ -413,7 +420,7 @@ class TicketRatingController {
       // Notificar al asignado + admins dept
       const reopener = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
       notifyTicketReopened(
-        { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, assignedToId: ticket.assignedToId, departmentId: ticket.departmentId },
+        { id: ticket.id, ticketNumber: ticket.ticketNumber, title: ticket.title, departmentId: ticket.departmentId },
         reason,
         reopener?.name || 'Solicitante'
       ).catch(err => logger.error('Error sending reopen notification:', err));

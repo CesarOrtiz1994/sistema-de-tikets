@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { usePermissions } from '../hooks/usePermissions';
@@ -15,15 +14,11 @@ import {
   FiAlertTriangle,
   FiStar,
   FiTrendingUp,
-  FiPlus,
-  FiExternalLink,
   FiXCircle
 } from 'react-icons/fi';
 import StatCard from '../components/common/StatCard';
-import Badge from '../components/common/Badge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Card from '../components/common/Card';
-import { BadgeVariant } from '../components/common/Badge';
 import {
   metricsService,
   DashboardMetrics,
@@ -36,7 +31,6 @@ import {
   MetricsFilters
 } from '../services/metrics.service';
 import { toast } from 'sonner';
-import { formatDate } from '../utils/dateUtils';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -61,15 +55,6 @@ const PRIORITY_COLORS: Record<string, string> = {
   LOW: '#10B981', MEDIUM: '#3B82F6', HIGH: '#F97316', CRITICAL: '#EF4444'
 };
 
-const STATUS_BADGE: Record<string, BadgeVariant> = {
-  NEW: 'info', ASSIGNED: 'gray', IN_PROGRESS: 'warning',
-  WAITING: 'orange', RESOLVED: 'success', CLOSED: 'gray', CANCELLED: 'danger'
-};
-
-const PRIORITY_BADGE: Record<string, BadgeVariant> = {
-  LOW: 'green', MEDIUM: 'yellow', HIGH: 'orange', CRITICAL: 'red'
-};
-
 const PERIOD_OPTIONS = [
   { value: 'week', label: 'Última semana' },
   { value: 'month', label: 'Último mes' },
@@ -81,7 +66,6 @@ export default function DashboardHomePage() {
   usePageTitle('Dashboard');
   const { user } = useAuth();
   const { userRole } = usePermissions();
-  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<DashboardMetrics | null>(null);
@@ -444,89 +428,6 @@ export default function DashboardHomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════ TICKETS RECIENTES + ACCIONES ═══════════════════════ */}
-      <section>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <FiFileText className="text-purple-500" /> Actividad Reciente
-        </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Tickets Recientes */}
-          <div className="lg:col-span-2">
-            <Card>
-              <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Últimos Tickets</h4>
-              {d.recentTickets.length > 0 ? (
-                <div className="space-y-3">
-                  {d.recentTickets.map(ticket => (
-                    <div
-                      key={ticket.id}
-                      onClick={() => navigate(`/tickets/${ticket.id}`)}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 cursor-pointer transition"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-mono text-purple-600 dark:text-purple-400">{ticket.ticketNumber}</span>
-                          <Badge variant={STATUS_BADGE[ticket.status] || 'gray'} size="sm">
-                            {STATUS_LABELS[ticket.status] || ticket.status}
-                          </Badge>
-                          <Badge variant={PRIORITY_BADGE[ticket.priority] || 'gray'} size="sm">
-                            {PRIORITY_LABELS[ticket.priority] || ticket.priority}
-                          </Badge>
-                        </div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{ticket.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {ticket.department.name} · {ticket.requester.name} · {formatDate(ticket.createdAt)}
-                        </p>
-                      </div>
-                      <FiExternalLink className="text-gray-400 ml-2 flex-shrink-0" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-400 text-sm text-center py-8">No hay tickets recientes</p>
-              )}
-            </Card>
-          </div>
-
-          {/* Acciones Rápidas */}
-          <Card>
-            <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Acciones Rápidas</h4>
-            <div className="space-y-2">
-              <button
-                onClick={() => navigate('/tickets/create')}
-                className="w-full text-left px-4 py-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800 transition flex items-center gap-2"
-              >
-                <FiPlus className="text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Crear Nuevo Ticket</span>
-              </button>
-              <button
-                onClick={() => navigate('/tickets')}
-                className="w-full text-left px-4 py-3 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800 transition flex items-center gap-2"
-              >
-                <FiFileText className="text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium text-green-700 dark:text-green-300">Ver Mis Tickets</span>
-              </button>
-              {(userRole === RoleType.SUPER_ADMIN || userRole === RoleType.DEPT_ADMIN) && (
-                <button
-                  onClick={() => navigate('/tickets/kanban')}
-                  className="w-full text-left px-4 py-3 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-800 transition flex items-center gap-2"
-                >
-                  <FiBriefcase className="text-purple-600 dark:text-purple-400" />
-                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Tablero Kanban</span>
-                </button>
-              )}
-              {userRole === RoleType.SUPER_ADMIN && (
-                <button
-                  onClick={() => navigate('/users')}
-                  className="w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 transition flex items-center gap-2"
-                >
-                  <FiUsers className="text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Gestionar Usuarios</span>
-                </button>
-              )}
-            </div>
-          </Card>
-        </div>
-      </section>
     </div>
   );
 }

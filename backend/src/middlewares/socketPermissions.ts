@@ -41,7 +41,13 @@ export const canAccessTicket = async (
     }
 
     // El usuario asignado tiene acceso
-    if (ticket.assignedToId === userId) {
+    const assignments = await prisma.ticketAssignment.findFirst({
+      where: {
+        ticketId,
+        userId
+      }
+    });
+    if (assignments) {
       return true;
     }
 

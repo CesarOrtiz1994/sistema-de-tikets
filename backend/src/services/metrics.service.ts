@@ -41,13 +41,21 @@ function buildTicketWhere(
   departmentIds: string[] | null,
   specificDeptId?: string,
   dateFilter?: DateFilter,
-  requesterId?: string
+  requesterId?: string,
+  userId?: string,
+  roleType?: RoleType
 ) {
   const where: any = { deletedAt: null };
 
   // Si es REQUESTER, solo sus tickets
   if (requesterId) {
     where.requesterId = requesterId;
+  }
+
+  // Si es SUBORDINATE, solo tickets asignados a ellos
+  // DEPT_ADMIN ve todos los tickets de su departamento
+  if (roleType === RoleType.SUBORDINATE) {
+    where.assignments = { some: { userId } };
   }
 
   // Filtro de departamento específico (query param)
@@ -80,7 +88,9 @@ class MetricsService {
       departmentIds,
       filters.departmentId,
       filters,
-      isRequester ? userId : undefined
+      isRequester ? userId : undefined,
+      userId,
+      roleType
     );
 
     if (where === null) {
@@ -119,7 +129,13 @@ class MetricsService {
           createdAt: true,
           department: { select: { name: true } },
           requester: { select: { name: true } },
-          assignedTo: { select: { name: true } }
+          assignments: {
+            include: {
+              user: {
+                select: { name: true }
+              }
+            }
+          }
         }
       })
     ]);

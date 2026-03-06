@@ -16,7 +16,6 @@ import { RoleType } from '../types/permissions';
 import kanbanService, { KanbanColumn as KanbanColumnType, KanbanTicket, KanbanFilters } from '../services/kanban.service';
 import { ticketsService } from '../services/tickets.service';
 import { usersService } from '../services/users.service';
-import { departmentsService } from '../services/departments.service';
 import permissionsService from '../services/permissions.service';
 import KanbanColumn from '../components/Kanban/KanbanColumn';
 import TicketCard from '../components/Kanban/TicketCard';
@@ -38,7 +37,6 @@ export default function KanbanBoardPage() {
   const [activeTicket, setActiveTicket] = useState<KanbanTicket | null>(null);
   const [myAdminDepartments, setMyAdminDepartments] = useState<any[]>([]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
-  const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
   
   // Modal de detalle
   const [selectedTicket, setSelectedTicket] = useState<KanbanTicket | null>(null);
@@ -82,9 +80,6 @@ export default function KanbanBoardPage() {
   useEffect(() => {
     if (selectedDepartmentId) {
       loadKanbanBoard();
-      if (isDeptAdmin && selectedDepartmentId !== 'all') {
-        loadDepartmentUsers();
-      }
     }
   }, [selectedDepartmentId, filters]);
 
@@ -107,18 +102,6 @@ export default function KanbanBoardPage() {
       console.error('Error loading admin departments:', error);
       toast.error('Error al cargar departamentos');
       setLoading(false);
-    }
-  };
-
-  const loadDepartmentUsers = async () => {
-    try {
-      if (!selectedDepartmentId) return;
-
-      const response = await departmentsService.getDepartmentUsers(selectedDepartmentId);
-      const users = response.data?.map((du: any) => du.user) || [];
-      setDepartmentUsers(users);
-    } catch (error) {
-      console.error('Error loading department users:', error);
     }
   };
 
@@ -371,12 +354,12 @@ export default function KanbanBoardPage() {
             >
               <FiFilter />
               <span>Filtros</span>
-              {(filters.priority || filters.assignedToId || filters.onlyMine) && (
+              {(filters.priority || filters.onlyMine) && (
                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
               )}
             </button>
 
-            {(filters.priority || filters.assignedToId || (filters.onlyMine && !isSubordinate)) && (
+            {(filters.priority || (filters.onlyMine && !isSubordinate)) && (
               <button
                 onClick={clearFilters}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
@@ -407,33 +390,9 @@ export default function KanbanBoardPage() {
                 </select>
               </div>
 
-              {/* Filtro de Asignado */}
-              {isDeptAdmin && (
+              {/* Filtro Solo Mis Tickets (checkbox para DEPT_ADMIN y SUPER_ADMIN) */}
+              {!isSubordinate && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Asignado a
-                  </label>
-                  <select
-                    value={filters.assignedToId || ''}
-                    onChange={(e) => handleFilterChange('assignedToId', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  >
-                    <option value="">Todos</option>
-                    {departmentUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Filtro Solo Míos (solo para admins) */}
-              {isDeptAdmin && !isSubordinate && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Mostrar
-                  </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
