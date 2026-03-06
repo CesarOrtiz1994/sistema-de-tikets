@@ -9,6 +9,10 @@ interface WorkScheduleInfoProps {
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+const formatTime = (hour: number, minute: number): string => {
+  return `${hour}:${minute.toString().padStart(2, '0')}`;
+};
+
 export default function WorkScheduleInfo({ departmentId, departmentName }: WorkScheduleInfoProps) {
   const [schedules, setSchedules] = useState<WorkSchedule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +61,7 @@ export default function WorkScheduleInfo({ departmentId, departmentName }: WorkS
   const scheduleGroups: { [key: string]: number[] } = {};
   
   workdays.forEach(schedule => {
-    const key = `${schedule.startHour}:${schedule.startMinute}-${schedule.endHour}:${schedule.endMinute}`;
+    const key = `${formatTime(schedule.startHour, schedule.startMinute)}-${formatTime(schedule.endHour, schedule.endMinute)}`;
     if (!scheduleGroups[key]) {
       scheduleGroups[key] = [];
     }
