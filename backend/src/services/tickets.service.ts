@@ -504,6 +504,25 @@ export class TicketsService {
             select: {
               name: true
             }
+          },
+          assignments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  profilePicture: true
+                }
+              }
+            }
+          },
+          requester: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
           }
         },
         orderBy: {
