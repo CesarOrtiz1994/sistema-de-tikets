@@ -135,7 +135,7 @@ export default function UsersManagementPage() {
     try {
       
       if (selectedUser) {
-        const result = await usersService.updateUser(selectedUser.id, data as UpdateUserData);
+        await usersService.updateUser(selectedUser.id, data as UpdateUserData);
         toast.success('Usuario actualizado exitosamente');
       } else {
         await usersService.createUser(data as CreateUserData);
