@@ -156,7 +156,21 @@ export default function KanbanBoardPage() {
     if (!over) return;
 
     const ticketId = active.id as string;
-    const newStatus = over.id as string;
+    
+    // Determinar el nuevo estado: puede ser el ID de la columna o el ID de un ticket
+    let newStatus = over.id as string;
+    
+    // Si over.id no es un status válido, buscar en qué columna está ese ticket
+    const validStatuses = ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'WAITING', 'RESOLVED'];
+    if (!validStatuses.includes(newStatus)) {
+      // over.id es un ticketId, buscar su columna
+      for (const column of columns) {
+        if (column.tickets.some(t => t.id === newStatus)) {
+          newStatus = column.status;
+          break;
+        }
+      }
+    }
 
     // Encontrar el ticket y su estado actual
     let currentStatus = '';
@@ -170,7 +184,16 @@ export default function KanbanBoardPage() {
       }
     }
 
-    if (!ticket || currentStatus === newStatus) return;
+    // Validar que el ticket existe
+    if (!ticket) {
+      console.warn('Ticket no encontrado:', ticketId);
+      return;
+    }
+
+    // Validar que el estado cambió - comparación estricta
+    if (currentStatus === newStatus) {
+      return;
+    }
 
     // Si se arrastra a RESOLVED, verificar si el departamento requiere entregable
     if (newStatus === 'RESOLVED' && ticket.department?.requireDeliverable) {
@@ -188,10 +211,8 @@ export default function KanbanBoardPage() {
     }
 
     try {
-      // Actualizar el estado del ticket en el backend
-      await ticketsService.updateTicket(ticketId, {
-        status: newStatus as any
-      });
+      // Actualizar el estado del ticket en el backend usando el endpoint correcto
+      await ticketsService.changeStatus(ticketId, newStatus as any);
 
       toast.success('Ticket actualizado exitosamente');
       
@@ -209,9 +230,7 @@ export default function KanbanBoardPage() {
     setShowDeliverableModal(false);
     if (pendingResolveTicketId) {
       try {
-        await ticketsService.updateTicket(pendingResolveTicketId, {
-          status: 'RESOLVED' as any
-        });
+        await ticketsService.changeStatus(pendingResolveTicketId, 'RESOLVED' as any);
         toast.success('Entregable subido y ticket marcado como resuelto');
         await loadKanbanBoard();
       } catch (error: any) {
