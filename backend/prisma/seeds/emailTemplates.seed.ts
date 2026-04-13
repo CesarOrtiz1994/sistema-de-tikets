@@ -275,7 +275,7 @@ export const emailTemplatesSeed = async (prisma: PrismaClient) => {
       htmlBody: wrapTemplate(`
         <div class="body">
           <p>Hola <strong>{{user_name}}</strong>,</p>
-          <p>⚠️ El siguiente ticket está <span class="badge badge-warning">próximo a exceder su SLA</span>:</p>
+          <p>El siguiente ticket está <span class="badge badge-warning">próximo a exceder su SLA</span>:</p>
           <div class="info-box">
             <div class="label">Número de Ticket</div>
             <div class="value">{{ticket_number}}</div>
@@ -304,7 +304,7 @@ export const emailTemplatesSeed = async (prisma: PrismaClient) => {
       htmlBody: wrapTemplate(`
         <div class="body">
           <p>Hola <strong>{{user_name}}</strong>,</p>
-          <p>🚨 El siguiente ticket ha <span class="badge badge-danger">excedido su SLA</span>:</p>
+          <p>El siguiente ticket ha <span class="badge badge-danger">excedido su SLA</span>:</p>
           <div class="info-box">
             <div class="label">Número de Ticket</div>
             <div class="value">{{ticket_number}}</div>

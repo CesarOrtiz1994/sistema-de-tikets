@@ -59,6 +59,8 @@ export const authRateLimitOptions: Partial<RateLimitOptions> = {
 };
 
 // Rate limit para mensajes de chat
+// Nota: No usamos keyGenerator personalizado para evitar warnings de IPv6
+// express-rate-limit maneja automáticamente las IPs (IPv4 e IPv6) de forma segura
 export const chatMessageRateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 1 * 60 * 1000, // 1 minuto
   max: env.NODE_ENV === 'development' ? 100 : 50, // 10 mensajes por minuto en producción
@@ -72,14 +74,11 @@ export const chatMessageRateLimitOptions: Partial<RateLimitOptions> = {
     }
     return false;
   },
-  // Usar userId como key en lugar de IP para usuarios autenticados
-  keyGenerator: (req) => {
-    const user = (req as any).user;
-    return user?.id || req.ip || 'unknown';
-  },
 };
 
 // Rate limit para archivos adjuntos
+// Nota: No usamos keyGenerator personalizado para evitar warnings de IPv6
+// express-rate-limit maneja automáticamente las IPs (IPv4 e IPv6) de forma segura
 export const chatAttachmentRateLimitOptions: Partial<RateLimitOptions> = {
   windowMs: 5 * 60 * 1000, // 5 minutos
   max: env.NODE_ENV === 'development' ? 50 : 20, // 5 archivos cada 5 minutos
@@ -91,9 +90,5 @@ export const chatAttachmentRateLimitOptions: Partial<RateLimitOptions> = {
       return true;
     }
     return false;
-  },
-  keyGenerator: (req) => {
-    const user = (req as any).user;
-    return user?.id || req.ip || 'unknown';
   },
 };

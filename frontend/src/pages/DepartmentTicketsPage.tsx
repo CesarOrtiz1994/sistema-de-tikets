@@ -93,6 +93,7 @@ export default function DepartmentTicketsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalTickets, setTotalTickets] = useState(0);
   const [stats, setStats] = useState({ pending: 0, resolved: 0 });
+  const [pageSize, setPageSize] = useState(10);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
@@ -118,7 +119,7 @@ export default function DepartmentTicketsPage() {
         loadDepartments();
       }
     }
-  }, [currentPage, statusFilter, priorityFilter, assignedToFilter, departmentFilterValue, dateFilter, dateFrom, dateTo, user?.id]);
+  }, [currentPage, departmentFilterValue, statusFilter, priorityFilter, dateFilter, dateFrom, dateTo, pageSize]);
 
   // Cargar usuarios cuando cambia el departamento seleccionado
   useEffect(() => {
@@ -200,7 +201,7 @@ export default function DepartmentTicketsPage() {
       // Si no hay departmentFilterValue, no enviar nada (el backend aplicará el filtro correcto)
       const response = await ticketsService.listTickets({
         page: currentPage,
-        limit: 10,
+        limit: pageSize,
         departmentId: departmentFilterValue || undefined,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
@@ -232,6 +233,11 @@ export default function DepartmentTicketsPage() {
   const handleSearch = () => {
     setCurrentPage(1);
     loadTickets();
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
   };
 
   const handleRowClick = (ticket: Ticket) => {
@@ -285,6 +291,15 @@ export default function DepartmentTicketsPage() {
           {ticket.assignments && ticket.assignments.length > 0 
             ? ticket.assignments.map(a => a.user.name).join(', ')
             : 'Sin asignar'}
+        </span>
+      ),
+    },
+    {
+      key: 'updatedAt',
+      header: 'Último Movimiento',
+      render: (ticket: Ticket) => (
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {formatDate(ticket.updatedAt)}
         </span>
       ),
     },
@@ -551,15 +566,16 @@ export default function DepartmentTicketsPage() {
           />
         )}
         
-        {totalPages > 1 && (
-          <div className="mt-6">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        )}
+        <div className="mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            totalItems={totalTickets}
+          />
+        </div>
       </Card>
     </div>
   );

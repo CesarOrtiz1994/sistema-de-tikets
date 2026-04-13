@@ -34,8 +34,10 @@ export default function UsersManagementPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { isOpen, options, confirm, handleConfirm, handleCancel } = useConfirmDialog();
@@ -49,7 +51,7 @@ export default function UsersManagementPage() {
   useEffect(() => {
     loadUsers();
     loadStats();
-  }, [page, search, roleFilter, statusFilter]);
+  }, [currentPage, search, roleFilter, statusFilter, pageSize]);
 
   const loadUsers = async () => {
     try {
@@ -59,12 +61,13 @@ export default function UsersManagementPage() {
         roleType: roleFilter !== '' ? roleFilter : undefined,
         isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
         includeDeleted: statusFilter === 'deleted',
-        page: page,
-        limit: 10
+        page: currentPage,
+        limit: pageSize
       });
       
       setUsers(response.users);
       setTotalPages(response.pagination.totalPages);
+      setTotalUsers(response.pagination.total);
     } catch (error: any) {
       console.error('Error al cargar usuarios:', error);
       console.error('Detalles del error:', error.response?.data || error.message);
@@ -150,6 +153,11 @@ export default function UsersManagementPage() {
       console.error('Error en handleSaveUser:', error);
       throw error;
     }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
   };
 
   if (loading) return <LoadingSpinner />;
@@ -387,9 +395,12 @@ export default function UsersManagementPage() {
         />
 
         <Pagination
-          currentPage={page}
+          currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setPage}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          totalItems={totalUsers}
         />
       </div>
 
