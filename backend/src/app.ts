@@ -42,8 +42,7 @@ import botRoutes from './routes/bot.routes';
 
 const app: Application = express();
 
-// Configurar trust proxy para manejar correctamente IPs detrás de proxies (nginx, load balancers, etc.)
-// Esto es necesario para que req.ip funcione correctamente con IPv6 y rate limiting
+// Trust proxy (Nginx reverse proxy en la misma máquina)
 app.set('trust proxy', 1);
 
 // Logging HTTP requests

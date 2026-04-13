@@ -60,3 +60,6 @@ tmp/
 # Uploads (development)
 uploads/
 !uploads/.gitkeep
+deploy/deploy-frontend.sh
+ecosystem.config.cjs
+deploy/deploy.sh
