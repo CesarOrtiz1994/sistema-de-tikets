@@ -327,7 +327,7 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
       ) : (
         <div className="px-4 py-3 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
           <p className="text-sm text-center text-gray-500 dark:text-gray-400">
-            {ticketStatus === 'CLOSED' ? '🔒 El ticket está cerrado. No se pueden enviar más mensajes.' : '❌ El ticket está cancelado. No se pueden enviar más mensajes.'}
+            {ticketStatus === 'CLOSED' ? 'El ticket está cerrado. No se pueden enviar más mensajes.' : 'El ticket está cancelado. No se pueden enviar más mensajes.'}
           </p>
         </div>
       )}

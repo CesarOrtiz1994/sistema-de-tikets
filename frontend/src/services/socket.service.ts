@@ -174,7 +174,7 @@ class SocketService {
         const validated = messageReceivedSchema.parse(data);
         callback(validated);
       } catch (error) {
-        console.error('❌ Error validando mensaje recibido:', error, 'Data:', data);
+        console.error('Error validando mensaje recibido:', error, 'Data:', data);
       }
     };
 

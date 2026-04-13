@@ -27,6 +27,8 @@ export default function DepartmentsManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalDepartments, setTotalDepartments] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [isTicketAccessModalOpen, setIsTicketAccessModalOpen] = useState(false);
@@ -42,7 +44,7 @@ export default function DepartmentsManagementPage() {
 
   useEffect(() => {
     loadDepartments();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, pageSize]);
 
   const loadDepartments = async () => {
     try {
@@ -50,11 +52,12 @@ export default function DepartmentsManagementPage() {
       const response = await departmentsService.getAllDepartments({
         search: searchTerm,
         page: currentPage,
-        limit: 10
+        limit: pageSize
       });
 
       setDepartments(response.data);
       setTotalPages(response.pagination.totalPages);
+      setTotalDepartments(response.pagination.totalItems);
       
       // Actualizar selectedDepartment si existe para reflejar cambios en el modal
       if (selectedDepartment) {
@@ -99,6 +102,11 @@ export default function DepartmentsManagementPage() {
   const handleManageWorkSchedule = (department: Department) => {
     setSelectedDepartment(department);
     setIsWorkScheduleModalOpen(true);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
   };
 
   const handleSaveDepartment = async (data: CreateDepartmentData | UpdateDepartmentData) => {
@@ -315,6 +323,9 @@ export default function DepartmentsManagementPage() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
+        pageSize={pageSize}
+        onPageSizeChange={handlePageSizeChange}
+        totalItems={totalDepartments}
       />
 
   <DepartmentModal

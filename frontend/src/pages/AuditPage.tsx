@@ -20,16 +20,22 @@ export default function AuditPage() {
   usePageTitle('Auditoría');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pageSize, setPageSize] = useState(10);
   const [filters, setFilters] = useState<AuditFilters>({
     page: 1,
     limit: 10
   });
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
 
   useEffect(() => {
+    setFilters(prev => ({ ...prev, limit: pageSize }));
+  }, [pageSize]);
+
+  useEffect(() => {
     loadLogs();
-  }, [filters.page, filters.action, filters.resource, filters.status]);
+  }, [filters.page, filters.action, filters.resource, filters.status, filters.limit]);
 
   const loadLogs = async () => {
     try {
@@ -37,6 +43,7 @@ export default function AuditPage() {
       const response = await auditService.getLogs(filters);
       setLogs(response.logs || []);
       setTotalPages(response.pagination?.totalPages || 1);
+      setTotalItems(response.pagination?.total || 0);
     } catch (error) {
       console.error('Error al cargar logs de auditoría:', error);
       toast.error('Error al cargar logs de auditoría', {
@@ -46,6 +53,11 @@ export default function AuditPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setFilters(prev => ({ ...prev, page: 1 }));
   };
 
   const getActionBadgeVariant = (action: string): 'success' | 'info' | 'danger' | 'gray' => {
@@ -216,6 +228,9 @@ export default function AuditPage() {
           currentPage={filters.page || 1}
           totalPages={totalPages}
           onPageChange={(page) => setFilters({ ...filters, page })}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          totalItems={totalItems}
         />
       </div>
     </RoleGuard>

@@ -86,6 +86,7 @@ export default function MyTicketsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalTickets, setTotalTickets] = useState(0);
   const [stats, setStats] = useState({ pending: 0, resolved: 0 });
+  const [pageSize, setPageSize] = useState(10);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
@@ -94,14 +95,14 @@ export default function MyTicketsPage() {
 
   useEffect(() => {
     loadTickets();
-  }, [currentPage, statusFilter, priorityFilter]);
+  }, [currentPage, statusFilter, priorityFilter, pageSize]);
 
   const loadTickets = async () => {
     try {
       setLoading(true);
       const response = await ticketsService.listTickets({
         page: currentPage,
-        limit: 10,
+        limit: pageSize,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         search: searchTerm || undefined,
@@ -130,6 +131,11 @@ export default function MyTicketsPage() {
   const handleSearch = () => {
     setCurrentPage(1);
     loadTickets();
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1); // Resetear a la primera página al cambiar el tamaño
   };
 
   const handleRowClick = (ticket: Ticket) => {
@@ -178,6 +184,15 @@ export default function MyTicketsPage() {
           {ticket.assignments && ticket.assignments.length > 0 
             ? ticket.assignments.map(a => a.user.name).join(', ')
             : 'Sin asignar'}
+        </span>
+      ),
+    },
+    {
+      key: 'updatedAt',
+      header: 'Último Movimiento',
+      render: (ticket: Ticket) => (
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {formatDate(ticket.updatedAt)}
         </span>
       ),
     },
@@ -339,15 +354,16 @@ export default function MyTicketsPage() {
               emptyMessage="No se encontraron tickets"
             />
             
-            {totalPages > 1 && (
-              <div className="mt-6">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-            )}
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
+                totalItems={totalTickets}
+              />
+            </div>
           </>
         )}
       </Card>

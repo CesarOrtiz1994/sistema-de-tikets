@@ -86,6 +86,7 @@ export default function AssignedTicketsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalTickets, setTotalTickets] = useState(0);
   const [stats, setStats] = useState({ pending: 0, resolved: 0 });
+  const [pageSize, setPageSize] = useState(10);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TicketStatus | ''>('');
@@ -94,7 +95,7 @@ export default function AssignedTicketsPage() {
 
   useEffect(() => {
     loadTickets();
-  }, [currentPage, statusFilter, priorityFilter]);
+  }, [currentPage, statusFilter, priorityFilter, pageSize]);
 
   const loadTickets = async () => {
     try {
@@ -102,7 +103,7 @@ export default function AssignedTicketsPage() {
       // SOLO tickets asignados al usuario actual
       const response = await ticketsService.listTickets({
         page: currentPage,
-        limit: 10,
+        limit: pageSize,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
         search: searchTerm || undefined,
@@ -132,6 +133,11 @@ export default function AssignedTicketsPage() {
   const handleSearch = () => {
     setCurrentPage(1);
     loadTickets();
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
   };
 
   const handleRowClick = (ticket: Ticket) => {
@@ -306,15 +312,16 @@ export default function AssignedTicketsPage() {
               emptyMessage="No se encontraron tickets"
             />
             
-            {totalPages > 1 && (
-              <div className="mt-6">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-            )}
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
+                totalItems={totalTickets}
+              />
+            </div>
           </>
         )}
       </Card>
