@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { FiX, FiUser, FiClock, FiAlertCircle, FiCalendar, FiFileText, FiMessageSquare, FiPaperclip, FiPackage, FiDownload } from 'react-icons/fi';
+import { FiX, FiUser, FiClock, FiAlertCircle, FiCalendar, FiFileText, FiMessageSquare, FiPaperclip, FiPackage, FiDownload, FiExternalLink } from 'react-icons/fi';
 import { KanbanTicket } from '../../services/kanban.service';
 import { ticketsService } from '../../services/tickets.service';
 import { formsService } from '../../services/forms.service';
@@ -20,6 +20,7 @@ interface TicketDetailModalProps {
   onClose: () => void;
   onUpdate: () => void;
   canEdit: boolean;
+  onViewFullDetail?: () => void;
 }
 
 const PRIORITY_CONFIG = {
@@ -39,7 +40,7 @@ const STATUS_CONFIG = {
 
 type TabType = 'details' | 'chat' | 'files';
 
-export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }: TicketDetailModalProps) {
+export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit, onViewFullDetail }: TicketDetailModalProps) {
   const { unreadCounts } = useUnreadMessages();
   const [loading, setLoading] = useState(false);
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
@@ -207,12 +208,24 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                   {statusConfig.label}
                 </span>
               </div>
-              <button
-                onClick={onClose}
-                className="text-white hover:text-gray-200 transition-colors"
-              >
-                <FiX className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-3">
+                {onViewFullDetail && (
+                  <button
+                    onClick={onViewFullDetail}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                    title="Ver historial de cambios, archivos y entregables"
+                  >
+                    <FiExternalLink className="w-4 h-4" />
+                    Ver detalle completo
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  <FiX className="w-6 h-6" />
+                </button>
+              </div>
             </div>
           </div>
 

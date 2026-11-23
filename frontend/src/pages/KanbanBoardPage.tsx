@@ -27,11 +27,13 @@ import Modal from '../components/common/Modal';
 import ModalButtons from '../components/common/ModalButtons';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FiFilter, FiRefreshCw, FiUpload } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
 export default function KanbanBoardPage() {
   usePageTitle('Kanban');
   const { user } = useAuth();
   const { hasRole } = usePermissions();
+  const navigate = useNavigate();
   const [columns, setColumns] = useState<KanbanColumnType[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTicket, setActiveTicket] = useState<KanbanTicket | null>(null);
@@ -475,6 +477,7 @@ export default function KanbanBoardPage() {
           onClose={handleCloseModal}
           onUpdate={handleTicketUpdate}
           canEdit={isDeptAdmin}
+          onViewFullDetail={isDeptAdmin ? () => navigate(`/tickets/${selectedTicket.id}`) : undefined}
         />
       )}
 
