@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { usePriorityLabels } from '../hooks/usePriorityLabels';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { FiFilter, FiFileText, FiClock, FiCheckCircle, FiCalendar } from 'react-icons/fi';
@@ -61,7 +62,7 @@ const getStatusBadge = (status: TicketStatus) => {
   return <Badge variant={variants[status]} size="sm">{labels[status]}</Badge>;
 };
 
-const getPriorityBadge = (priority: TicketPriority) => {
+const getPriorityBadge = (priority: TicketPriority, label: string) => {
   const variants: Record<TicketPriority, BadgeVariant> = {
     LOW: 'green',
     MEDIUM: 'yellow',
@@ -69,14 +70,7 @@ const getPriorityBadge = (priority: TicketPriority) => {
     CRITICAL: 'red',
   };
   
-  const labels: Record<TicketPriority, string> = {
-    LOW: 'Baja',
-    MEDIUM: 'Media',
-    HIGH: 'Alta',
-    CRITICAL: 'Crítica',
-  };
-
-  return <Badge variant={variants[priority]} size="sm">{labels[priority]}</Badge>;
+  return <Badge variant={variants[priority]} size="sm">{label}</Badge>;
 };
 
 export default function DepartmentTicketsPage() {
@@ -85,6 +79,7 @@ export default function DepartmentTicketsPage() {
   const { user } = useAuth();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const { getLabel: getPriorityLabel } = usePriorityLabels(tickets.map((t) => t.departmentId));
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [myAdminDepartments, setMyAdminDepartments] = useState<Department[]>([]);
@@ -281,7 +276,7 @@ export default function DepartmentTicketsPage() {
     {
       key: 'priority',
       header: 'Prioridad',
-      render: (ticket: Ticket) => getPriorityBadge(ticket.priority),
+      render: (ticket: Ticket) => getPriorityBadge(ticket.priority, getPriorityLabel(ticket.departmentId, ticket.priority)),
     },
     {
       key: 'assignedTo',

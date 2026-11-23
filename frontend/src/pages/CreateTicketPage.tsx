@@ -11,12 +11,13 @@ import { formsService, TicketForm } from '../services/forms.service';
 import { ticketsService, TicketPriority } from '../services/tickets.service';
 import { createTicketSchema } from '../validators/tickets.validator';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { usePriorityLabels } from '../hooks/usePriorityLabels';
 
-const PRIORITY_OPTIONS: { value: TicketPriority; label: string; color: string }[] = [
-  { value: 'LOW', label: 'Baja', color: 'bg-gray-100 text-gray-800 border-gray-300' },
-  { value: 'MEDIUM', label: 'Media', color: 'bg-blue-100 text-blue-800 border-blue-300' },
-  { value: 'HIGH', label: 'Alta', color: 'bg-orange-100 text-orange-800 border-orange-300' },
-  { value: 'CRITICAL', label: 'Crítica', color: 'bg-red-100 text-red-800 border-red-300' },
+const PRIORITY_OPTIONS: { value: TicketPriority; color: string }[] = [
+  { value: 'LOW', color: 'bg-gray-100 text-gray-800 border-gray-300' },
+  { value: 'MEDIUM', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+  { value: 'HIGH', color: 'bg-orange-100 text-orange-800 border-orange-300' },
+  { value: 'CRITICAL', color: 'bg-red-100 text-red-800 border-red-300' },
 ];
 
 export default function CreateTicketPage() {
@@ -30,6 +31,7 @@ export default function CreateTicketPage() {
   const [activeForm, setActiveForm] = useState<TicketForm | null>(null);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<TicketPriority>('MEDIUM');
+  const { getLabel: getPriorityLabel } = usePriorityLabels([selectedDepartmentId]);
   
   const [loadingDepartments, setLoadingDepartments] = useState(true);
   const [loadingForm, setLoadingForm] = useState(false);
@@ -293,7 +295,7 @@ export default function CreateTicketPage() {
                         disabled:opacity-50 disabled:cursor-not-allowed
                       `}
                     >
-                      {option.label}
+                      {getPriorityLabel(selectedDepartmentId, option.value)}
                     </button>
                   ))}
                 </div>

@@ -1,3 +1,4 @@
+import { usePriorityLabelStore } from '../../store/priorityLabelStore';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { FiClock, FiAlertCircle, FiCheckCircle, FiZap, FiTrash2, FiSave } from 'react-icons/fi';
@@ -148,6 +149,7 @@ export default function DepartmentSLAModal({
 
     try {
       await departmentSLAService.assignSLAToDepartment(departmentId, data);
+      usePriorityLabelStore.getState().invalidate(departmentId);
       toast.success('Configuración SLA asignada exitosamente');
       await loadDepartmentSLAs();
       resetForm();
@@ -171,6 +173,7 @@ export default function DepartmentSLAModal({
 
     try {
       await departmentSLAService.removeSLAFromDepartment(departmentId, priority);
+      usePriorityLabelStore.getState().invalidate(departmentId);
       toast.success('Configuración SLA eliminada exitosamente');
       await loadDepartmentSLAs();
       onSuccess?.(); // Notificar a la página principal para recargar

@@ -1,3 +1,4 @@
+import { usePriorityLabelStore } from '../../store/priorityLabelStore';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -173,6 +174,7 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
 
       // Enviar datos completos al backend
       await departmentSLAService.assignSLAToDepartment(departmentId, dataToSend);
+      usePriorityLabelStore.getState().invalidate(departmentId);
 
       toast.success(editingPriority ? 'SLA actualizado exitosamente' : 'SLA creado exitosamente');
       setIsModalOpen(false);
@@ -209,6 +211,7 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
 
     try {
       await departmentSLAService.removeSLAFromDepartment(departmentId, priority);
+      usePriorityLabelStore.getState().invalidate(departmentId);
       toast.success('SLA eliminado exitosamente');
       await loadData();
       onUpdate?.();

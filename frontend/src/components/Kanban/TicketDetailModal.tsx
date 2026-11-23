@@ -13,6 +13,7 @@ import { BadgeVariant } from '../common/Badge';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ChatWindow from '../Chat/ChatWindow';
 import FileHistory from '../Chat/FileHistory';
+import { usePriorityLabels } from '../../hooks/usePriorityLabels';
 import { useUnreadMessages } from '../../contexts/UnreadMessagesContext';
 
 interface TicketDetailModalProps {
@@ -42,6 +43,7 @@ type TabType = 'details' | 'chat' | 'files';
 
 export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit, onViewFullDetail }: TicketDetailModalProps) {
   const { unreadCounts } = useUnreadMessages();
+  const { getLabel: getPriorityLabel, getOptions: getPriorityOptions } = usePriorityLabels([ticket.department?.id]);
   const [loading, setLoading] = useState(false);
   const [departmentUsers, setDepartmentUsers] = useState<any[]>([]);
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>(ticket.assignments?.map(a => a.user.id) || []);
@@ -202,7 +204,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit, 
                   {ticket.ticketNumber}
                 </h3>
                 <Badge variant={priorityConfig.variant}>
-                  {priorityConfig.label}
+                  {getPriorityLabel(ticket.department?.id, ticket.priority, priorityConfig.label)}
                 </Badge>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
                   {statusConfig.label}
@@ -425,10 +427,11 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit, 
                         className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         disabled={loading}
                       >
-                        <option value="LOW">Baja</option>
-                        <option value="MEDIUM">Media</option>
-                        <option value="HIGH">Alta</option>
-                        <option value="CRITICAL">Crítica</option>
+                        {getPriorityOptions(ticket.department?.id).map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
                       </select>
                       <button
                         onClick={handleChangePriority}

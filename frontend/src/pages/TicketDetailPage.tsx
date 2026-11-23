@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { usePriorityLabels } from '../hooks/usePriorityLabels';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import PageHeader from '../components/common/PageHeader';
@@ -36,13 +37,6 @@ const STATUS_OPTIONS: { value: TicketStatus; label: string }[] = [
   { value: 'RESOLVED', label: 'Resuelto' },
   { value: 'CLOSED', label: 'Cerrado' },
   { value: 'CANCELLED', label: 'Cancelado' },
-];
-
-const PRIORITY_OPTIONS: { value: TicketPriority; label: string }[] = [
-  { value: 'LOW', label: 'Baja' },
-  { value: 'MEDIUM', label: 'Media' },
-  { value: 'HIGH', label: 'Alta' },
-  { value: 'CRITICAL', label: 'Crítica' },
 ];
 
 const getAvailableStatusOptions = (currentStatus: TicketStatus, userRole: RoleType): typeof STATUS_OPTIONS => {
@@ -119,7 +113,7 @@ const getStatusBadge = (status: TicketStatus) => {
   return <Badge variant={variants[status]} size="md">{labels[status]}</Badge>;
 };
 
-const getPriorityBadge = (priority: TicketPriority) => {
+const getPriorityBadge = (priority: TicketPriority, label: string) => {
   const variants: Record<TicketPriority, BadgeVariant> = {
     LOW: 'green',
     MEDIUM: 'yellow',
@@ -127,14 +121,7 @@ const getPriorityBadge = (priority: TicketPriority) => {
     CRITICAL: 'red',
   };
   
-  const labels: Record<TicketPriority, string> = {
-    LOW: 'Baja',
-    MEDIUM: 'Media',
-    HIGH: 'Alta',
-    CRITICAL: 'Crítica',
-  };
-
-  return <Badge variant={variants[priority]} size="md">{labels[priority]}</Badge>;
+  return <Badge variant={variants[priority]} size="md">{label}</Badge>;
 };
 
 export default function TicketDetailPage() {
@@ -144,6 +131,7 @@ export default function TicketDetailPage() {
   const { userRole } = usePermissions();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const { getLabel: getPriorityLabel, getOptions: getPriorityOptions } = usePriorityLabels([ticket?.departmentId]);
   
   usePageTitle(ticket ? `Ticket ${ticket.ticketNumber}` : 'Detalle del Ticket');
   const [loading, setLoading] = useState(true);
@@ -551,7 +539,7 @@ export default function TicketDetailPage() {
         other={
           <>
           {getStatusBadge(ticket.status)}
-          {getPriorityBadge(ticket.priority)}
+          {getPriorityBadge(ticket.priority, getPriorityLabel(ticket.departmentId, ticket.priority))}
             {ticket.slaExceeded && (
               <Badge variant="danger" size="md">
                 <FiAlertCircle className="inline mr-1" />
@@ -1314,7 +1302,7 @@ export default function TicketDetailPage() {
             onChange={(e) => setSelectedPriority(e.target.value as TicketPriority)}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
-            {PRIORITY_OPTIONS.map((option) => (
+            {getPriorityOptions(ticket?.departmentId).map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

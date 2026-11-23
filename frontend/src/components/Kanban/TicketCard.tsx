@@ -1,3 +1,4 @@
+import { usePriorityLabels } from '../../hooks/usePriorityLabels';
 import { FiClock, FiUser, FiAlertCircle, FiPauseCircle } from 'react-icons/fi';
 import Badge from '../common/Badge';
 import UnreadBadge from '../common/UnreadBadge';
@@ -80,6 +81,7 @@ const getSLAStatus = (ticket: KanbanTicket): 'exceeded' | 'warning' | 'ok' | 'pa
 export default function TicketCard({ ticket, isDragging, onClick }: TicketCardProps) {
   const { unreadCounts } = useUnreadMessages();
   const priorityConfig = PRIORITY_CONFIG[ticket.priority];
+  const { getLabel } = usePriorityLabels([ticket.department?.id]);
   const slaStatus = getSLAStatus(ticket);
   const unreadCount = unreadCounts[ticket.id] || 0;
   
@@ -131,7 +133,7 @@ export default function TicketCard({ ticket, isDragging, onClick }: TicketCardPr
           )}
         </div>
         <Badge variant={priorityConfig.variant} size="sm">
-          {priorityConfig.label}
+          {getLabel(ticket.department?.id, ticket.priority, priorityConfig.label)}
         </Badge>
       </div>
 
