@@ -30,6 +30,9 @@ const KanbanBoardPage = lazy(() => import('./pages/KanbanBoardPage'));
 const DepartmentRoute = lazy(() => import('./components/Departments/DepartmentRoute'));
 const BrandingPage = lazy(() => import('./pages/BrandingPage'));
 
+// Cambiar a true para volver a mostrar el botón de SCOT Assistant
+const BOT_CHAT_ENABLED = false;
+
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
@@ -77,7 +80,7 @@ function App() {
       <UnreadMessagesProvider>
         <Router>
           <Toaster />
-          {isAuthenticated && <BotChat />}
+          {BOT_CHAT_ENABLED && isAuthenticated && <BotChat />}
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route 
