@@ -579,6 +579,105 @@ export class TicketsService {
   }
 
   /**
+   * Fija manualmente la fecha de entrega. El ticket pasa a SLA personalizado:
+   * deja de pausarse y de recalcularse por reglas, y solo conserva la fecha indicada.
+   */
+  async setCustomSLADeadline(ticketId: string, userId: string, deadline: Date, reason?: string) {
+    const ticket = await this.getTicketById(ticketId, userId);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { roleType: true }
+    });
+
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const isSuperAdmin = user.roleType === 'SUPER_ADMIN';
+    const isDeptAdminOfTicket =
+      user.roleType === 'DEPT_ADMIN' &&
+      !!(await prisma.departmentUser.findFirst({
+        where: { userId, departmentId: ticket.departmentId },
+        select: { id: true }
+      }));
+
+    if (!isSuperAdmin && !isDeptAdminOfTicket) {
+      throw new Error('No tienes permisos para cambiar la fecha de entrega de este ticket');
+    }
+
+    const finishedStatuses: TicketStatus[] = [
+      TicketStatus.RESOLVED,
+      TicketStatus.CLOSED,
+      TicketStatus.CANCELLED
+    ];
+    if (finishedStatuses.includes(ticket.status)) {
+      throw new Error('No se puede cambiar la fecha de entrega de un ticket resuelto, cerrado o cancelado');
+    }
+
+    if (Number.isNaN(deadline.getTime()) || deadline.getTime() <= Date.now()) {
+      throw new Error('La fecha de entrega debe ser posterior a la fecha y hora actual');
+    }
+
+    // Se quitan etiquetas HTML; React ya escapa el texto al mostrarlo
+    const cleanReason = reason?.replace(/<[^>]*>/g, '').trim() || null;
+
+    const updatedTicket = await prisma.$transaction(async (tx) => {
+      const updated = await tx.ticket.update({
+        where: { id: ticketId },
+        data: {
+          slaDeadline: deadline,
+          slaCustom: true,
+          slaCustomReason: cleanReason,
+          slaExceeded: false,
+          slaPausedAt: null
+        },
+        include: {
+          department: true,
+          form: true,
+          requester: true,
+          assignments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  profilePicture: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'SLA_DEADLINE_CUSTOM',
+          resource: 'ticket',
+          resourceId: ticketId,
+          details: {
+            field: 'slaDeadline',
+            oldValue: ticket.slaDeadline ? new Date(ticket.slaDeadline).toISOString() : null,
+            newValue: deadline.toISOString(),
+            reason: cleanReason,
+            wasCustom: ticket.slaCustom,
+            ticketNumber: ticket.ticketNumber
+          },
+          status: 'success'
+        }
+      });
+
+      return updated;
+    });
+
+    logger.info(`Ticket ${ticket.ticketNumber}: fecha de entrega personalizada por usuario ${userId}`);
+
+    return updatedTicket;
+  }
+
+  /**
    * Actualiza un ticket
    */
   async updateTicket(ticketId: string, userId: string, data: UpdateTicketData) {
@@ -736,18 +835,21 @@ export class TicketsService {
         if (data.waitingReason) {
           updates.waitingReason = data.waitingReason;
         }
-        updates.slaPausedAt = new Date();
-        historyEntries.push({
-          action: 'SLA_PAUSED',
-          field: 'slaPausedAt',
-          newValue: 'SLA pausado - ticket en espera'
-        });
+        // Un SLA personalizado tiene fecha fija: no se pausa
+        if (!ticket.slaCustom) {
+          updates.slaPausedAt = new Date();
+          historyEntries.push({
+            action: 'SLA_PAUSED',
+            field: 'slaPausedAt',
+            newValue: 'SLA pausado - ticket en espera'
+          });
+        }
       }
 
       // Si cambia DESDE WAITING a otro estado: reanudar el SLA y limpiar motivo
       if (ticket.status === TicketStatus.WAITING && data.status !== TicketStatus.WAITING) {
         updates.waitingReason = null;
-        if (ticket.slaPausedAt) {
+        if (ticket.slaPausedAt && !ticket.slaCustom) {
           const pausedAt = new Date(ticket.slaPausedAt);
           const resumedAt = new Date();
           const businessHoursOnly = await this.isBusinessHoursOnlySLA(ticket.departmentId, ticket.priority);
@@ -809,7 +911,8 @@ export class TicketsService {
         data.priority as any // Cast necesario porque TicketPriority y SLAPriority son el mismo enum
       );
 
-      if (newSlaConfig) {
+      // Un SLA personalizado conserva la fecha de entrega fijada manualmente
+      if (newSlaConfig && !ticket.slaCustom) {
         const slaConfigId = (newSlaConfig as any).sla_configuration_id || (newSlaConfig as any).id;
         // El SLA se mide desde la creación del ticket, no desde el momento del cambio
         const newSlaResult = await slaDeadlineService.calculateSLADeadline({

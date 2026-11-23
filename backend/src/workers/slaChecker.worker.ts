@@ -25,10 +25,12 @@ class SLACheckerWorker {
           status: { 
             notIn: [TicketStatus.RESOLVED, TicketStatus.CLOSED, TicketStatus.CANCELLED] 
           },
-          // No contar tickets que están pausados (WAITING)
-          NOT: {
-            status: TicketStatus.WAITING
-          }
+          // No contar tickets que están pausados (WAITING), salvo los de SLA personalizado
+          // porque su fecha es fija y no se pausa
+          OR: [
+            { status: { not: TicketStatus.WAITING } },
+            { slaCustom: true }
+          ]
         },
         select: {
           id: true,
@@ -121,8 +123,13 @@ class SLACheckerWorker {
         },
         slaExceeded: false,
         status: {
-          notIn: [TicketStatus.RESOLVED, TicketStatus.CLOSED, TicketStatus.CANCELLED, TicketStatus.WAITING]
-        }
+          notIn: [TicketStatus.RESOLVED, TicketStatus.CLOSED, TicketStatus.CANCELLED]
+        },
+        // Los tickets en WAITING no avisan, salvo los de SLA personalizado (su fecha no se pausa)
+        OR: [
+          { status: { not: TicketStatus.WAITING } },
+          { slaCustom: true }
+        ]
       },
       select: {
         id: true,

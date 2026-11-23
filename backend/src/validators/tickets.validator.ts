@@ -65,6 +65,14 @@ export const changePrioritySchema = z.object({
   comment: z.string().max(500, 'El comentario no puede exceder 500 caracteres').optional()
 });
 
+// Schema para fijar una fecha de entrega manual (SLA personalizado)
+export const setSlaDeadlineSchema = z.object({
+  deadline: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), 'Fecha de entrega inválida'),
+  reason: z.string().max(500, 'El motivo no puede exceder 500 caracteres').optional()
+});
+
 // Schema para filtros de listado
 export const listTicketsQuerySchema = z.object({
   departmentId: z.string().uuid().optional(),
@@ -82,4 +90,5 @@ export type UpdateTicketInput = z.infer<typeof updateTicketSchema>;
 export type AssignTicketInput = z.infer<typeof assignTicketSchema>;
 export type ChangeStatusInput = z.infer<typeof changeStatusSchema>;
 export type ChangePriorityInput = z.infer<typeof changePrioritySchema>;
+export type SetSlaDeadlineInput = z.infer<typeof setSlaDeadlineSchema>;
 export type ListTicketsQuery = z.infer<typeof listTicketsQuerySchema>;

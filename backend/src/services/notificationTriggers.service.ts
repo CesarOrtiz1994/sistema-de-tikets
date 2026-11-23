@@ -215,6 +215,38 @@ export async function notifyTicketPriorityChanged(ticket: {
 }
 
 /**
+ * Fecha de entrega cambiada manualmente (SLA personalizado) → notificar al solicitante y asignados
+ */
+export async function notifyTicketSlaDeadlineChanged(ticket: {
+  id: string;
+  ticketNumber: string;
+  requesterId: string;
+  assignments?: Array<{ userId?: string; user?: { id: string } }>;
+}, newDeadline: Date, changedByUserId: string) {
+  try {
+    const assignedIds = (ticket.assignments || [])
+      .map(a => a.userId || a.user?.id)
+      .filter((uid): uid is string => !!uid);
+    const userIds = Array.from(new Set([ticket.requesterId, ...assignedIds]))
+      .filter(uid => uid !== changedByUserId);
+
+    if (userIds.length === 0) return;
+
+    const deadline = newDeadline.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+
+    await notificationService.sendToMany(
+      userIds,
+      NotificationType.TICKET_SLA_DEADLINE_CHANGED,
+      'Fecha de entrega actualizada',
+      `${ticket.ticketNumber}: La fecha de entrega ahora es ${deadline}`,
+      { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, slaDeadline: newDeadline.toISOString() }
+    );
+  } catch (error) {
+    logger.error('Error in notifyTicketSlaDeadlineChanged:', error);
+  }
+}
+
+/**
  * Ticket resuelto → notificar al solicitante
  */
 export async function notifyTicketResolved(ticket: {

@@ -353,6 +353,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit, 
                             : 'text-green-700 dark:text-green-300'
                       }`}>
                         {ticket.slaExceeded ? '⚠️ SLA Excedido' : '⏰ Fecha de Entrega Estimada'}
+                        {ticket.slaCustom ? ' · SLA personalizado' : ''}
                       </p>
                       <p className={`font-bold ${
                         ticket.slaExceeded 

@@ -8,7 +8,8 @@ import {
   updateTicketSchema,
   assignTicketSchema,
   changeStatusSchema,
-  changePrioritySchema
+  changePrioritySchema,
+  setSlaDeadlineSchema
 } from '../validators/tickets.validator';
 
 const router = Router();
@@ -90,6 +91,17 @@ router.put(
   '/:id/priority',
   validateBody(changePrioritySchema),
   ticketsController.changePriority
+);
+
+/**
+ * @route   PUT /api/tickets/:id/sla-deadline
+ * @desc    Fijar manualmente la fecha de entrega (SLA personalizado)
+ * @access  Private (Super Admin o Dept Admin del departamento)
+ */
+router.put(
+  '/:id/sla-deadline',
+  validateBody(setSlaDeadlineSchema),
+  ticketsController.setSlaDeadline
 );
 
 export default router;

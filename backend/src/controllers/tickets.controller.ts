@@ -4,7 +4,8 @@ import {
   notifyTicketCreated,
   notifyTicketAssigned,
   notifyTicketStatusChanged,
-  notifyTicketPriorityChanged
+  notifyTicketPriorityChanged,
+  notifyTicketSlaDeadlineChanged
 } from '../services/notificationTriggers.service';
 import { cacheService } from '../services/cache.service';
 import logger from '../config/logger';
@@ -264,6 +265,38 @@ class TicketsController {
     } catch (error: any) {
       logger.error('Error en changePriority:', error);
       next(error);
+    }
+  }
+
+  /**
+   * PUT /api/tickets/:id/sla-deadline
+   * Fijar manualmente la fecha de entrega (el ticket pasa a SLA personalizado)
+   */
+  async setSlaDeadline(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user.id;
+      const { id } = req.params;
+      const { deadline, reason } = req.body;
+
+      const ticket = await ticketsService.setCustomSLADeadline(id, userId, new Date(deadline), reason);
+
+      notifyTicketSlaDeadlineChanged(ticket, new Date(deadline), userId).catch(err =>
+        logger.error('Error sending SLA deadline change notification:', err)
+      );
+
+      cacheService.invalidateMetrics().catch(() => {});
+
+      return res.json({
+        success: true,
+        message: 'Fecha de entrega actualizada. El ticket ahora tiene SLA personalizado',
+        data: ticket
+      });
+    } catch (error: any) {
+      logger.error('Error en setSlaDeadline:', error);
+      return res.status(400).json({
+        success: false,
+        error: error.message || 'Error al cambiar la fecha de entrega'
+      });
     }
   }
 }

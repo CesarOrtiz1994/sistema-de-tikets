@@ -409,6 +409,8 @@ model Ticket {
   slaPausedAt DateTime? @map("sla_paused_at")
   slaTotalPausedMinutes Int @default(0) @map("sla_total_paused_minutes")
   slaStartTime DateTime? @map("sla_start_time")
+  slaCustom Boolean @default(false) @map("sla_custom")
+  slaCustomReason String? @map("sla_custom_reason") @db.Text
   createdOutsideBusinessHours Boolean @default(false) @map("created_outside_business_hours")
 
   waitingReason String? @map("waiting_reason") @db.Text
@@ -569,6 +571,7 @@ enum NotificationType {
   TICKET_ASSIGNED
   TICKET_STATUS_CHANGED
   TICKET_PRIORITY_CHANGED
+  TICKET_SLA_DEADLINE_CHANGED
   TICKET_RESOLVED
   TICKET_CLOSED
   TICKET_REOPENED

@@ -19,6 +19,8 @@ export interface Ticket {
   slaPausedAt?: string;
   slaTotalPausedMinutes: number;
   slaStartTime?: string;
+  slaCustom?: boolean;
+  slaCustomReason?: string | null;
   createdOutsideBusinessHours?: boolean;
   waitingReason?: string | null;
   deliverableRejections: number;
@@ -176,6 +178,11 @@ class TicketsService {
 
   async changePriority(id: string, priority: TicketPriority): Promise<Ticket> {
     const response = await api.put(`/api/tickets/${id}/priority`, { priority });
+    return response.data.data;
+  }
+
+  async setSlaDeadline(id: string, deadline: string, reason?: string): Promise<Ticket> {
+    const response = await api.put(`/api/tickets/${id}/sla-deadline`, { deadline, reason });
     return response.data.data;
   }
 }

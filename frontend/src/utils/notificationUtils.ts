@@ -15,6 +15,7 @@ import {
   FiMessageSquare,
   FiBell,
   FiArrowUp,
+  FiCalendar,
 } from 'react-icons/fi';
 
 interface NotificationIconInfo {
@@ -38,6 +39,10 @@ const iconMap: Record<string, NotificationIconInfo> = {
   TICKET_PRIORITY_CHANGED: {
     icon: FiArrowUp,
     color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+  },
+  TICKET_SLA_DEADLINE_CHANGED: {
+    icon: FiCalendar,
+    color: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
   },
   TICKET_RESOLVED: {
     icon: FiCheckCircle,

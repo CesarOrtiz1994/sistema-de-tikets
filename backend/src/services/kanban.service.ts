@@ -155,6 +155,7 @@ export class KanbanService {
           slaDeadline: true,
           slaExceeded: true,
           slaPausedAt: true,
+          slaCustom: true,
           requester: {
             select: {
               id: true,
@@ -315,6 +316,7 @@ export class KanbanService {
           slaDeadline: true,
           slaExceeded: true,
           slaPausedAt: true,
+          slaCustom: true,
           requester: {
             select: { id: true, name: true, email: true, profilePicture: true }
           },

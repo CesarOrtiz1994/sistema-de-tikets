@@ -4,8 +4,9 @@ import {
   FiEdit, FiCheckCircle, FiLock, FiUnlock, FiStar, FiMessageSquare,
   FiPaperclip, FiTrash2, FiPauseCircle, FiPlayCircle, FiAlertOctagon,
   FiClock, FiCpu, FiBriefcase, FiClipboard, FiPackage, FiXCircle,
-  FiBell, FiMail, FiActivity
+  FiBell, FiMail, FiActivity, FiCalendar
 } from 'react-icons/fi';
+import { formatDate } from './dateUtils';
 
 /**
  * Traduce las acciones técnicas del historial a mensajes amigables para usuarios finales
@@ -124,6 +125,14 @@ export const getHistoryMessage = (action: string, details?: any): string => {
 
       case 'SLA_RESUMED':
         return 'Tiempo de respuesta reanudado';
+
+      case 'SLA_DEADLINE_CUSTOM': {
+        const newDeadline = detailsObj?.newValue ? formatDate(detailsObj.newValue) : null;
+        const customReason = detailsObj?.reason ? ` (${detailsObj.reason})` : '';
+        return newDeadline
+          ? `Fecha de entrega personalizada: ${newDeadline}${customReason}`
+          : 'Fecha de entrega personalizada';
+      }
 
       case 'SLA_BREACHED':
       case 'SLA_EXCEEDED':
@@ -260,6 +269,9 @@ export const getHistoryIcon = (action: string): React.ReactNode => {
     case 'SLA_RESUMED':
       return icon(FiPlayCircle, 'text-green-400');
     
+    case 'SLA_DEADLINE_CUSTOM':
+      return icon(FiCalendar, 'text-indigo-500');
+
     case 'SLA_BREACHED':
     case 'SLA_EXCEEDED':
       return icon(FiAlertOctagon, 'text-red-600');

@@ -113,6 +113,11 @@ const getStatusBadge = (status: TicketStatus) => {
   return <Badge variant={variants[status]} size="md">{labels[status]}</Badge>;
 };
 
+const toDateTimeLocalValue = (date: Date): string => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 const getPriorityBadge = (priority: TicketPriority, label: string) => {
   const variants: Record<TicketPriority, BadgeVariant> = {
     LOW: 'green',
@@ -140,6 +145,9 @@ export default function TicketDetailPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPriorityModal, setShowPriorityModal] = useState(false);
+  const [showSlaDeadlineModal, setShowSlaDeadlineModal] = useState(false);
+  const [slaDeadlineInput, setSlaDeadlineInput] = useState('');
+  const [slaDeadlineReason, setSlaDeadlineReason] = useState('');
   const [showCloseModal, setShowCloseModal] = useState(false);
 
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
@@ -385,6 +393,34 @@ export default function TicketDetailPage() {
     }
   };
 
+  const handleSetSlaDeadline = async () => {
+    if (!ticket || !slaDeadlineInput) {
+      toast.error('Selecciona la nueva fecha de entrega');
+      return;
+    }
+
+    const deadline = new Date(slaDeadlineInput);
+    if (Number.isNaN(deadline.getTime()) || deadline.getTime() <= Date.now()) {
+      toast.error('La fecha de entrega debe ser posterior a la fecha y hora actual');
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await ticketsService.setSlaDeadline(ticket.id, deadline.toISOString(), slaDeadlineReason.trim() || undefined);
+      toast.success('Fecha de entrega actualizada. El ticket ahora tiene SLA personalizado');
+      setShowSlaDeadlineModal(false);
+      setSlaDeadlineReason('');
+      loadTicket();
+    } catch (error) {
+      console.error('Error setting SLA deadline:', error);
+      const apiError = error as { response?: { data?: { error?: string } } };
+      toast.error(apiError.response?.data?.error || 'Error al cambiar la fecha de entrega');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleCancelTicket = async () => {
     if (!ticket) return;
 
@@ -446,6 +482,10 @@ export default function TicketDetailPage() {
   const canChangePriority = (userRole === RoleType.SUPER_ADMIN) || 
                             (userRole === RoleType.DEPT_ADMIN && isMemberOfDepartment);
   
+  // CAMBIAR FECHA DE ENTREGA (SLA personalizado): mismos roles que prioridad, solo en tickets abiertos
+  const canSetSlaDeadline = canChangePriority &&
+                            !['RESOLVED', 'CLOSED', 'CANCELLED'].includes(ticket?.status || '');
+
   // CANCELAR: Solo el solicitante cuando el ticket está en estado NEW
   const canCancel = ticket?.requesterId === user?.id && ticket?.status === 'NEW';
   
@@ -513,6 +553,23 @@ export default function TicketDetailPage() {
                 <span>Cambiar Prioridad</span>
               </button>
             )}
+            {canSetSlaDeadline && (
+              <button
+                onClick={() => {
+                  setSlaDeadlineInput(toDateTimeLocalValue(
+                    ticket.slaDeadline && new Date(ticket.slaDeadline).getTime() > Date.now()
+                      ? new Date(ticket.slaDeadline)
+                      : new Date(Date.now() + 24 * 60 * 60 * 1000)
+                  ));
+                  setSlaDeadlineReason('');
+                  setShowSlaDeadlineModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
+              >
+                <FiCalendar />
+                <span>Fecha de Entrega</span>
+              </button>
+            )}
             {canCancel && (
               <button
                 onClick={handleCancelTicket}
@@ -544,6 +601,12 @@ export default function TicketDetailPage() {
               <Badge variant="danger" size="md">
                 <FiAlertCircle className="inline mr-1" />
                 SLA Excedido
+              </Badge>
+            )}
+            {ticket.slaCustom && (
+              <Badge variant="info" size="md">
+                <FiCalendar className="inline mr-1" />
+                SLA Personalizado
               </Badge>
             )}
           </>
@@ -828,10 +891,15 @@ export default function TicketDetailPage() {
                       {formatDate(ticket.slaDeadline)}
                     </span>
                   </div>
+                  {ticket.slaCustom && (
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                      Fecha personalizada{ticket.slaCustomReason ? `: ${ticket.slaCustomReason}` : ''}
+                    </p>
+                  )}
                 </div>
               )}
 
-              {ticket.createdOutsideBusinessHours && ticket.slaStartTime && (
+              {ticket.createdOutsideBusinessHours && ticket.slaStartTime && !ticket.slaCustom && (
                 <div className="col-span-2">
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                     <div className="flex items-start gap-2">
@@ -927,7 +995,7 @@ export default function TicketDetailPage() {
           )}
 
           {/* Horario de Atención del Departamento */}
-          {ticket.department && (
+          {ticket.department && !ticket.slaCustom && (
             <WorkScheduleInfo
               departmentId={ticket.department.id}
               departmentName={ticket.department.name}
@@ -1308,6 +1376,57 @@ export default function TicketDetailPage() {
               </option>
             ))}
           </select>
+        </div>
+      </Modal>
+
+      {/* Modal Fecha de Entrega (SLA personalizado) */}
+      <Modal
+        isOpen={showSlaDeadlineModal}
+        onClose={() => setShowSlaDeadlineModal(false)}
+        title="Fecha de Entrega"
+        subtitle="Define manualmente la fecha de entrega del ticket"
+        footer={
+          <ModalButtons
+            onCancel={() => setShowSlaDeadlineModal(false)}
+            onConfirm={handleSetSlaDeadline}
+            confirmText="Guardar"
+            confirmIcon={<FiCalendar />}
+            loading={actionLoading}
+          />
+        }
+      >
+        <div className="space-y-4">
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-3 text-sm text-indigo-800 dark:text-indigo-200">
+            El ticket pasará a <strong>SLA personalizado</strong>: la fecha quedará fija y ya no se pausará
+            ni se recalculará al cambiar el estado o la prioridad.
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Nueva fecha y hora de entrega
+            </label>
+            <input
+              type="datetime-local"
+              value={slaDeadlineInput}
+              min={toDateTimeLocalValue(new Date())}
+              onChange={(e) => setSlaDeadlineInput(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Motivo (opcional)
+            </label>
+            <textarea
+              value={slaDeadlineReason}
+              onChange={(e) => setSlaDeadlineReason(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="Ej: El solicitante acordó una nueva fecha"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            />
+          </div>
         </div>
       </Modal>
 

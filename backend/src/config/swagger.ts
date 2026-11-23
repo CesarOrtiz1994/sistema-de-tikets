@@ -85,6 +85,8 @@ const options: swaggerJsdoc.Options = {
             waitingReason: { type: 'string', nullable: true },
             slaDeadline: { type: 'string', format: 'date-time', nullable: true },
             slaExceeded: { type: 'boolean' },
+            slaCustom: { type: 'boolean', description: 'Fecha de entrega fijada manualmente (SLA personalizado)' },
+            slaCustomReason: { type: 'string', nullable: true },
             departmentId: { type: 'string', format: 'uuid' },
             requesterId: { type: 'string', format: 'uuid' },
             assignedToId: { type: 'string', format: 'uuid', nullable: true },
