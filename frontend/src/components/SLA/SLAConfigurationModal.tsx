@@ -4,6 +4,7 @@ import Modal from '../common/Modal';
 import ModalButtons from '../common/ModalButtons';
 import { validateForm, slaConfigurationSchema } from '../../utils/validationSchemas';
 import { toast } from 'sonner';
+import TimeInput from './TimeInput';
 
 interface SLAConfiguration {
   id?: string;
@@ -172,33 +173,20 @@ export default function SLAConfigurationModal({
 
         {/* Tiempos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tiempo de Respuesta (minutos) *
-            </label>
-            <input
-              type="number"
-              required
-              min="1"
-              value={formData.responseTime}
-              onChange={(e) => handleChange('responseTime', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tiempo de Resolución (minutos) *
-            </label>
-            <input
-              type="number"
-              required
-              min="1"
-              value={formData.resolutionTime}
-              onChange={(e) => handleChange('resolutionTime', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
+          <TimeInput
+            label="Tiempo de Respuesta"
+            value={formData.responseTime}
+            onChange={(v) => handleChange('responseTime', v ?? 0)}
+            required
+            error={errors.responseTime}
+          />
+          <TimeInput
+            label="Tiempo de Resolución"
+            value={formData.resolutionTime}
+            onChange={(v) => handleChange('resolutionTime', v ?? 0)}
+            required
+            error={errors.resolutionTime}
+          />
         </div>
 
         {/* Escalamiento */}
@@ -217,18 +205,13 @@ export default function SLAConfigurationModal({
           </div>
 
           {formData.escalationEnabled && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tiempo de Escalamiento (minutos)
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.escalationTime || ''}
-                onChange={(e) => handleChange('escalationTime', parseInt(e.target.value) || null)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
+            <TimeInput
+              label="Tiempo de Escalamiento"
+              value={formData.escalationTime}
+              onChange={(v) => handleChange('escalationTime', v)}
+              allowNull
+              error={errors.escalationTime}
+            />
           )}
         </div>
 
@@ -248,18 +231,14 @@ export default function SLAConfigurationModal({
           </div>
 
           {formData.notifyOnBreach && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Notificar antes de (minutos)
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={formData.notifyBefore || ''}
-                onChange={(e) => handleChange('notifyBefore', parseInt(e.target.value) || null)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
+            <TimeInput
+              label="Notificar antes de"
+              value={formData.notifyBefore}
+              onChange={(v) => handleChange('notifyBefore', v)}
+              allowNull
+              units={['minutes', 'hours']}
+              error={errors.notifyBefore}
+            />
           )}
         </div>
 

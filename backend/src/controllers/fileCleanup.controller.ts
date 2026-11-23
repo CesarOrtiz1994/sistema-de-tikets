@@ -76,9 +76,9 @@ class FileCleanupController {
    */
   async cleanupOrphanFiles(req: Request, res: Response) {
     try {
-      const { daysOld = 30 } = req.body;
+      const { daysAfterClosure = 60 } = req.body;
       
-      const stats = await fileCleanupService.cleanupOrphanFiles(daysOld);
+      const stats = await fileCleanupService.cleanupOrphanFiles(daysAfterClosure);
 
       return res.status(200).json({
         success: true,

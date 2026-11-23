@@ -1066,7 +1066,8 @@ const options: swaggerJsdoc.Options = {
         post: {
           tags: ['File Cleanup'],
           summary: 'Limpiar archivos huérfanos',
-          description: 'Solo SUPER_ADMIN',
+          description: 'Solo SUPER_ADMIN. Elimina archivos de tickets resueltos/cerrados/cancelados después de `daysAfterClosure` días (por defecto 60) y archivos sin referencia con más de esa antigüedad. Nunca elimina archivos de tickets abiertos ni de branding.',
+          requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { daysAfterClosure: { type: 'integer', default: 60 } } } } } },
           responses: { 200: { description: 'Archivos huérfanos limpiados' } },
         },
       },

@@ -14,6 +14,7 @@ import departmentSLAService, { DepartmentSLA, SLAPriority } from '../../services
 import api from '../../services/api';
 import { createDepartmentSLASchema, CreateDepartmentSLAFormData } from '../../validators/department.validator';
 import { z } from 'zod';
+import TimeInput from '../SLA/TimeInput';
 
 interface GlobalSLAConfig {
   id: string;
@@ -511,43 +512,20 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
 
           {/* Tiempos */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="responseTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tiempo de Respuesta (minutos) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                id="responseTime"
-                value={formData.responseTime}
-                onChange={(e) => setFormData({ ...formData, responseTime: parseInt(e.target.value) || 0 })}
-                min="1"
-                max="10080"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {formatTime(formData.responseTime)}
-              </p>
-              <ValidationError message={errors.responseTime} />
-            </div>
-
-            <div>
-              <label htmlFor="resolutionTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tiempo de Resolución (minutos) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                id="resolutionTime"
-                value={formData.resolutionTime}
-                onChange={(e) => setFormData({ ...formData, resolutionTime: parseInt(e.target.value) || 0 })}
-                min="1"
-                max="43200"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {formatTime(formData.resolutionTime)}
-              </p>
-              <ValidationError message={errors.resolutionTime} />
-            </div>
+            <TimeInput
+              label="Tiempo de Respuesta"
+              value={formData.responseTime}
+              onChange={(v) => setFormData({ ...formData, responseTime: v ?? 0 })}
+              required
+              error={errors.responseTime}
+            />
+            <TimeInput
+              label="Tiempo de Resolución"
+              value={formData.resolutionTime}
+              onChange={(v) => setFormData({ ...formData, resolutionTime: v ?? 0 })}
+              required
+              error={errors.resolutionTime}
+            />
           </div>
 
           {/* Opciones booleanas */}
@@ -594,23 +572,14 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
 
             {formData.notifyOnBreach && (
               <div className="ml-7">
-                <label htmlFor="notifyBefore" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Notificar antes de (minutos)
-                </label>
-                <input
-                  type="number"
-                  id="notifyBefore"
-                  value={formData.notifyBefore || ''}
-                  onChange={(e) => setFormData({ ...formData, notifyBefore: parseInt(e.target.value) || null })}
-                  min="1"
-                  max="1440"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  placeholder="30"
+                <TimeInput
+                  label="Notificar antes de"
+                  value={formData.notifyBefore}
+                  onChange={(v) => setFormData({ ...formData, notifyBefore: v })}
+                  allowNull
+                  units={['minutes', 'hours']}
+                  error={errors.notifyBefore}
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Notificar preventivamente antes de que se exceda el SLA
-                </p>
-                <ValidationError message={errors.notifyBefore} />
               </div>
             )}
 
@@ -636,24 +605,13 @@ export default function DepartmentSLAConfig({ departmentId, onUpdate }: Departme
 
             {formData.escalationEnabled && (
               <div className="ml-7">
-                <label htmlFor="escalationTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tiempo de escalamiento (minutos) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="escalationTime"
-                  value={formData.escalationTime || ''}
-                  onChange={(e) => setFormData({ ...formData, escalationTime: parseInt(e.target.value) || null })}
-                  min="1"
-                  max="10080"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                <TimeInput
+                  label="Tiempo de escalamiento"
+                  value={formData.escalationTime}
+                  onChange={(v) => setFormData({ ...formData, escalationTime: v })}
+                  allowNull
+                  error={errors.escalationTime}
                 />
-                {formData.escalationTime && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {formatTime(formData.escalationTime)}
-                  </p>
-                )}
-                <ValidationError message={errors.escalationTime} />
               </div>
             )}
 

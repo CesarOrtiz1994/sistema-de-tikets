@@ -1176,6 +1176,7 @@ export default function TicketDetailPage() {
                 <ChatWindow 
                   ticketId={ticket.id}
                   ticketStatus={ticket.status}
+                  hasAssignees={(ticket.assignments?.length ?? 0) > 0}
                 />
               ) : (
                 <FileHistory ticketId={ticket.id} />

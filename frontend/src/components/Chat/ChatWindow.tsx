@@ -13,10 +13,10 @@ import type { MessageReceived } from '../../validators/socket.validator';
 interface ChatWindowProps {
   ticketId: string;
   ticketStatus?: string;
-  assignedToId?: string | null;
+  hasAssignees?: boolean;
 }
 
-export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: ChatWindowProps) {
+export default function ChatWindow({ ticketId, ticketStatus, hasAssignees }: ChatWindowProps) {
   const {
     isConnected,
     joinTicket,
@@ -47,7 +47,7 @@ export default function ChatWindow({ ticketId, ticketStatus, assignedToId }: Cha
   const [replyingTo, setReplyingTo] = useState<MessageReceived | null>(null);
 
   // Verificar si el chat debe estar habilitado
-  const isChatVisible = !!assignedToId; // Mostrar chat si hay agente asignado (incluso cerrado/cancelado)
+  const isChatVisible = !!hasAssignees; // Mostrar chat si hay agente asignado (incluso cerrado/cancelado)
   const isChatEnabled = isChatVisible && ticketStatus !== 'CLOSED' && ticketStatus !== 'CANCELLED'; // Permitir enviar solo si no está cerrado/cancelado
 
   // Cargar historial de mensajes al montar (si el chat es visible)

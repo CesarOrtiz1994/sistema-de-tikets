@@ -29,7 +29,7 @@ class FileCleanupJob {
     this.orphanFilesJob = cron.schedule('0 2 * * *', async () => {
       logger.info('Ejecutando limpieza de archivos huérfanos...');
       try {
-        const stats = await fileCleanupService.cleanupOrphanFiles(30); // Archivos de más de 30 días
+        const stats = await fileCleanupService.cleanupOrphanFiles(60); // 60 días después del cierre/resolución del ticket
         logger.info(`Limpieza de huérfanos completada: ${stats.filesDeleted} archivos eliminados, ${this.formatBytes(stats.spaceFreed)} liberados`);
       } catch (error) {
         logger.error('Error en job de limpieza de archivos huérfanos:', error);
@@ -112,7 +112,7 @@ class FileCleanupJob {
       logger.info(`Temp: ${tempStats.filesDeleted} archivos eliminados`);
 
       // Limpiar archivos huérfanos
-      const orphanStats = await fileCleanupService.cleanupOrphanFiles(30);
+      const orphanStats = await fileCleanupService.cleanupOrphanFiles(60);
       logger.info(`Huérfanos: ${orphanStats.filesDeleted} archivos eliminados`);
 
       // Limpiar directorios vacíos

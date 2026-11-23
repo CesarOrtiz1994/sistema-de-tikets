@@ -773,6 +773,7 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit }
                     <ChatWindow 
                       ticketId={ticket.id}
                       ticketStatus={ticket.status}
+                      hasAssignees={(ticket.assignments?.length ?? 0) > 0}
                     />
                   </div>
                 )}

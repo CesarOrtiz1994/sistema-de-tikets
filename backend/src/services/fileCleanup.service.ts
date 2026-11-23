@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { TicketStatus } from '@prisma/client';
 import logger from '../config/logger';
+import prisma from '../config/database';
 
 export interface CleanupStats {
   filesScanned: number;
@@ -47,10 +49,14 @@ class FileCleanupService {
   }
 
   /**
-   * Limpiar archivos huérfanos (archivos sin referencia en BD)
-   * @param daysOld - Días de antigüedad para considerar un archivo como huérfano
+   * Limpiar archivos de images/documents que ya no se necesitan.
+   * - Archivos de tickets: solo se eliminan cuando TODOS los tickets que los usan están
+   *   resueltos/cerrados/cancelados y pasaron `daysAfterClosure` días desde su cierre/resolución.
+   * - Archivos de branding: nunca se eliminan.
+   * - Archivos sin ninguna referencia: se eliminan si tienen más de `daysAfterClosure` días.
+   * @param daysAfterClosure - Días después del cierre/resolución del ticket para eliminar sus archivos
    */
-  async cleanupOrphanFiles(daysOld: number = 200): Promise<CleanupStats> {
+  async cleanupOrphanFiles(daysAfterClosure: number = 60): Promise<CleanupStats> {
     const stats: CleanupStats = {
       filesScanned: 0,
       filesDeleted: 0,
@@ -60,18 +66,19 @@ class FileCleanupService {
 
     try {
       const now = Date.now();
-      const maxAge = daysOld * 24 * 60 * 60 * 1000;
+      const maxAge = daysAfterClosure * 24 * 60 * 60 * 1000;
 
-      // Limpiar imágenes antiguas
+      // Si falla la consulta a BD se aborta sin eliminar nada
+      const references = await this.buildFileReferences();
+
       const imagesDir = path.join(this.uploadsDir, 'images');
       if (fs.existsSync(imagesDir)) {
-        await this.cleanDirectoryRecursive(imagesDir, now, maxAge, stats);
+        await this.cleanDirectoryRecursive(imagesDir, now, maxAge, references, stats);
       }
 
-      // Limpiar documentos antiguos
       const documentsDir = path.join(this.uploadsDir, 'documents');
       if (fs.existsSync(documentsDir)) {
-        await this.cleanDirectoryRecursive(documentsDir, now, maxAge, stats);
+        await this.cleanDirectoryRecursive(documentsDir, now, maxAge, references, stats);
       }
 
       logger.info(`Limpieza de archivos huérfanos completada:`, stats);
@@ -209,12 +216,104 @@ class FileCleanupService {
   }
 
   /**
-   * Limpiar directorio recursivamente
+   * Construir mapa de archivos referenciados en BD.
+   * Valor: null = archivo en uso (no eliminar); número = fecha (ms) desde la que puede contarse el plazo.
+   */
+  private async buildFileReferences(): Promise<Map<string, number | null>> {
+    const references = new Map<string, number | null>();
+    const filePattern = /uploads\/(?:images|documents)\/[^"'\s?#)\\]+/g;
+
+    const register = (source: string | null | undefined, finishedAt: number | null) => {
+      if (!source) return;
+      for (const match of source.matchAll(filePattern)) {
+        const filePath = match[0];
+        const current = references.get(filePath);
+        if (current === null) continue;
+        if (finishedAt === null) {
+          references.set(filePath, null);
+        } else {
+          references.set(filePath, Math.max(current ?? 0, finishedAt));
+        }
+      }
+    };
+
+    const branding = await prisma.brandingConfig.findMany({
+      select: { logoUrl: true, logoSmallUrl: true, loginBgImageUrl: true }
+    });
+    for (const config of branding) {
+      register(config.logoUrl, null);
+      register(config.logoSmallUrl, null);
+      register(config.loginBgImageUrl, null);
+    }
+
+    const finishedStatuses: TicketStatus[] = [
+      TicketStatus.RESOLVED,
+      TicketStatus.CLOSED,
+      TicketStatus.CANCELLED
+    ];
+
+    const tickets = await prisma.ticket.findMany({
+      select: {
+        status: true,
+        formData: true,
+        resolvedAt: true,
+        closedAt: true,
+        updatedAt: true,
+        deletedAt: true,
+        messages: { select: { attachmentUrl: true }, where: { attachmentUrl: { not: null } } },
+        deliverables: { select: { fileUrl: true } }
+      }
+    });
+
+    for (const ticket of tickets) {
+      let finishedAt: number | null = null;
+
+      if (finishedStatuses.includes(ticket.status)) {
+        const dates = [ticket.closedAt, ticket.resolvedAt]
+          .filter((d): d is Date => d !== null)
+          .map(d => d.getTime());
+        finishedAt = dates.length > 0
+          ? Math.max(...dates)
+          : ticket.updatedAt.getTime();
+      } else if (ticket.deletedAt) {
+        finishedAt = ticket.deletedAt.getTime();
+      }
+
+      register(JSON.stringify(ticket.formData), finishedAt);
+      ticket.messages.forEach(m => register(m.attachmentUrl, finishedAt));
+      ticket.deliverables.forEach(d => register(d.fileUrl, finishedAt));
+    }
+
+    return references;
+  }
+
+  /**
+   * Buscar referencia de un archivo (o de su imagen original si es un thumbnail)
+   */
+  private getFileReference(
+    filePath: string,
+    references: Map<string, number | null>
+  ): number | null | undefined {
+    if (references.has(filePath)) {
+      return references.get(filePath);
+    }
+
+    const originalPath = filePath.replace(/-thumb(\.[^./]+)$/, '$1');
+    if (originalPath !== filePath && references.has(originalPath)) {
+      return references.get(originalPath);
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Limpiar directorio recursivamente respetando las referencias de BD
    */
   private async cleanDirectoryRecursive(
     dirPath: string,
     now: number,
     maxAge: number,
+    references: Map<string, number | null>,
     stats: CleanupStats
   ): Promise<void> {
     if (!fs.existsSync(dirPath)) {
@@ -230,17 +329,27 @@ class FileCleanupService {
         const itemStats = fs.statSync(itemPath);
 
         if (itemStats.isDirectory()) {
-          await this.cleanDirectoryRecursive(itemPath, now, maxAge, stats);
+          await this.cleanDirectoryRecursive(itemPath, now, maxAge, references, stats);
         } else {
           stats.filesScanned++;
 
-          // Verificar si el archivo es antiguo
-          if (now - itemStats.mtimeMs > maxAge) {
+          const reference = this.getFileReference(itemPath.replace(/\\/g, '/'), references);
+
+          // En uso por un ticket abierto o por el branding
+          if (reference === null) {
+            continue;
+          }
+
+          // Referenciado: contar desde el cierre/resolución. Sin referencia: desde la subida.
+          const referenceDate = reference === undefined ? itemStats.mtimeMs : reference;
+
+          if (now - referenceDate > maxAge) {
             const fileSize = itemStats.size;
             fs.unlinkSync(itemPath);
             stats.filesDeleted++;
             stats.spaceFreed += fileSize;
-            logger.info(`Archivo huérfano eliminado: ${itemPath} (${this.formatBytes(fileSize)})`);
+            const reason = reference === undefined ? 'sin referencia' : 'ticket cerrado/resuelto';
+            logger.info(`Archivo eliminado (${reason}): ${itemPath} (${this.formatBytes(fileSize)})`);
           }
         }
       } catch (error) {
