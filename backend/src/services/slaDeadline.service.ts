@@ -351,6 +351,139 @@ class SLADeadlineService {
     return result;
   }
 
+  /**
+   * Minutos de horario laboral que hay entre dos fechas según el horario del departamento
+   * (o Lunes-Viernes 9:00-18:00 si no tiene uno configurado)
+   */
+  async getBusinessMinutesBetween(from: Date, to: Date, departmentId: string): Promise<number> {
+    const schedules = await departmentWorkScheduleService.getDepartmentSchedule(departmentId);
+    return this.countBusinessMinutes(from, to, this.toWorkSchedules(schedules));
+  }
+
+  countBusinessMinutes(from: Date, to: Date, schedules: WorkSchedule[]): number {
+    if (to.getTime() <= from.getTime()) {
+      return 0;
+    }
+
+    const scheduleMap = new Map<number, WorkSchedule>();
+    schedules.forEach(s => scheduleMap.set(s.dayOfWeek, s));
+
+    const MAX_DAYS = 3660;
+    let totalMs = 0;
+    const day = new Date(from);
+    day.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < MAX_DAYS && day.getTime() < to.getTime(); i++) {
+      const schedule = scheduleMap.get(day.getDay());
+
+      if (schedule && schedule.isWorkday) {
+        const windowStart = new Date(day);
+        windowStart.setHours(schedule.startHour, schedule.startMinute || 0, 0, 0);
+        const windowEnd = new Date(day);
+        windowEnd.setHours(schedule.endHour, schedule.endMinute || 0, 0, 0);
+
+        const overlapStart = Math.max(windowStart.getTime(), from.getTime());
+        const overlapEnd = Math.min(windowEnd.getTime(), to.getTime());
+        if (overlapEnd > overlapStart) {
+          totalMs += overlapEnd - overlapStart;
+        }
+      }
+
+      day.setDate(day.getDate() + 1);
+      day.setHours(0, 0, 0, 0);
+    }
+
+    return Math.floor(totalMs / 60000);
+  }
+
+  /**
+   * Mueve una fecha límite hacia adelante. Si el SLA es solo horario laboral,
+   * los minutos se suman únicamente dentro del horario del departamento.
+   */
+  async extendDeadline(
+    deadline: Date,
+    minutes: number,
+    businessHoursOnly: boolean,
+    departmentId: string
+  ): Promise<Date> {
+    if (minutes <= 0) {
+      return new Date(deadline);
+    }
+
+    if (!businessHoursOnly) {
+      return new Date(deadline.getTime() + minutes * 60000);
+    }
+
+    const schedules = await departmentWorkScheduleService.getDepartmentSchedule(departmentId);
+    return this.addBusinessMinutes(deadline, minutes, this.toWorkSchedules(schedules));
+  }
+
+  /**
+   * Suma minutos de horario laboral a partir de la fecha dada, sin saltar al día siguiente
+   * cuando la fecha ya está dentro del horario.
+   */
+  addBusinessMinutes(date: Date, minutes: number, schedules: WorkSchedule[]): Date {
+    const scheduleMap = new Map<number, WorkSchedule>();
+    schedules.forEach(s => scheduleMap.set(s.dayOfWeek, s));
+
+    if (!schedules.some(s => s.isWorkday)) {
+      return new Date(date.getTime() + minutes * 60000);
+    }
+
+    const MAX_DAYS = 3660;
+    let current = new Date(date);
+    let remaining = minutes;
+
+    for (let i = 0; i < MAX_DAYS && remaining > 0; i++) {
+      const schedule = scheduleMap.get(current.getDay());
+
+      if (schedule && schedule.isWorkday) {
+        const windowStart = new Date(current);
+        windowStart.setHours(schedule.startHour, schedule.startMinute || 0, 0, 0);
+        const windowEnd = new Date(current);
+        windowEnd.setHours(schedule.endHour, schedule.endMinute || 0, 0, 0);
+
+        if (current.getTime() < windowStart.getTime()) {
+          current = windowStart;
+        }
+
+        if (current.getTime() < windowEnd.getTime()) {
+          const available = (windowEnd.getTime() - current.getTime()) / 60000;
+          if (remaining <= available) {
+            return new Date(current.getTime() + remaining * 60000);
+          }
+          remaining -= available;
+        }
+      }
+
+      current = new Date(current);
+      current.setDate(current.getDate() + 1);
+      current.setHours(0, 0, 0, 0);
+    }
+
+    return current;
+  }
+
+  private toWorkSchedules(
+    schedules: Array<{
+      dayOfWeek: number;
+      startHour: number;
+      startMinute?: number | null;
+      endHour: number;
+      endMinute?: number | null;
+      isWorkday: boolean;
+    }>
+  ): WorkSchedule[] {
+    return schedules.map(s => ({
+      dayOfWeek: s.dayOfWeek,
+      startHour: s.startHour,
+      startMinute: s.startMinute || 0,
+      endHour: s.endHour,
+      endMinute: s.endMinute || 0,
+      isWorkday: s.isWorkday
+    }));
+  }
+
   private subtractMinutes(date: Date, minutes: number): Date {
     return new Date(date.getTime() - minutes * 60000);
   }

@@ -545,6 +545,39 @@ export class TicketsService {
     };
   }
 
+  private readBusinessHoursOnly(slaConfig: any): boolean {
+    if (!slaConfig) return false;
+    return Boolean(slaConfig.business_hours_only ?? slaConfig.businessHoursOnly);
+  }
+
+  private async isBusinessHoursOnlySLA(departmentId: string, priority: TicketPriority): Promise<boolean> {
+    try {
+      const slaConfig = await departmentSLAService.getSLAForDepartmentAndPriority(
+        departmentId,
+        priority as any
+      );
+      return this.readBusinessHoursOnly(slaConfig);
+    } catch (error) {
+      logger.error('Error obteniendo configuración SLA:', error);
+      return false;
+    }
+  }
+
+  // Si falla el cálculo por horario laboral, se suman minutos corridos para no bloquear la operación
+  private async extendSLADeadline(
+    deadline: Date,
+    minutes: number,
+    businessHoursOnly: boolean,
+    departmentId: string
+  ): Promise<Date> {
+    try {
+      return await slaDeadlineService.extendDeadline(deadline, minutes, businessHoursOnly, departmentId);
+    } catch (error) {
+      logger.error('Error extendiendo deadline de SLA, se usan minutos corridos:', error);
+      return new Date(deadline.getTime() + minutes * 60000);
+    }
+  }
+
   /**
    * Actualiza un ticket
    */
@@ -560,6 +593,40 @@ export class TicketsService {
 
     if (!user) {
       throw new Error('Usuario no encontrado');
+    }
+
+    // Permisos de backend para cambiar prioridad y estado (mismas reglas que la interfaz)
+    const isPriorityChange = !!data.priority && data.priority !== ticket.priority;
+    const isStatusChange = !!data.status && data.status !== ticket.status;
+
+    if (isPriorityChange || isStatusChange) {
+      const isDepartmentMember = user.roleType === 'SUPER_ADMIN'
+        ? true
+        : !!(await prisma.departmentUser.findFirst({
+            where: { userId, departmentId: ticket.departmentId },
+            select: { id: true }
+          }));
+      const isSuperAdmin = user.roleType === 'SUPER_ADMIN';
+      const isDeptAdminOfTicket = user.roleType === 'DEPT_ADMIN' && isDepartmentMember;
+
+      if (isPriorityChange && !isSuperAdmin && !isDeptAdminOfTicket) {
+        throw new Error('No tienes permisos para cambiar la prioridad de este ticket');
+      }
+
+      if (isStatusChange) {
+        const isAssignedSubordinate =
+          user.roleType === 'SUBORDINATE' &&
+          isDepartmentMember &&
+          ticket.assignments.some(a => a.userId === userId);
+        const isRequesterCancelling =
+          ticket.requesterId === userId &&
+          ticket.status === TicketStatus.NEW &&
+          data.status === TicketStatus.CANCELLED;
+
+        if (!isSuperAdmin && !isDeptAdminOfTicket && !isAssignedSubordinate && !isRequesterCancelling) {
+          throw new Error('No tienes permisos para cambiar el estado de este ticket');
+        }
+      }
     }
 
     const updates: Prisma.TicketUpdateInput = {};
@@ -681,10 +748,23 @@ export class TicketsService {
       if (ticket.status === TicketStatus.WAITING && data.status !== TicketStatus.WAITING) {
         updates.waitingReason = null;
         if (ticket.slaPausedAt) {
-          // Calcular cuántos minutos estuvo pausado
-          const pausedDuration = Math.floor(
-            (new Date().getTime() - new Date(ticket.slaPausedAt).getTime()) / (1000 * 60)
-          );
+          const pausedAt = new Date(ticket.slaPausedAt);
+          const resumedAt = new Date();
+          const businessHoursOnly = await this.isBusinessHoursOnlySLA(ticket.departmentId, ticket.priority);
+
+          // Calcular cuántos minutos estuvo pausado (solo horario laboral si el SLA lo exige)
+          let pausedDuration = Math.floor((resumedAt.getTime() - pausedAt.getTime()) / (1000 * 60));
+          if (businessHoursOnly) {
+            try {
+              pausedDuration = await slaDeadlineService.getBusinessMinutesBetween(
+                pausedAt,
+                resumedAt,
+                ticket.departmentId
+              );
+            } catch (error) {
+              logger.error(`Error calculando pausa en horario laboral del ticket ${ticket.ticketNumber}:`, error);
+            }
+          }
           
           // Acumular el tiempo pausado
           const totalPausedMinutes = (ticket.slaTotalPausedMinutes || 0) + pausedDuration;
@@ -692,9 +772,12 @@ export class TicketsService {
           
           // Extender el deadline sumando el tiempo pausado
           if (ticket.slaDeadline) {
-            const newDeadline = new Date(ticket.slaDeadline);
-            newDeadline.setMinutes(newDeadline.getMinutes() + pausedDuration);
-            updates.slaDeadline = newDeadline;
+            updates.slaDeadline = await this.extendSLADeadline(
+              new Date(ticket.slaDeadline),
+              pausedDuration,
+              businessHoursOnly,
+              ticket.departmentId
+            );
           }
           
           // Limpiar la fecha de pausa
@@ -728,11 +811,34 @@ export class TicketsService {
 
       if (newSlaConfig) {
         const slaConfigId = (newSlaConfig as any).sla_configuration_id || (newSlaConfig as any).id;
+        // El SLA se mide desde la creación del ticket, no desde el momento del cambio
         const newSlaResult = await slaDeadlineService.calculateSLADeadline({
           slaConfigurationId: slaConfigId,
-          departmentId: ticket.departmentId
+          departmentId: ticket.departmentId,
+          createdAt: ticket.createdAt
         });
-        updates.slaDeadline = newSlaResult.resolutionDeadline;
+
+        // Se conserva el tiempo que el ticket estuvo pausado
+        const pausedMinutes =
+          typeof updates.slaTotalPausedMinutes === 'number'
+            ? updates.slaTotalPausedMinutes
+            : ticket.slaTotalPausedMinutes || 0;
+        const newBusinessHoursOnly = this.readBusinessHoursOnly(newSlaConfig);
+        const newDeadline = await this.extendSLADeadline(
+          newSlaResult.resolutionDeadline,
+          pausedMinutes,
+          newBusinessHoursOnly,
+          ticket.departmentId
+        );
+
+        updates.slaDeadline = newDeadline;
+        updates.slaStartTime = newSlaResult.slaStartTime;
+        updates.createdOutsideBusinessHours = newSlaResult.createdOutsideBusinessHours;
+
+        // Si el nuevo plazo aún no vence, el ticket deja de estar marcado como excedido
+        if (ticket.slaExceeded && newDeadline.getTime() > Date.now()) {
+          updates.slaExceeded = false;
+        }
       }
     }
 
