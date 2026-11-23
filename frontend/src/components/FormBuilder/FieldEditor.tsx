@@ -1,6 +1,23 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { FiPlus, FiTrash2, FiMove } from 'react-icons/fi';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  arrayMove,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import Modal from '../common/Modal';
 import ModalButtons from '../common/ModalButtons';
 import FieldPreview from './FieldPreview';
@@ -19,6 +36,68 @@ interface FieldOption {
   label: string;
   value: string;
   isDefault: boolean;
+}
+
+interface SortableOptionItemProps {
+  option: FieldOption;
+  onUpdate: (id: string, updates: Partial<FieldOption>) => void;
+  onSetDefault: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+function SortableOptionItem({ option, onUpdate, onSetDefault, onDelete }: SortableOptionItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: option.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="p-1 touch-none cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        title="Arrastrar para reordenar"
+      >
+        <FiMove className="w-4 h-4" />
+      </button>
+
+      <input
+        type="text"
+        value={option.label}
+        onChange={(e) => onUpdate(option.id, { label: e.target.value, value: e.target.value })}
+        className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+        placeholder="Etiqueta de la opción"
+      />
+
+      <button
+        onClick={() => onSetDefault(option.id)}
+        className={`px-2 py-1 text-xs rounded ${
+          option.isDefault
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+        }`}
+        title="Marcar como predeterminada"
+      >
+        {option.isDefault ? 'Por defecto' : 'Predeterminar'}
+      </button>
+
+      <button
+        onClick={() => onDelete(option.id)}
+        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+      >
+        <FiTrash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
 }
 
 const fieldSchema = z.object({
@@ -128,6 +207,21 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
     setOptions(options.map(opt => 
       opt.id === id ? { ...opt, ...updates } : opt
     ));
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleOptionsDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setOptions((prev) => {
+      const oldIndex = prev.findIndex((o) => o.id === active.id);
+      const newIndex = prev.findIndex((o) => o.id === over.id);
+      return oldIndex < 0 || newIndex < 0 ? prev : arrayMove(prev, oldIndex, newIndex);
+    });
   };
 
   const handleDeleteOption = (id: string) => {
@@ -447,40 +541,25 @@ export default function FieldEditor({ isOpen, onClose, field, onSave, allFields 
               </button>
             </div>
 
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {options.map((option) => (
-                <div key={option.id} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <FiMove className="w-4 h-4 text-gray-400 cursor-move" />
-                  
-                  <input
-                    type="text"
-                    value={option.label}
-                    onChange={(e) => handleUpdateOption(option.id, { label: e.target.value, value: e.target.value })}
-                    className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Etiqueta de la opción"
-                  />
-
-                  <button
-                    onClick={() => handleSetDefaultOption(option.id)}
-                    className={`px-2 py-1 text-xs rounded ${
-                      option.isDefault
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                    }`}
-                    title="Marcar como predeterminada"
-                  >
-                    {option.isDefault ? 'Por defecto' : 'Predeterminar'}
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteOption(option.id)}
-                    className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
-                  >
-                    <FiTrash2 className="w-4 h-4" />
-                  </button>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleOptionsDragEnd}
+            >
+              <SortableContext items={options.map((o) => o.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {options.map((option) => (
+                    <SortableOptionItem
+                      key={option.id}
+                      option={option}
+                      onUpdate={handleUpdateOption}
+                      onSetDefault={handleSetDefaultOption}
+                      onDelete={handleDeleteOption}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
 
             {options.length === 0 && (
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
