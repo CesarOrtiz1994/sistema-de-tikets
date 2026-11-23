@@ -46,13 +46,17 @@ class UploadService {
         `-processed.${format}`
       );
 
-      await sharp(filePath)
-        .resize(maxWidth, maxHeight, {
-          fit: 'inside',
-          withoutEnlargement: true
-        })
-        .toFormat(format, { quality })
-        .toFile(processedPath);
+      const resized = sharp(filePath).resize(maxWidth, maxHeight, {
+        fit: 'inside',
+        withoutEnlargement: true
+      });
+
+      if (format === 'png') {
+        // PNG conserva el canal alfa (transparencia)
+        await resized.png({ compressionLevel: 9, effort: 7 }).toFile(processedPath);
+      } else {
+        await resized.toFormat(format, { quality }).toFile(processedPath);
+      }
 
       // Eliminar archivo original
       fs.unlinkSync(filePath);

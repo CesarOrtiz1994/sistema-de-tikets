@@ -21,12 +21,19 @@ class UploadController {
       let thumbnailUrl = null;
 
       // Procesar imagen si se solicita y es una imagen
-      if (processImage === 'true' && ALLOWED_IMAGE_TYPES.includes(req.file.mimetype)) {
+      // Se conserva el formato original (PNG/WebP) para no perder la transparencia.
+      // Los GIF no se procesan porque se perdería la animación.
+      const outputFormat: Record<string, 'jpeg' | 'png' | 'webp'> = {
+        'image/jpeg': 'jpeg',
+        'image/png': 'png',
+        'image/webp': 'webp'
+      };
+      if (processImage === 'true' && ALLOWED_IMAGE_TYPES.includes(req.file.mimetype) && outputFormat[req.file.mimetype]) {
         filePath = await uploadService.processImage(filePath, {
           maxWidth: 1920,
           maxHeight: 1080,
           quality: 85,
-          format: 'jpeg'
+          format: outputFormat[req.file.mimetype]
         });
       }
 

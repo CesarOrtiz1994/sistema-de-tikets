@@ -74,9 +74,14 @@ export const upload = multer({
 });
 
 /**
- * Comprime una imagen usando Sharp
+ * Comprime una imagen usando Sharp.
+ * Los PNG se mantienen como PNG para conservar la transparencia (JPEG no soporta canal alfa).
  */
-async function compressImage(inputPath: string, outputPath: string): Promise<{ size: number; width: number; height: number }> {
+async function compressImage(
+  inputPath: string,
+  outputPath: string,
+  keepPng: boolean
+): Promise<{ size: number; width: number; height: number; resized: boolean }> {
   const image = sharp(inputPath);
   const metadata = await image.metadata();
 
@@ -95,10 +100,13 @@ async function compressImage(inputPath: string, outputPath: string): Promise<{ s
     });
   }
 
-  // Comprimir y convertir a JPEG
-  await processedImage
-    .jpeg({ quality: IMAGE_COMPRESSION_CONFIG.quality, progressive: true })
-    .toFile(outputPath);
+  if (keepPng) {
+    await processedImage.png({ compressionLevel: 9, effort: 7 }).toFile(outputPath);
+  } else {
+    await processedImage
+      .jpeg({ quality: IMAGE_COMPRESSION_CONFIG.quality, progressive: true })
+      .toFile(outputPath);
+  }
 
   const stats = await fs.stat(outputPath);
   const finalMetadata = await sharp(outputPath).metadata();
@@ -106,7 +114,8 @@ async function compressImage(inputPath: string, outputPath: string): Promise<{ s
   return {
     size: stats.size,
     width: finalMetadata.width || 0,
-    height: finalMetadata.height || 0
+    height: finalMetadata.height || 0,
+    resized: finalMetadata.width !== metadata.width || finalMetadata.height !== metadata.height
   };
 }
 
@@ -130,22 +139,31 @@ export const chatAttachmentController = {
       let finalMimeType: string;
 
       if (isCompressibleImage) {
-        // Comprimir imagen
+        // Comprimir imagen (los PNG siguen siendo PNG para no perder la transparencia)
         const originalSize = req.file.size;
-        const compressedFilename = `${path.parse(req.file.filename).name}.jpg`;
+        const isPng = req.file.mimetype === 'image/png';
+        const compressedFilename = `${path.parse(req.file.filename).name}${isPng ? '.png' : '.jpg'}`;
         finalPath = path.join(finalDir, compressedFilename);
 
         logger.info(`[ChatAttachment] Compressing image: ${req.file.originalname} (${(originalSize / 1024).toFixed(2)} KB)`);
 
-        const compressionResult = await compressImage(req.file.path, finalPath);
+        const compressionResult = await compressImage(req.file.path, finalPath, isPng);
         finalSize = compressionResult.size;
-        finalMimeType = 'image/jpeg';
+        finalMimeType = isPng ? 'image/png' : 'image/jpeg';
+
+        // Si el PNG recomprimido pesa más y no se redimensionó, se conserva el original
+        if (isPng && !compressionResult.resized && finalSize >= originalSize) {
+          await fs.unlink(finalPath);
+          finalPath = path.join(finalDir, req.file.filename);
+          await fs.rename(req.file.path, finalPath);
+          finalSize = originalSize;
+        } else {
+          // Eliminar archivo temporal original
+          await fs.unlink(req.file.path);
+        }
 
         const compressionRatio = ((1 - finalSize / originalSize) * 100).toFixed(2);
         logger.info(`[ChatAttachment] Image compressed: ${(finalSize / 1024).toFixed(2)} KB (${compressionRatio}% reduction)`);
-
-        // Eliminar archivo temporal original
-        await fs.unlink(req.file.path);
       } else {
         // No comprimir (PDF, SVG, etc.)
         finalPath = path.join(finalDir, req.file.filename);

@@ -35,6 +35,18 @@ async function getDeptAdminIds(departmentId: string): Promise<string[]> {
   return admins.map(a => a.userId);
 }
 
+/**
+ * Obtener los IDs de todos los usuarios asignados a un ticket.
+ * Los tickets pueden tener varios asignados (tabla ticket_assignments).
+ */
+async function getAssigneeIds(ticketId: string): Promise<string[]> {
+  const assignments = await prisma.ticketAssignment.findMany({
+    where: { ticketId },
+    select: { userId: true }
+  });
+  return assignments.map(a => a.userId);
+}
+
 // ============================================
 // TICKET LIFECYCLE NOTIFICATIONS
 // ============================================
@@ -159,12 +171,12 @@ export async function notifyTicketStatusChanged(ticket: {
   ticketNumber: string;
   title: string;
   requesterId: string;
-  assignedToId?: string | null;
 }, newStatus: string, changedByUserId: string) {
   try {
-    logger.info(`[notifyTicketStatusChanged] Ticket: ${ticket.ticketNumber}, requesterId: ${ticket.requesterId}, assignedToId: ${ticket.assignedToId}, newStatus: ${newStatus}, changedBy: ${changedByUserId}`);
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    logger.info(`[notifyTicketStatusChanged] Ticket: ${ticket.ticketNumber}, requesterId: ${ticket.requesterId}, assignees: ${assigneeIds.length}, newStatus: ${newStatus}, changedBy: ${changedByUserId}`);
     const label = statusLabels[newStatus] || newStatus;
-    const userIds = [ticket.requesterId, ticket.assignedToId]
+    const userIds = Array.from(new Set([ticket.requesterId, ...assigneeIds]))
       .filter((uid): uid is string => !!uid && uid !== changedByUserId);
 
     logger.info(`[notifyTicketStatusChanged] userIds to notify: ${JSON.stringify(userIds)}`);
@@ -193,11 +205,11 @@ export async function notifyTicketPriorityChanged(ticket: {
   ticketNumber: string;
   title: string;
   requesterId: string;
-  assignedToId?: string | null;
 }, newPriority: string, changedByUserId: string) {
   try {
     const label = priorityLabels[newPriority] || newPriority;
-    const userIds = [ticket.requesterId, ticket.assignedToId]
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    const userIds = Array.from(new Set([ticket.requesterId, ...assigneeIds]))
       .filter((uid): uid is string => !!uid && uid !== changedByUserId);
 
     if (userIds.length === 0) return;
@@ -292,21 +304,19 @@ export async function notifyTicketClosed(ticket: {
   id: string;
   ticketNumber: string;
   title: string;
-  assignedToId?: string | null;
 }, closedByName: string) {
   try {
-    if (!ticket.assignedToId) return;
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    if (assigneeIds.length === 0) return;
 
     const ticketUrl = `${FRONTEND_URL}/tickets/${ticket.id}`;
 
-    await notificationService.send(
-      {
-        userId: ticket.assignedToId,
-        type: NotificationType.TICKET_CLOSED,
-        title: 'Ticket cerrado',
-        message: `El ticket ${ticket.ticketNumber} ha sido cerrado por el solicitante.`,
-        data: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber }
-      },
+    await notificationService.sendToMany(
+      assigneeIds,
+      NotificationType.TICKET_CLOSED,
+      'Ticket cerrado',
+      `El ticket ${ticket.ticketNumber} ha sido cerrado por el solicitante.`,
+      { ticketId: ticket.id, ticketNumber: ticket.ticketNumber },
       {
         sendEmail: true,
         emailTemplateCode: 'TICKET_CLOSED',
@@ -331,13 +341,13 @@ export async function notifyTicketReopened(ticket: {
   id: string;
   ticketNumber: string;
   title: string;
-  assignedToId?: string | null;
   departmentId: string;
 }, reason: string, reopenedByName: string) {
   try {
     const ticketUrl = `${FRONTEND_URL}/tickets/${ticket.id}`;
     const adminIds = await getDeptAdminIds(ticket.departmentId);
-    const userIds = [...new Set([ticket.assignedToId, ...adminIds].filter(Boolean) as string[])];
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    const userIds = [...new Set([...assigneeIds, ...adminIds])];
 
     if (userIds.length === 0) return;
 
@@ -373,18 +383,18 @@ export async function notifyTicketReopened(ticket: {
 export async function notifyTicketRated(ticket: {
   id: string;
   ticketNumber: string;
-  assignedToId?: string | null;
 }, rating: number) {
   try {
-    if (!ticket.assignedToId) return;
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    if (assigneeIds.length === 0) return;
 
-    await notificationService.send({
-      userId: ticket.assignedToId,
-      type: NotificationType.TICKET_RATED,
-      title: 'Ticket calificado',
-      message: `El ticket ${ticket.ticketNumber} fue calificado con ${rating} estrella(s).`,
-      data: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, rating }
-    });
+    await notificationService.sendToMany(
+      assigneeIds,
+      NotificationType.TICKET_RATED,
+      'Ticket calificado',
+      `El ticket ${ticket.ticketNumber} fue calificado con ${rating} estrella(s).`,
+      { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, rating }
+    );
   } catch (error) {
     logger.error('Error in notifyTicketRated:', error);
   }
@@ -479,18 +489,18 @@ export async function notifyDeliverableUploaded(ticket: {
 export async function notifyDeliverableApproved(ticket: {
   id: string;
   ticketNumber: string;
-  assignedToId?: string | null;
 }) {
   try {
-    if (!ticket.assignedToId) return;
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    if (assigneeIds.length === 0) return;
 
-    await notificationService.send({
-      userId: ticket.assignedToId,
-      type: NotificationType.DELIVERABLE_APPROVED,
-      title: 'Entregable aprobado',
-      message: `Tu entregable del ticket ${ticket.ticketNumber} fue aprobado.`,
-      data: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber }
-    });
+    await notificationService.sendToMany(
+      assigneeIds,
+      NotificationType.DELIVERABLE_APPROVED,
+      'Entregable aprobado',
+      `Tu entregable del ticket ${ticket.ticketNumber} fue aprobado.`,
+      { ticketId: ticket.id, ticketNumber: ticket.ticketNumber }
+    );
   } catch (error) {
     logger.error('Error in notifyDeliverableApproved:', error);
   }
@@ -503,21 +513,19 @@ export async function notifyDeliverableRejected(ticket: {
   id: string;
   ticketNumber: string;
   title: string;
-  assignedToId?: string | null;
 }, rejectionReason: string, remainingAttempts: number) {
   try {
-    if (!ticket.assignedToId) return;
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    if (assigneeIds.length === 0) return;
 
     const ticketUrl = `${FRONTEND_URL}/tickets/${ticket.id}`;
 
-    await notificationService.send(
-      {
-        userId: ticket.assignedToId,
-        type: NotificationType.DELIVERABLE_REJECTED,
-        title: 'Entregable rechazado',
-        message: `Tu entregable del ticket ${ticket.ticketNumber} fue rechazado. Intentos restantes: ${remainingAttempts}`,
-        data: { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, rejectionReason, remainingAttempts }
-      },
+    await notificationService.sendToMany(
+      assigneeIds,
+      NotificationType.DELIVERABLE_REJECTED,
+      'Entregable rechazado',
+      `Tu entregable del ticket ${ticket.ticketNumber} fue rechazado. Intentos restantes: ${remainingAttempts}`,
+      { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, rejectionReason, remainingAttempts },
       {
         sendEmail: true,
         emailTemplateCode: 'DELIVERABLE_REJECTED',
@@ -549,14 +557,14 @@ export async function notifySLAWarning(ticket: {
   id: string;
   ticketNumber: string;
   title: string;
-  assignedToId?: string | null;
   departmentId: string;
   slaDeadline?: Date | null;
 }) {
   try {
     const ticketUrl = `${FRONTEND_URL}/tickets/${ticket.id}`;
     const adminIds = await getDeptAdminIds(ticket.departmentId);
-    const userIds = [...new Set([ticket.assignedToId, ...adminIds].filter(Boolean) as string[])];
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    const userIds = [...new Set([...assigneeIds, ...adminIds])];
 
     if (userIds.length === 0) return;
 
@@ -596,14 +604,14 @@ export async function notifySLAExceeded(ticket: {
   id: string;
   ticketNumber: string;
   title: string;
-  assignedToId?: string | null;
   departmentId: string;
   slaDeadline?: Date | null;
 }) {
   try {
     const ticketUrl = `${FRONTEND_URL}/tickets/${ticket.id}`;
     const adminIds = await getDeptAdminIds(ticket.departmentId);
-    const userIds = [...new Set([ticket.assignedToId, ...adminIds].filter(Boolean) as string[])];
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    const userIds = [...new Set([...assigneeIds, ...adminIds])];
 
     if (userIds.length === 0) return;
 
@@ -643,10 +651,10 @@ export async function notifyNewMessage(ticket: {
   id: string;
   ticketNumber: string;
   requesterId: string;
-  assignedToId?: string | null;
 }, senderUserId: string, senderName: string) {
   try {
-    const userIds = [ticket.requesterId, ticket.assignedToId]
+    const assigneeIds = await getAssigneeIds(ticket.id);
+    const userIds = Array.from(new Set([ticket.requesterId, ...assigneeIds]))
       .filter((uid): uid is string => !!uid && uid !== senderUserId);
 
     if (userIds.length === 0) return;
