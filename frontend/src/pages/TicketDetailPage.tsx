@@ -16,7 +16,7 @@ import ChatWindow from '../components/Chat/ChatWindow';
 import FileHistory from '../components/Chat/FileHistory';
 import TicketRelationship from '../components/Tickets/TicketRelationship';
 import DeliverableUpload, { DeliverableUploadHandle } from '../components/Deliverables/DeliverableUpload';
-import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRefreshCw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle } from 'react-icons/fi';
+import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRefreshCw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 import { deliverablesService } from '../services/deliverables.service';
 import { Deliverable, DeliverableStatus } from '../types/deliverable';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
@@ -1382,23 +1382,26 @@ export default function TicketDetailPage() {
       {/* Modal Fecha de Entrega (SLA personalizado) */}
       <Modal
         isOpen={showSlaDeadlineModal}
-        onClose={() => setShowSlaDeadlineModal(false)}
+        onClose={() => { setShowSlaDeadlineModal(false); setSlaDeadlineReason(''); }}
         title="Fecha de Entrega"
         subtitle="Define manualmente la fecha de entrega del ticket"
         footer={
           <ModalButtons
-            onCancel={() => setShowSlaDeadlineModal(false)}
+            onCancel={() => { setShowSlaDeadlineModal(false); setSlaDeadlineReason(''); }}
             onConfirm={handleSetSlaDeadline}
-            confirmText="Guardar"
+            confirmText="Cambiar"
             confirmIcon={<FiCalendar />}
             loading={actionLoading}
           />
         }
       >
         <div className="space-y-4">
-          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-3 text-sm text-indigo-800 dark:text-indigo-200">
-            El ticket pasará a <strong>SLA personalizado</strong>: la fecha quedará fija y ya no se pausará
-            ni se recalculará al cambiar el estado o la prioridad.
+          <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <FiInfo className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              El ticket pasará a <strong>SLA personalizado</strong>: la fecha quedará fija y ya no se pausará
+              ni se recalculará al cambiar el estado o la prioridad.
+            </p>
           </div>
 
           <div>
@@ -1421,11 +1424,14 @@ export default function TicketDetailPage() {
             <textarea
               value={slaDeadlineReason}
               onChange={(e) => setSlaDeadlineReason(e.target.value)}
-              maxLength={500}
+              placeholder="Ej: El solicitante acordó una nueva fecha..."
               rows={3}
-              placeholder="Ej: El solicitante acordó una nueva fecha"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              maxLength={500}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
             />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+              {slaDeadlineReason.length}/500
+            </p>
           </div>
         </div>
       </Modal>
