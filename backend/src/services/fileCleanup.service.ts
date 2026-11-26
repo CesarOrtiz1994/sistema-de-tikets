@@ -261,7 +261,7 @@ class FileCleanupService {
         updatedAt: true,
         deletedAt: true,
         messages: { select: { attachmentUrl: true }, where: { attachmentUrl: { not: null } } },
-        deliverables: { select: { fileUrl: true } }
+        deliverables: { select: { fileUrl: true, files: { select: { fileUrl: true } } } }
       }
     });
 
@@ -281,7 +281,10 @@ class FileCleanupService {
 
       register(JSON.stringify(ticket.formData), finishedAt);
       ticket.messages.forEach(m => register(m.attachmentUrl, finishedAt));
-      ticket.deliverables.forEach(d => register(d.fileUrl, finishedAt));
+      ticket.deliverables.forEach(d => {
+        register(d.fileUrl, finishedAt);
+        d.files.forEach(f => register(f.fileUrl, finishedAt));
+      });
     }
 
     return references;

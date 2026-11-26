@@ -10,8 +10,12 @@ export class DeliverablesService {
   async uploadDeliverable(
     ticketId: string,
     userId: string,
-    file: Express.Multer.File
+    files: Express.Multer.File[]
   ) {
+    if (!files || files.length === 0) {
+      throw new Error('No se proporcionó ningún archivo');
+    }
+
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
       include: {
@@ -50,34 +54,70 @@ export class DeliverablesService {
     const deliverableDir = path.join(process.cwd(), 'uploads', 'deliverables', ticketId);
     await fs.mkdir(deliverableDir, { recursive: true });
 
-    // Mover archivo al directorio de entregables
-    const fileName = `${Date.now()}-${file.originalname}`;
-    const filePath = path.join(deliverableDir, fileName);
-    await fs.writeFile(filePath, file.buffer);
+    // Guardar archivos en el directorio de entregables
+    const timestamp = Date.now();
+    const savedFiles: { fileUrl: string; fileName: string; fileSize: number; fileType: string }[] = [];
+    try {
+      for (const [index, file] of files.entries()) {
+        const storedName = `${timestamp}-${String(index).padStart(2, '0')}-${path.basename(file.originalname)}`;
+        await fs.writeFile(path.join(deliverableDir, storedName), file.buffer);
+        savedFiles.push({
+          fileUrl: `/uploads/deliverables/${ticketId}/${storedName}`,
+          fileName: file.originalname,
+          fileSize: file.size,
+          fileType: file.mimetype
+        });
+      }
+    } catch (error) {
+      await this.removeStoredFiles(savedFiles.map(f => f.fileUrl));
+      throw error;
+    }
 
-    // Crear registro del entregable
-    const deliverable = await prisma.ticketDeliverable.create({
-      data: {
-        ticketId,
-        uploadedById: userId,
-        fileUrl: `/uploads/deliverables/${ticketId}/${fileName}`,
-        fileName: file.originalname,
-        fileSize: file.size,
-        fileType: file.mimetype,
-        status: DeliverableStatus.PENDING
-      },
-      include: {
-        uploadedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
+    // Los campos de archivo del entregable conservan el primer archivo por compatibilidad
+    const [firstFile] = savedFiles;
+    const totalSize = savedFiles.reduce((sum, f) => sum + f.fileSize, 0);
+
+    try {
+      const deliverable = await prisma.ticketDeliverable.create({
+        data: {
+          ticketId,
+          uploadedById: userId,
+          fileUrl: firstFile.fileUrl,
+          fileName: savedFiles.length > 1
+            ? `${firstFile.fileName} (+${savedFiles.length - 1} más)`
+            : firstFile.fileName,
+          fileSize: totalSize,
+          fileType: firstFile.fileType,
+          status: DeliverableStatus.PENDING,
+          files: {
+            create: savedFiles
+          }
+        },
+        include: {
+          uploadedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          files: {
+            orderBy: { fileUrl: 'asc' }
           }
         }
-      }
-    });
+      });
 
-    return deliverable;
+      return deliverable;
+    } catch (error) {
+      await this.removeStoredFiles(savedFiles.map(f => f.fileUrl));
+      throw error;
+    }
+  }
+
+  private async removeStoredFiles(fileUrls: string[]) {
+    await Promise.all(
+      fileUrls.map(url => fs.unlink(path.join(process.cwd(), url)).catch(() => undefined))
+    );
   }
 
   /**
@@ -295,6 +335,9 @@ export class DeliverablesService {
             name: true,
             email: true
           }
+        },
+        files: {
+          orderBy: { fileUrl: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' }

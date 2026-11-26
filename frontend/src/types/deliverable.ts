@@ -4,6 +4,16 @@ export enum DeliverableStatus {
   REJECTED = 'REJECTED'
 }
 
+export interface DeliverableFile {
+  id: string;
+  deliverableId: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  createdAt: string;
+}
+
 export interface Deliverable {
   id: string;
   ticketId: string;
@@ -12,6 +22,7 @@ export interface Deliverable {
   fileName: string;
   fileSize: number;
   fileType: string;
+  files: DeliverableFile[];
   status: DeliverableStatus;
   rejectionReason?: string;
   reviewedById?: string;

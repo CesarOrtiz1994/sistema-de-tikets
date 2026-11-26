@@ -3,11 +3,11 @@ import { Deliverable, DeliverableRejectResult } from '../types/deliverable';
 
 export const deliverablesService = {
   /**
-   * Subir un entregable para un ticket
+   * Subir un entregable (uno o varios archivos) para un ticket
    */
-  async uploadDeliverable(ticketId: string, file: File): Promise<Deliverable> {
+  async uploadDeliverable(ticketId: string, files: File[]): Promise<Deliverable> {
     const formData = new FormData();
-    formData.append('file', file);
+    files.forEach(file => formData.append('files', file));
 
     const response = await api.post(
       `/api/tickets/${ticketId}/deliverables`,

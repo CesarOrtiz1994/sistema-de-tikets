@@ -177,6 +177,19 @@ const options: swaggerJsdoc.Options = {
             mimeType: { type: 'string' },
             status: { type: 'string', enum: ['PENDING', 'APPROVED', 'REJECTED'] },
             rejectionReason: { type: 'string', nullable: true },
+            files: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', format: 'uuid' },
+                  fileUrl: { type: 'string' },
+                  fileName: { type: 'string' },
+                  fileSize: { type: 'integer' },
+                  fileType: { type: 'string' },
+                },
+              },
+            },
             createdAt: { type: 'string', format: 'date-time' },
           },
         },
@@ -1312,7 +1325,7 @@ const options: swaggerJsdoc.Options = {
           tags: ['Deliverables'],
           summary: 'Subir entregable',
           parameters: [{ in: 'path', name: 'ticketId', required: true, schema: { type: 'string', format: 'uuid' } }],
-          requestBody: { required: true, content: { 'multipart/form-data': { schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } } } },
+          requestBody: { required: true, content: { 'multipart/form-data': { schema: { type: 'object', properties: { files: { type: 'array', maxItems: 10, items: { type: 'string', format: 'binary' }, description: 'Uno o varios archivos (máx. 10, 50MB c/u)' } } } } } },
           responses: { 201: { description: 'Entregable subido', content: { 'application/json': { schema: { $ref: '#/components/schemas/Deliverable' } } } } },
         },
         get: {

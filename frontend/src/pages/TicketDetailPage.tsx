@@ -16,7 +16,8 @@ import ChatWindow from '../components/Chat/ChatWindow';
 import FileHistory from '../components/Chat/FileHistory';
 import TicketRelationship from '../components/Tickets/TicketRelationship';
 import DeliverableUpload, { DeliverableUploadHandle } from '../components/Deliverables/DeliverableUpload';
-import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRefreshCw, FiMessageSquare, FiFolder, FiPackage, FiDownload, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import DeliverableFileList from '../components/Deliverables/DeliverableFileList';
+import { FiArrowLeft, FiClock, FiCalendar, FiCheckCircle, FiAlertCircle, FiBriefcase, FiFileText, FiXCircle, FiUserCheck, FiEdit, FiRefreshCw, FiMessageSquare, FiFolder, FiPackage, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 import { deliverablesService } from '../services/deliverables.service';
 import { Deliverable, DeliverableStatus } from '../types/deliverable';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
@@ -663,27 +664,11 @@ export default function TicketDetailPage() {
               {(() => {
                 const approvedDeliverable = deliverables.find(d => d.status === DeliverableStatus.APPROVED);
                 return approvedDeliverable && (
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div className="p-2 rounded-lg bg-white dark:bg-gray-800">
-                      <FiFolder className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {approvedDeliverable.fileName}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Subido por {approvedDeliverable.uploadedBy.name} • Aprobado el {new Date(approvedDeliverable.reviewedAt!).toLocaleDateString('es-MX')}
-                      </p>
-                    </div>
-                    <a
-                      href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${approvedDeliverable.fileUrl}`}
-                      download
-                      className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                      title="Descargar entregable"
-                    >
-                      <FiDownload className="w-4 h-4" />
-                      <span>Descargar</span>
-                    </a>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Subido por {approvedDeliverable.uploadedBy.name} • Aprobado el {new Date(approvedDeliverable.reviewedAt!).toLocaleDateString('es-MX')}
+                    </p>
+                    <DeliverableFileList deliverable={approvedDeliverable} iconClassName="text-green-600" />
                   </div>
                 );
               })()}
@@ -727,29 +712,14 @@ export default function TicketDetailPage() {
               {pendingDeliverable && (user?.id === ticket.requesterId || userRole === RoleType.SUPER_ADMIN) ? (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    El agente ha subido un archivo entregable. Revísalo y decide si lo apruebas o rechazas.
+                    El agente ha subido el entregable. Revisa todos los archivos y decide si lo apruebas o rechazas.
                   </p>
 
-                  <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div className="p-2 rounded-lg bg-white dark:bg-gray-800">
-                      <FiFolder className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {pendingDeliverable.fileName}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Subido por {pendingDeliverable.uploadedBy.name} • {new Date(pendingDeliverable.createdAt).toLocaleDateString('es-MX')}
-                      </p>
-                    </div>
-                    <a
-                      href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${pendingDeliverable.fileUrl}`}
-                      download
-                      className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      title="Descargar"
-                    >
-                      <FiDownload className="w-4 h-4" />
-                    </a>
+                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Subido por {pendingDeliverable.uploadedBy.name} • {new Date(pendingDeliverable.createdAt).toLocaleDateString('es-MX')}
+                    </p>
+                    <DeliverableFileList deliverable={pendingDeliverable} />
                   </div>
 
                   <div className="flex gap-3 justify-end">

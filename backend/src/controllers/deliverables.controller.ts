@@ -17,9 +17,9 @@ export class DeliverablesController {
     try {
       const userId = (req as any).user.id;
       const { ticketId } = req.params;
-      const file = req.file;
+      const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
-      if (!file) {
+      if (files.length === 0) {
         return res.status(400).json({
           success: false,
           error: 'No se proporcionó ningún archivo'
@@ -29,7 +29,7 @@ export class DeliverablesController {
       const deliverable = await deliverablesService.uploadDeliverable(
         ticketId,
         userId,
-        file
+        files
       );
 
       // Notificar al solicitante

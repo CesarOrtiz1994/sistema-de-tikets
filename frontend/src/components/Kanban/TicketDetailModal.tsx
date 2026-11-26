@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { FiX, FiUser, FiClock, FiAlertCircle, FiCalendar, FiFileText, FiMessageSquare, FiPaperclip, FiPackage, FiDownload, FiExternalLink } from 'react-icons/fi';
+import { FiX, FiUser, FiClock, FiAlertCircle, FiCalendar, FiFileText, FiMessageSquare, FiPaperclip, FiPackage, FiExternalLink } from 'react-icons/fi';
 import { KanbanTicket } from '../../services/kanban.service';
 import { ticketsService } from '../../services/tickets.service';
 import { formsService } from '../../services/forms.service';
 import { departmentsService } from '../../services/departments.service';
 import { deliverablesService } from '../../services/deliverables.service';
 import { Deliverable, DeliverableStatus } from '../../types/deliverable';
+import DeliverableFileList from '../Deliverables/DeliverableFileList';
 import Badge from '../common/Badge';
 import UnreadBadge from '../common/UnreadBadge';
 import { BadgeVariant } from '../common/Badge';
@@ -537,24 +538,16 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit, 
                             </div>
                           )}
 
-                          {/* Archivo pendiente */}
+                          {/* Archivos pendientes */}
                           {pending && (
-                            <div className="flex items-center gap-3 bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
-                              <FiPackage className="w-4 h-4 text-purple-600" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{pending.fileName}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  Subido el {new Date(pending.createdAt).toLocaleDateString('es-MX')}
-                                </p>
-                              </div>
-                              <a
-                                href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${pending.fileUrl}`}
-                                download
-                                className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                title="Descargar"
-                              >
-                                <FiDownload className="w-4 h-4" />
-                              </a>
+                            <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-600 space-y-2">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Subido el {new Date(pending.createdAt).toLocaleDateString('es-MX')}
+                              </p>
+                              <DeliverableFileList
+                                deliverable={pending}
+                                itemClassName="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                              />
                             </div>
                           )}
 

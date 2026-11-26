@@ -553,12 +553,29 @@ model TicketDeliverable {
   ticket       Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   uploadedBy   User   @relation("DeliverableUploads", fields: [uploadedById], references: [id])
   reviewedBy   User?  @relation("DeliverableReviews", fields: [reviewedById], references: [id])
+  files        TicketDeliverableFile[]
 
   @@index([ticketId])
   @@index([uploadedById])
   @@index([status])
   @@index([ticketId, status])
   @@map("ticket_deliverables")
+}
+
+// Archivos de un entregable (un entregable puede tener varios archivos y se revisa como paquete)
+model TicketDeliverableFile {
+  id            String   @id @default(uuid())
+  deliverableId String   @map("deliverable_id")
+  fileUrl       String   @map("file_url")
+  fileName      String   @map("file_name")
+  fileSize      Int      @map("file_size")
+  fileType      String   @map("file_type")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  deliverable TicketDeliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  @@index([deliverableId])
+  @@map("ticket_deliverable_files")
 }
 
 // ============================================
