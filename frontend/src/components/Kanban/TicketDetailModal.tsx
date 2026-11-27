@@ -8,6 +8,7 @@ import { departmentsService } from '../../services/departments.service';
 import { deliverablesService } from '../../services/deliverables.service';
 import { Deliverable, DeliverableStatus } from '../../types/deliverable';
 import DeliverableFileList from '../Deliverables/DeliverableFileList';
+import { formatFormDateValue } from '../../utils/dateUtils';
 import Badge from '../common/Badge';
 import UnreadBadge from '../common/UnreadBadge';
 import { BadgeVariant } from '../common/Badge';
@@ -663,6 +664,10 @@ export default function TicketDetailModal({ ticket, onClose, onUpdate, canEdit, 
                           if (['SELECT', 'RADIO'].includes(fieldTypeName)) {
                             const option = field.options?.find((opt: any) => opt.value === value);
                             return <span>{option?.label || value || '-'}</span>;
+                          }
+
+                          if (['DATE', 'DATETIME', 'TIME'].includes(fieldTypeName) && typeof value === 'string') {
+                            return <span>{formatFormDateValue(value)}</span>;
                           }
                           
                           // Si es un objeto (no manejado arriba)

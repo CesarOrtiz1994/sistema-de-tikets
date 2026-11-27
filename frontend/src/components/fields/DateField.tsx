@@ -18,18 +18,31 @@ export default function DateField({
   className = ''
 }: DateFieldProps) {
   const inputType = type === 'datetime' ? 'datetime-local' : type;
-  
+
+  // Los valores se manejan como hora local "de pared" (sin zona horaria) para que
+  // solicitante y agente vean exactamente lo mismo; no se debe usar toISOString (UTC).
   const formatDateForInput = (date: Date | string | undefined) => {
     if (!date) return '';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    
-    if (type === 'date') {
-      return d.toISOString().split('T')[0];
-    } else if (type === 'datetime') {
-      return d.toISOString().slice(0, 16);
-    } else if (type === 'time') {
-      return d.toISOString().slice(11, 16);
+
+    if (typeof date === 'string') {
+      const match = date.match(/^(\d{4}-\d{2}-\d{2})?(?:T)?(\d{2}:\d{2})?/);
+      const datePart = match?.[1];
+      const timePart = match?.[2];
+      if (type === 'date' && datePart) return datePart;
+      if (type === 'time' && timePart) return timePart;
+      if (type === 'datetime' && datePart && timePart) return `${datePart}T${timePart}`;
     }
+
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '';
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const localDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const localTime = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+    if (type === 'date') return localDate;
+    if (type === 'datetime') return `${localDate}T${localTime}`;
+    if (type === 'time') return localTime;
     return '';
   };
 

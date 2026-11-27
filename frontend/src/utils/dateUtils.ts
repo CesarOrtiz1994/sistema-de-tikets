@@ -35,3 +35,20 @@ export const formatRelativeTime = (date: string | Date): string => {
   
   return formatDateShort(d);
 };
+
+/**
+ * Formatea el valor de un campo DATE / DATETIME / TIME de formulario.
+ * Los valores se guardan como hora local sin zona horaria ("2026-11-27T17:30"),
+ * por lo que se formatean como texto para que todos los usuarios vean lo mismo.
+ */
+export const formatFormDateValue = (rawValue: string): string => {
+  const value = rawValue.replace(/&#x3A;/g, ':');
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}:\d{2}))?$|^(\d{2}:\d{2})$/);
+  if (!match) return value;
+
+  const [, year, month, day, time, timeOnly] = match;
+  if (timeOnly) return timeOnly;
+
+  const date = `${day}/${month}/${year}`;
+  return time ? `${date} ${time}` : date;
+};

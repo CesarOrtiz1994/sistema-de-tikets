@@ -23,7 +23,7 @@ import { Deliverable, DeliverableStatus } from '../types/deliverable';
 import { ticketsService, Ticket, TicketStatus, TicketPriority } from '../services/tickets.service';
 import { departmentsService } from '../services/departments.service';
 import { BadgeVariant } from '../components/common/Badge';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, formatFormDateValue } from '../utils/dateUtils';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { getHistoryMessage, getHistoryIcon } from '../utils/historyUtils';
 import { useAuth } from '../hooks/useAuth';
@@ -1074,6 +1074,10 @@ export default function TicketDetailPage() {
                     if (['SELECT', 'RADIO'].includes(fieldTypeName)) {
                       const option = field.options?.find((opt: any) => opt.value === value);
                       return <span>{option?.label || value || '-'}</span>;
+                    }
+
+                    if (['DATE', 'DATETIME', 'TIME'].includes(fieldTypeName) && typeof value === 'string') {
+                      return <span>{formatFormDateValue(value)}</span>;
                     }
                     
                     // Valor simple - decodificar entidades HTML
